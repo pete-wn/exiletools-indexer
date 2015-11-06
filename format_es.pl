@@ -9,6 +9,19 @@ use Data::Dumper;
 use Time::HiRes;
 use Parallel::ForkManager;
 
+open(CREDS, ".dbcreds");
+while(<CREDS>) {
+  my $line = $_;
+  chomp($line);
+  my ($key,$val) = split(/:/, $line);
+  $db{$key} = $val;
+}
+close(CREDS);
+
+$dbhjson = DBI->connect("dbi:mysql:$db{table}","$db{user}","$db{pass}") || die "DBI Connection Error: $DBI::errstr\n";
+
+my $md5sum = $ARGV[0];
+
 my $rawjson = $dbhjson->selectrow_array("select `data` from `raw` where `md5sum`=\"$md5sum\" limit 1");
 unless ($rawjson) {
   print "[$fork] WARNING: $md5sum returned no data from raw json db!\n";
@@ -374,9 +387,18 @@ foreach $elekey (keys (%{$item{modsPseudo}})) {
 #  print "$jsonout\n";
 
 # Pretty Version Output
-my $jsonchunk = JSON->new->utf8;
-my $prettychunk = $jsonchunk->pretty->encode(\%item);
-print "$prettychunk\n";
+print "== Original JSON Data: =========================\n";
+my $json = JSON->new->allow_nonref;
+my $perl_scalar = $json->decode($rawjson);
+my $pretty = $json->pretty->encode( $perl_scalar );
+print "$pretty\n";
+print "================================================\n\n\n";
+
+
+print "== New JSON Data: ==============================\n";
+my $json = JSON->new->utf8;
+my $pretty = $json->pretty->encode(\%item);
+print "$pretty\n";
 
 exit;
 
