@@ -12,6 +12,12 @@ use utf8::all;
 use Parallel::ForkManager;
 use Date::Parse;
 require("subs/all.subroutines.pl");
+# Keep track of what this program is based on the name
+$process = $0;
+# This is clumsy, we can probably do this better.
+if ($process =~ /\//) {
+  $process =~ s/.*?\///g;
+}
 
 # == Initial Options 
 # Whether or not to give basic debug output
@@ -20,11 +26,9 @@ $debug = 1;
 # The depth to crawl each forum for updates
 $maxCheckForumPages = 8;
 
-
 my $time = localtime();
-&d("Started at $time.\n");
-
-&CreateLock("$ARGV");
+&d("Started $process at $time.\n");
+&CreateLock("$process");
 
 
 

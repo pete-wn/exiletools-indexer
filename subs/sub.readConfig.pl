@@ -1,13 +1,17 @@
 #!/usr/bin/perl
 
+#print "Importing configuration file.\n";
+
+our %conf;
+
 # Open the config file and read it into a hash for reference
-my %conf;
 open(IN, "config") || die "ERROR: Unable to read config file! $!\n";
 while(<IN>) {
   $line = $_;
   # Ignore any commented lines
   next if ($line =~ /^*#/);
   my ($option, $value) = split(/:/, $line);
+  chomp($value);
   $conf{$option} = $value;
 }
 close(IN);
@@ -19,6 +23,7 @@ while(<IN>) {
   # Ignore any commented lines
   next if ($line =~ /^*#/);
   my ($option, $value) = split(/:/, $line);
+  chomp($value);
   $conf{$option} = $value;
 }
 

@@ -8,4 +8,10 @@ require("subs/sub.leagueHash.pl");
 require("subs/sub.leagueApiNames.pl");
 require("subs/sub.processLock.pl");
 
+# Debug printing subroutine
+sub d {
+  print LOG "  ".$_[0] if ($debug);
+  print "  ".$_[0] if ($debug);
+}
+
 return true;
