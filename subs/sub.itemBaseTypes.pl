@@ -11,10 +11,6 @@ sub identifyBaseItemTypeFromName {
   return("Unknown");
 }
 
-
-
-$successfulrequire = 1;
-
 $gearBaseType{"Spike-Point Arrow Quiver"} = Quiver;
 $gearBaseType{"Broadhead Arrow Quiver"} = Quiver;
 $gearBaseType{"Two-Point Arrow Quiver"} = Quiver;
@@ -1675,3 +1671,5 @@ $gearBaseType{"Doedre's Madness"} = "Card";
 $gearBaseType{"The Encroaching Darkness"} = "Card";
 $gearBaseType{"The Wrath"} = "Card";
 $gearBaseType{"The King's Blade"} = "Card";
+
+return true;

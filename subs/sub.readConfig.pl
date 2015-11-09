@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-$successfulrequire = 1;
-
 # Open the config file and read it into a hash for reference
 my %conf;
 open(IN, "config") || die "ERROR: Unable to read config file! $!\n";
@@ -23,3 +21,5 @@ while(<IN>) {
   my ($option, $value) = split(/:/, $line);
   $conf{$option} = $value;
 }
+
+return true;

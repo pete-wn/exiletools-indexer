@@ -46,5 +46,4 @@ sub niceCEV {
 
 }
 
-
-$successfulinclude = 1;
+return true;

@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-$successfulrequire = 1;
-
 $currencyName{chrom} = "Chromatic Orb";
 $currencyName{chroms} = "Chromatic Orb";
 $currencyName{chrome} = "Chromatic Orb";
@@ -79,3 +77,4 @@ $currencyName{mirrors} = "Mirror of Kalandra";
 $currencyName{vaal} = "Vaal Orb";
 $currencyName{vaals} = "Vaal Orb";
 
+return true;

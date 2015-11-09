@@ -11,37 +11,24 @@ use Encode;
 use utf8::all;
 use Parallel::ForkManager;
 use Date::Parse;
+require("subs/all.subroutines.pl");
 
-
-# Initial Options
+# == Initial Options 
+# Whether or not to give basic debug output
 $debug = 1;
+
+# The depth to crawl each forum for updates
 $maxCheckForumPages = 8;
 
-$datadir = "$conf{basedir}/data/threads";
-$logdir = "$conf{basedir}/logs";
-
-$lockfile = "$conf{basedir}/logs/.lock-get-forum-threads";
-$abortfile = "$conf{basedir}/logs/abort-full-update";
 
 my $time = localtime();
-if (-f $lockfile) {
-  unless ($ARGV[0]) {
-    print "$time FATAL: Lock file exists. Exiting.\n";
-    open(MAIL, "|/usr/sbin/sendmail -t");
-    print MAIL "To: pete\@pwx.me\n";
-    print MAIL "From: exiletools <pete\@exiletools.com>\n";
-    print MAIL "Subject: Lock File Exists for Forum Updates\n\n";
-    print MAIL "$time - A lock file still exists for get-forum-updates, possible problem/slow processing?\n";
-    close(MAIL);
-    die;
-  }
-} else {
-  system("touch $lockfile") unless ($ARGV[0]);
-}
-
 &d("Started at $time.\n");
 
-use DBI;
+&CreateLock("$ARGV");
+
+
+
+exit;
 
 $timestamp = time();
 $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
@@ -82,9 +69,9 @@ if ($ARGV[0] eq "old") {
 
   print "** [OLD] Pulling threads from $starttime to $endtime\n";
 
-  $dbhforum = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-  %oldthreads = %{$dbhforum->selectall_hashref("SELECT `threadid`,`forumid`,`jsonfound`,`origin`,`processed`,max(`timestamp`) as time FROM `shop-threads` group by `threadid` LIMIT 1000",threadid)};
-  $dbhforum->disconnect;
+  $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+  %oldthreads = %{$dbh->selectall_hashref("SELECT `threadid`,`forumid`,`jsonfound`,`origin`,`processed`,max(`timestamp`) as time FROM `shop-threads` group by `threadid` LIMIT 1000",threadid)};
+  $dbh->disconnect;
   foreach $thread (keys(%oldthreads)) {
     next unless ($oldthreads{$thread}{jsonfound});
     next unless ($oldthreads{$thread}{processed} == 2);
@@ -104,10 +91,10 @@ if ($ARGV[0] eq "old") {
   foreach $thread (keys(%gothreads)) {
     $threadcount++;
     $manager->start and next;
-    $dbhforum = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
     print "  [ $threadcount / $gothreadcount ] $thread $gothreads{$thread}{forumid}\n";
     &FetchShopPage("$thread","$forumhash{$oldthreads{$thread}{forumid}}");
-    $dbhforum->disconnect;
+    $dbh->disconnect;
     $manager->finish;
   }
   $manager->wait_all_children;
@@ -122,10 +109,10 @@ if ($ARGV[0] eq "old") {
 
   print "** [OLD TEMP] Pulling threads from $starttime to $endtime\n";
 
-  $dbhforum = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n"
+  $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n"
 ;
-  %oldthreads = %{$dbhforum->selectall_hashref("SELECT `threadid`,`forumid`,`jsonfound`,`origin`,`processed`,max(`timestamp`) as time FROM `shop-threads` WHERE `forumid`=\"597\" OR `forumid`=\"598\" group by `threadid` LIMIT 5000",threadid)};
-  $dbhforum->disconnect;
+  %oldthreads = %{$dbh->selectall_hashref("SELECT `threadid`,`forumid`,`jsonfound`,`origin`,`processed`,max(`timestamp`) as time FROM `shop-threads` WHERE `forumid`=\"597\" OR `forumid`=\"598\" group by `threadid` LIMIT 5000",threadid)};
+  $dbh->disconnect;
   foreach $thread (keys(%oldthreads)) {
 #    next unless ($oldthreads{$thread}{jsonfound});
 #    next unless ($oldthreads{$thread}{processed} == 2);
@@ -145,11 +132,11 @@ if ($ARGV[0] eq "old") {
   foreach $thread (keys(%gothreads)) {
     $threadcount++;
     $manager->start and next;
-    $dbhforum = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\
+    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\
 n";
     print "  [ $threadcount / $gothreadcount ] $thread $gothreads{$thread}{forumid}\n";
     &FetchShopPage("$thread","$forumhash{$oldthreads{$thread}{forumid}}");
-    $dbhforum->disconnect;
+    $dbh->disconnect;
     $manager->finish;
   }
   $manager->wait_all_children;
@@ -173,9 +160,9 @@ n";
       last;
     }
     $manager->start and next;
-    $dbhforum = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
     my $status = &FetchForumPage("$conf{$forum}{url}/$page","$conf{$forum}{id}");
-    $dbhforum->disconnect;
+    $dbh->disconnect;
     $manager->finish;
   }
   $manager->wait_all_children;
@@ -187,12 +174,12 @@ n";
     $manager->start and next;
 
     open(LOG,">>$logdir/get-forum-$forum.log");
-    $dbhforum = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbpass}","$conf{dbuser}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbpass}","$conf{dbuser}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
     for (my $page=1; $page <= $maxCheckForumPages; $page++) {
       my $status = &FetchForumPage("$conf{$forum}{url}/$page","$conf{$forum}{id}");
       sleep 2;
     }
-    $dbhforum->disconnect;
+    $dbh->disconnect;
     close(LOG);
   
     # FORK DONE
@@ -277,13 +264,13 @@ sub FetchShopPage {
   if ($content =~ /i.imgur.com\/ZHBMImo.png/) {
     $generatedWith = "Procurement";
   }
-  $dbhforum->do("UPDATE `web-post-track` SET
+  $dbh->do("UPDATE `web-post-track` SET
                  `lastedit`=\"$lastedit\",
                  `generatedWith`=\"$generatedWith\"
                  WHERE `threadid`=\"$threadid\"
                  ") || die "SQL ERROR: $DBI::errstr\n";
 
-  $dbhforum->do("INSERT INTO `shop-threads` SET
+  $dbh->do("INSERT INTO `shop-threads` SET
                 `threadid`=\"$threadid\",
                 `timestamp`=\"$timestamp\",
                 `processed`=\"$processed\",
@@ -356,12 +343,12 @@ sub FetchForumPage {
       $threadtitle =~ tr/a-zA-Z0-9 //dc;
   
       if ($threadid && $threadtitle && $username && $lastpost) {
-        my $checkLast = $dbhforum->selectrow_array("select (`lastpost`) from `web-post-track` where `threadid`=\"$threadid\" limit 1");
+        my $checkLast = $dbh->selectrow_array("select (`lastpost`) from `web-post-track` where `threadid`=\"$threadid\" limit 1");
         if (($lastpost ne "$checkLast") || ($performFullScan == 1)) {
           if ($checkLast) {
             &d("UPDATED: $forumPage | $threadid | $threadtitle | $username\n");
             &FetchShopPage("$threadid");
-            $dbhforum->do("UPDATE `web-post-track` SET
+            $dbh->do("UPDATE `web-post-track` SET
               `lastpost`=\"$lastpost\",
               `username`=\"$username\",
               `originalpost`=\"$originalpost\",
@@ -375,7 +362,7 @@ sub FetchForumPage {
           } else {
             &d("NEW: $forumPage | $threadid | $threadtitle | $username\n");
             &FetchShopPage("$threadid");
-            $dbhforum->do("INSERT INTO `web-post-track` SET
+            $dbh->do("INSERT INTO `web-post-track` SET
                 `threadid`=\"$threadid\",
                 `lastpost`=\"$lastpost\",
                 `username`=\"$username\",
@@ -389,7 +376,7 @@ sub FetchForumPage {
         } elsif ($fullupdate eq "go") {
           &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
           &FetchShopPage("$threadid");
-          $dbhforum->do("UPDATE `web-post-track` SET
+          $dbh->do("UPDATE `web-post-track` SET
             `lastpost`=\"$lastpost\",
             `username`=\"$username\",
             `originalpost`=\"$originalpost\",
