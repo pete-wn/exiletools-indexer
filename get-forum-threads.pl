@@ -12,203 +12,78 @@ use utf8::all;
 use Parallel::ForkManager;
 use Date::Parse;
 require("subs/all.subroutines.pl");
-# Keep track of what this program is based on the name
-$process = $0;
-# This is clumsy, we can probably do this better.
-if ($process =~ /\//) {
-  $process =~ s/.*?\///g;
-}
 
 # == Initial Options 
 # Whether or not to give basic debug output
 $debug = 1;
 
+# Whether or not to give SUPER VERBOSE output. USE WITH CARE! Will create huge logs
+# and tons of spammy text.
+$sv = 1;
+
 # The depth to crawl each forum for updates
-$maxCheckForumPages = 8;
+$maxCheckForumPages = 1;
 
-my $time = localtime();
-&d("Started $process at $time.\n");
-&CreateLock("$process");
+# The number of processes to fork
+$forkMe = 1;
 
+# The time to sleep between each page get
+$sleepFor = 1;
 
+# == Initial Startup
+&StartProcess;
 
-exit;
+# Some hard coded variables for testing
+$forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
+$forums{darkshrine}{forumID} = "597";
+#$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
+#$forums{darkshrinehc}{forumID} = "598";
 
-$timestamp = time();
-$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-$statement = $dbh->prepare("SELECT * FROM `league-list`");
-$statement->execute;
-$statement->bind_columns(undef, \$myleague, \$prettyName, \$apiName, \$startTime, \$endTime, \$active, \$itemjsonName, \$archivedLadder, \$shopForumURL, \$shopURL, \$shopForumID);
-while ($statement->fetch()) {
-  next if (($prettyName eq "Tempest") || ($prettyName eq "Warbands"));
-  if (($active) && ($endTime > $timestamp) && ($startTime < $timestamp) && ($shopForumURL) && ($shopForumID) && ($shopURL)) {
-
-#print "good: $myleague $shopForumURL $shopURL $shopForumID\n";
-
-    $conf{$myleague}{url} = $shopForumURL;
-    $conf{$myleague}{shopurl} =  $shopURL;
-    $conf{$myleague}{id} = $shopForumID;
-    $forumhash{$shopForumID} = $myleague;
-  }
-}
-$dbh->disconnect;
-
+# Create a user agent
 my $ua = LWP::UserAgent->new;
+# Make sure it accepts gzip
 my $can_accept = HTTP::Message::decodable;
 
+# Terminate our DB connection since we're going to do some weird forking
+$dbh->disconnect if ($dbh->ping);
 
-$checkdays = 30;
+# Fork a new process for each forum to scan, up to a max of $forkMe processes
+my $manager = new Parallel::ForkManager( $forkMe );
+foreach $forum (keys(%forums)) {
+  # FORK START
+  $manager->start and next;
 
-# If we're told to fetch older posts, let's do that.
+  # Prepare the local statistics hash
+  local %stats;
 
-if ($ARGV[0] eq "old") {
-  $checkdays = 45;
-  print "** [OLD] Updating all thread data to find changes to items in the last 1 to $checkdays days\n";
-  my $currenttime = time();
-  # Last 15 Days
-  my $starttime = $currenttime - (86400 * $checkdays);
-  # To 48 hours ago
-#  my $endtime = $currenttime - (86400 * 2);
-  my $endtime = $currenttime - 86400;
+  # On fork start, we must create a new DB Connection
+  $dbhf = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
-  print "** [OLD] Pulling threads from $starttime to $endtime\n";
-
-  $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-  %oldthreads = %{$dbh->selectall_hashref("SELECT `threadid`,`forumid`,`jsonfound`,`origin`,`processed`,max(`timestamp`) as time FROM `shop-threads` group by `threadid` LIMIT 1000",threadid)};
-  $dbh->disconnect;
-  foreach $thread (keys(%oldthreads)) {
-    next unless ($oldthreads{$thread}{jsonfound});
-    next unless ($oldthreads{$thread}{processed} == 2);
-#    next unless ($oldthreads{$thread}{origin} ne "get-old-forum-threads");
-#    next unless ($forumHash{$oldthreads{$thread}{forumid}});
-    if (($oldthreads{$thread}{time} > $starttime) && ($oldthreads{$thread}{time} < $endtime)) {
-      $gothreads{$thread}{forumid} = $oldthreads{$thread}{forumid};
-    }
+  # Every $sleepFor seconds, iterate from page 1 to $maxCheckForumPages on the forums for the shop
+  # This subroutine will grab the forum page and look for updates, calling FetchShopPage for any
+  # it notices need to be updated
+  for (my $page=1; $page <= $maxCheckForumPages; $page++) {
+    my $status = &FetchForumPage("$forums{$forum}{forumURL}/$page","$forums{$forum}{forumID}","$forum");
+    sleep $sleepFor;
   }
-  $gothreadcount = keys(%gothreads);
-#  foreach $thread (keys(%gothreads)) {
-#    print "  [ $threadcount / $gothreadcount ] $thread $gothreads{$thread}{forumid} $forumhash{$oldthreads{$thread}{forumid}}\n";
-#  }
 
-  my $manager = new Parallel::ForkManager( 2 );
-  my $threadcount = 0;
-  foreach $thread (keys(%gothreads)) {
-    $threadcount++;
-    $manager->start and next;
-    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-    print "  [ $threadcount / $gothreadcount ] $thread $gothreads{$thread}{forumid}\n";
-    &FetchShopPage("$thread","$forumhash{$oldthreads{$thread}{forumid}}");
-    $dbh->disconnect;
-    $manager->finish;
+  # Disconnect forked DB connection
+  $dbhf->disconnect if ($dbhf->ping);
+
+  # Output some stats for this fork
+  foreach $stat (sort(keys(%stats))) {
+    &d("(PID: $$) *STATS* $stat: $stats{$stat}\n");
   }
-  $manager->wait_all_children;
-} elsif ($ARGV[0] eq "oldtemp") {
-  $checkdays = 30;
-  print "** [OLD TEMP] Updating TEMP League thread data to find changes to items in the $checkdays days\n";
-  my $currenttime = time();
-  # Last 15 Days
-  my $starttime = $currenttime - (86400 * $checkdays);
-  # To 12 hours ago
-  my $endtime = $currenttime - 43200;
 
-  print "** [OLD TEMP] Pulling threads from $starttime to $endtime\n";
-
-  $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n"
-;
-  %oldthreads = %{$dbh->selectall_hashref("SELECT `threadid`,`forumid`,`jsonfound`,`origin`,`processed`,max(`timestamp`) as time FROM `shop-threads` WHERE `forumid`=\"597\" OR `forumid`=\"598\" group by `threadid` LIMIT 5000",threadid)};
-  $dbh->disconnect;
-  foreach $thread (keys(%oldthreads)) {
-#    next unless ($oldthreads{$thread}{jsonfound});
-#    next unless ($oldthreads{$thread}{processed} == 2);
-#    next unless ($oldthreads{$thread}{origin} ne "get-old-forum-threads");
-#    next unless ($forumHash{$oldthreads{$thread}{forumid}});
-    if (($oldthreads{$thread}{time} > $starttime) && ($oldthreads{$thread}{time} < $endtime)) {
-      $gothreads{$thread}{forumid} = $oldthreads{$thread}{forumid};
-    }
-  }
-  $gothreadcount = keys(%gothreads);
-#  foreach $thread (keys(%gothreads)) {
-#    print "  [ $threadcount / $gothreadcount ] $thread $gothreads{$thread}{forumid} $forumhash{$oldthreads{$thread}{forumid}}\n";
-#  }
-
-  my $manager = new Parallel::ForkManager( 2 );
-  my $threadcount = 0;
-  foreach $thread (keys(%gothreads)) {
-    $threadcount++;
-    $manager->start and next;
-    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\
-n";
-    print "  [ $threadcount / $gothreadcount ] $thread $gothreads{$thread}{forumid}\n";
-    &FetchShopPage("$thread","$forumhash{$oldthreads{$thread}{forumid}}");
-    $dbh->disconnect;
-    $manager->finish;
-  }
-  $manager->wait_all_children;
-
-# Do normal update of pages
-} elsif ($ARGV[0] eq "all") {
-  $forum = $ARGV[1];
-  die "must specify a forum\n" unless ($forum);
-  $maxCheckForumPages = 10;
-  $startCheckForumPages = 8;
-  local $fullupdate = "go";
-
-  print "Performing FULL scan of ALL pages for $forum\n";
-  open(LOG,">>$logdir/get-forum-$forum.log");
-  my $manager = new Parallel::ForkManager( 3 );
-  for (my $page=$startCheckForumPages; $page <= $maxCheckForumPages; $page++) {
-    if (-f "$abortfile") {
-      print localtime()." Received abort notification via file that current page is too old to process!\n";
-      $manager->wait_all_children;
-      print localtime()." Finalized abort.\n";
-      last;
-    }
-    $manager->start and next;
-    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-    my $status = &FetchForumPage("$conf{$forum}{url}/$page","$conf{$forum}{id}");
-    $dbh->disconnect;
-    $manager->finish;
-  }
-  $manager->wait_all_children;
-  close(LOG);
-} else {
-  my $manager = new Parallel::ForkManager( 3 );
-  foreach $forum (keys(%conf)) {
-    # FORK START
-    $manager->start and next;
-
-    open(LOG,">>$logdir/get-forum-$forum.log");
-    $dbh = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbpass}","$conf{dbuser}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-    for (my $page=1; $page <= $maxCheckForumPages; $page++) {
-      my $status = &FetchForumPage("$conf{$forum}{url}/$page","$conf{$forum}{id}");
-      sleep 2;
-    }
-    $dbh->disconnect;
-    close(LOG);
-  
-    # FORK DONE
-    $manager->finish;
-  }
-  $manager->wait_all_children;
+  # FORK DONE
+  $manager->finish;
 }
+$manager->wait_all_children;
 
-
-
-
-# End
-unlink($lockfile);
-unlink($abortfile);
-my $time = localtime();
-&d("Done at $time.\n");
-
-exit;
+# == Exit cleanly
+&ExitProcess;
 
 # ==================================================================
-
-sub d {
-  print LOG "  ".$_[0] if ($debug);
-  print "  ".$_[0] if ($debug);
-}
 
 sub FetchShopPage {
   my $target = $_[0];
@@ -268,13 +143,13 @@ sub FetchShopPage {
   if ($content =~ /i.imgur.com\/ZHBMImo.png/) {
     $generatedWith = "Procurement";
   }
-  $dbh->do("UPDATE `web-post-track` SET
+  $dbhf->do("UPDATE `web-post-track` SET
                  `lastedit`=\"$lastedit\",
                  `generatedWith`=\"$generatedWith\"
                  WHERE `threadid`=\"$threadid\"
                  ") || die "SQL ERROR: $DBI::errstr\n";
 
-  $dbh->do("INSERT INTO `shop-threads` SET
+  $dbhf->do("INSERT INTO `shop-threads` SET
                 `threadid`=\"$threadid\",
                 `timestamp`=\"$timestamp\",
                 `processed`=\"$processed\",
@@ -289,70 +164,144 @@ sub FetchShopPage {
 
 
 sub FetchForumPage {
-  local $forumID = $_[1];
   local $forumPage = $_[0];
-  &d("$$ FetchForumPage [$forumID]: $_[0] \n");
+  local $forumID = $_[1];
+  local $forumName = $_[2];
+  &d("(PID: $$) [$forumName] FetchForumPage: $_[0] \n");
 
   my $response = $ua->get("$_[0]",'Accept-Encoding' => $can_accept);
-#  print "Content Encoding is ".$response->header ('Content-Encoding')."\n";
-#  print length($response->content)." bytes received.\n";
-#  print length($response->decoded_content)." bytes unpacked.\n";
+
+  $stats{TotalRequests}++;
+  $stats{TotalTransferBytes} += length($response->content);
+  $stats{TotalUncompressedBytes} += length($response->decoded_content);
+
+# Sometimes you don't even want to see stuff in Super Verbose ^_^
+#  &sv("Content Encoding is ".$response->header ('Content-Encoding')."\n");
+#  &sv("".length($response->content)." bytes received.\n");
+#  &sv("".length($response->decoded_content)." bytes unpacked.\n");
+
+  # Decode the returned data
   my $content = $response->decoded_content;
-  my $htmltree = HTML::Tree->new();
-  $htmltree->parse($content);
-  my $clean = $htmltree->as_HTML;
-  $clean =~ s/<tr/\n<tr/g;
 
-  my $status;
-  
-  my @content = split(/\n/, $clean);
-  foreach $line (@content) {
-    if ($line =~ /<div class=\"sticky off\"/) {
-      # Skip Locked Threads
-      next if ($line =~ /<div class=\"locked\">/);
-      my $threadid;
-      my $threadtitle;
-      my $username;
-      my $lastpost;
-      my $originalpost;
-      my $viewcount;
-      my $replies;
-      my $lastpostepoch;
-  
-      if ($line =~ /<div class=\"title\"><a href=\"\/forum\/view-thread\/(\d+)\">(.*?)<\/a>/) {
-        $threadid = $1;
-        $threadtitle = $2; 
-      }
-      if ($line =~ /span class=\"post_date\"> on (.*?)<\/span><\/div>/) {
-        $originalpost = str2time($1);
-      }
-      if ($line =~ /<td class=\"views\">(.*?)<\/td>/) {
-        $viewcount = $1;
-      }
-      if ($line =~ /<td class="replies">(.*?)<\/td>/) {
-        $replies = $1;
-      }
-      if ($line =~ /<a href="\/account\/view-profile\/(.*?)">/) {
-        $username = $1;
-      }
-      if ($line =~ /<td class="last_post">.*?<span class=\"post_date\"> on (.*?)<\/span/) {
-        # time is UTC
-        $lastpost = $1;
+  # Parse the HTML into a tree for scanning
+  my $tree = HTML::Tree->new();
+  $tree->parse($content);
+
+  # Look for the forumTable which has the posts
+  my $table = $tree->look_down('_tag' => 'table', 'class' => 'forumTable viewForumTable');
+  # Start looking at each row of the table by finding the tr tag
+  foreach my $row ($table->find_by_tag_name('tr')) {
+    # Check the TR class and skip if it's heading
+    my $trclass = $row->attr('class');
+    # (I use a regexp instead of a perfect match in case sometimes there are multiple classes
+    next if ($trclass =~ /heading/);
+
+    # Make sure none of these variables are set outside this iteration
+    my $threadid;
+    my $threadtitle;
+    my $username;
+    my $lastpost;
+    my $originalpost;
+    my $viewcount;
+    my $replies;
+    my $lastpostepoch;
+
+# For debug/programming purposes, ignore
+#    print $row->as_HTML."\n";
+
+    # Look at each column in the table by finding the td tag
+    foreach my $column ($row->find_by_tag_name('td')) {
+      my $class = $column->attr('class');
+
+      # Populate variables based on known values - this is done in an if/else
+      # loop instead of a direct loop in case the ordering changes, might not be
+      # the best idea but oh well.
+
+      if ($class eq "views") {
+        $viewcount = $column->as_text;
+      } elsif ($class eq "replies") {
+        $replies = $column->as_text;
+      } elsif ($class eq "last_post") {
+
+        # We review the last post section to see when this thread was last bumped.
+        # The only thing we care about here is in the post_date span
+        my $post_date = $column->look_down('_tag' => 'span', 'class' => 'post_date');
+        $lastpost = $post_date->as_text;
+        # Strip the " on " at the beginning
+        $lastpost =~ s/^ on //;
+        # use the str2time subroutine to convert this UTC field into an epoch timestamp
         $lastpostepoch = str2time($lastpost);
-      }
-      if ($line =~ /<h3 class=\"strip-heading centered\">No Threads<\/h3>/) {
-        $abortme = "no threads!";
+
+      } elsif ($class eq "thread") {
+
+        # Thread data section including the threadid, threadtitle, username, and originalpost date
+        # The HTML here is a bit messy. The thread class contains a lot of information by div:
+        #
+        # * title: contains the a href and thread name
+        # * postBy: bunch of crap. includes two spans we care about, "profile link post_by_account achieved" for the
+        #          account name and post_date for the post date
+        # setReadButton: don't care
+        # clear: don't care
+        # status: contains read/unread status, don't care
+ 
+        my $scan = $column->look_down('_tag' => 'div', 'class' => 'title');
+        # The only text in scan right now is the shop name, so let's set that
+        $threadtitle = $scan->as_text;
+        # Find the threadid via regexp, seems like the only way to do this since we don't want
+        # the entire href location
+        $scan->as_HTML =~ /<a href=\"\/forum\/view-thread\/(.*?)\">/;
+        $threadid = $1;
+
+        # Scan for profile-link and post_date only in the postBy section
+        my $scan = $column->look_down('_tag' => 'div', 'class' => 'postBy', sub {
+          # The profile span can have a bunch of different classes but should include profile-link
+          my $profile = $_[0]->look_down('_tag' => 'span', 'class' => qr/profile-link/);
+          $username = $profile->as_text;
+          # Set the original post date from the post_date spawn
+          my $post_date = $_[0]->look_down('_tag' => 'span', 'class' => 'post_date');
+          $originalpost = $post_date->as_text;
+          # Remove the leading " on " from originalpost
+          $originalpost =~ s/^ on //;
+        });
+
+
       }
 
-      $threadtitle =~ tr/a-zA-Z0-9 //dc;
+    }
+
+    # I remove most special characters from thread titles because I find random
+    # unicode characters to be very annoying, plus it means I don't have to worry
+    # about sanitizing for SQL/ES injection
+    # (~~~!! MY SHOP!!! ~~~~ `````` #@@@@!!!) seriously? eck.
+    $threadtitle =~ tr/\'\(\)a-zA-Z0-9 //dc;
+
+    # Some of the data in these variables may have leading or trailing spaces due to extra formatting
+    # Let's remove them just in case, we don't want that
+    $threadid =~ s/(^\s+|\s+$)//g;
+    $threadtitle =~ s/(^\s+|\s+$)//g;
+    $username =~ s/(^\s+|\s+$)//g;
+    $lastpost =~ s/(^\s+|\s+$)//g;
+    $lastpostepoch =~ s/(^\s+|\s+$)//g;
+    $originalpost =~ s/(^\s+|\s+$)//g;
+    $viewcount =~ s/(^\s+|\s+$)//g;
+    $replies =~ s/(^\s+|\s+$)//g;
+
+
+    # Summarize some data for debug for each row
+    &d("  >>FOUND: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+  }
+
+
+  return;
+
   
       if ($threadid && $threadtitle && $username && $lastpost) {
-        my $checkLast = $dbh->selectrow_array("select (`lastpost`) from `web-post-track` where `threadid`=\"$threadid\" limit 1");
+        my $checkLast = $dbhf->selectrow_array("select (`lastpost`) from `web-post-track` where `threadid`=\"$threadid\" limit 1");
         if (($lastpost ne "$checkLast") || ($performFullScan == 1)) {
           if ($checkLast) {
             &d("UPDATED: $forumPage | $threadid | $threadtitle | $username\n");
             &FetchShopPage("$threadid");
-            $dbh->do("UPDATE `web-post-track` SET
+            $dbhf->do("UPDATE `web-post-track` SET
               `lastpost`=\"$lastpost\",
               `username`=\"$username\",
               `originalpost`=\"$originalpost\",
@@ -366,7 +315,7 @@ sub FetchForumPage {
           } else {
             &d("NEW: $forumPage | $threadid | $threadtitle | $username\n");
             &FetchShopPage("$threadid");
-            $dbh->do("INSERT INTO `web-post-track` SET
+            $dbhf->do("INSERT INTO `web-post-track` SET
                 `threadid`=\"$threadid\",
                 `lastpost`=\"$lastpost\",
                 `username`=\"$username\",
@@ -380,7 +329,7 @@ sub FetchForumPage {
         } elsif ($fullupdate eq "go") {
           &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
           &FetchShopPage("$threadid");
-          $dbh->do("UPDATE `web-post-track` SET
+          $dbhf->do("UPDATE `web-post-track` SET
             `lastpost`=\"$lastpost\",
             `username`=\"$username\",
             `originalpost`=\"$originalpost\",
@@ -401,8 +350,6 @@ sub FetchForumPage {
           &d("UNCHANGED: $forumPage | $threadid | $threadtitle | $username\n");
         }
       }
-    }
-  }
   return("$status");
 }
 

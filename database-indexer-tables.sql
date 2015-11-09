@@ -68,8 +68,8 @@ CREATE TABLE `locks` (
   `process` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `locked` int(1) NOT NULL,
   `timestamp` int(11) NOT NULL,
-  `abort` int(1) NOT NULL,
-  `abort-reason` varchar(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `abort` int(1) DEFAULT NULL,
+  `abort-reason` varchar(256) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
   UNIQUE KEY `process` (`process`),
   KEY `timestamp` (`timestamp`),
   KEY `locked` (`locked`),
@@ -311,4 +311,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-11-09 11:01:27
+-- Dump completed on 2015-11-09 13:05:44
