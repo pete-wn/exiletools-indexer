@@ -28,7 +28,7 @@ $maxCheckForumPages = 1;
 $forkMe = 1;
 
 # The time to sleep between each page get
-$sleepFor = 1;
+$sleepFor = 2;
 
 # == Initial Startup
 &StartProcess;
@@ -36,8 +36,8 @@ $sleepFor = 1;
 # Some hard coded variables for testing
 $forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
 $forums{darkshrine}{forumID} = "597";
-#$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
-#$forums{darkshrinehc}{forumID} = "598";
+$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
+$forums{darkshrinehc}{forumID} = "598";
 
 # Create a user agent
 my $ua = LWP::UserAgent->new;
@@ -57,7 +57,7 @@ foreach $forum (keys(%forums)) {
   local %stats;
 
   # On fork start, we must create a new DB Connection
-  $dbhf = DBI->connect("dbi:mysql:$conf{dbtable}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+  $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
   # Every $sleepFor seconds, iterate from page 1 to $maxCheckForumPages on the forums for the shop
   # This subroutine will grab the forum page and look for updates, calling FetchShopPage for any
@@ -72,7 +72,7 @@ foreach $forum (keys(%forums)) {
 
   # Output some stats for this fork
   foreach $stat (sort(keys(%stats))) {
-    &d("(PID: $$) *STATS* $stat: $stats{$stat}\n");
+    &d("STATS: (PID: $$) [$forum] $stat: $stats{$stat}\n");
   }
 
   # FORK DONE
@@ -93,6 +93,9 @@ sub FetchShopPage {
   my $targeturl = $conf{$forum}{shopurl}."/".$_[0];
   &d("FetchShopPage: $targeturl\n");
   my $threadid = $target;
+
+  # Return for now, don't do anything, for debugging
+  return;
 
   # =========================================
   # Saving local copy of data
@@ -144,10 +147,9 @@ sub FetchShopPage {
     $generatedWith = "Procurement";
   }
   $dbhf->do("UPDATE `web-post-track` SET
-                 `lastedit`=\"$lastedit\",
-                 `generatedWith`=\"$generatedWith\"
+                 `lastedit`=\"$lastedit\"
                  WHERE `threadid`=\"$threadid\"
-                 ") || die "SQL ERROR: $DBI::errstr\n";
+                 ") || die "FATAL DBI ERROR: $DBI::errstr\n";
 
   $dbhf->do("INSERT INTO `shop-threads` SET
                 `threadid`=\"$threadid\",
@@ -156,7 +158,7 @@ sub FetchShopPage {
                 `forumid`=\"$forumID\",
                 `jsonfound`=\"$jsonfound\",
                 `origin`=\"get-forum-threads\"
-                ") || die "SQL ERROR: $DBI::errstr\n";
+                ") || die "FATAL DBI ERROR: $DBI::errstr\n";
 
   # Done saving local copy of data
   # =========================================
@@ -167,7 +169,7 @@ sub FetchForumPage {
   local $forumPage = $_[0];
   local $forumID = $_[1];
   local $forumName = $_[2];
-  &d("(PID: $$) [$forumName] FetchForumPage: $_[0] \n");
+  &d("FetchForumPage: (PID: $$) [$forumName] $_[0] \n");
 
   my $response = $ua->get("$_[0]",'Accept-Encoding' => $can_accept);
 
@@ -262,6 +264,8 @@ sub FetchForumPage {
           $originalpost = $post_date->as_text;
           # Remove the leading " on " from originalpost
           $originalpost =~ s/^ on //;
+          # Convert originalpost into epoch time
+          $originalpost = str2time($originalpost);
         });
 
 
@@ -286,48 +290,18 @@ sub FetchForumPage {
     $viewcount =~ s/(^\s+|\s+$)//g;
     $replies =~ s/(^\s+|\s+$)//g;
 
+    # If we have all the relevant information populated, compare it against the database to decide what to do  
+    # We don't just assume everything is good to avoid populating with incomplete data
 
-    # Summarize some data for debug for each row
-    &d("  >>FOUND: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-  }
+    if ($threadid && $threadtitle && $username && $lastpost) {
 
-
-  return;
-
-  
-      if ($threadid && $threadtitle && $username && $lastpost) {
-        my $checkLast = $dbhf->selectrow_array("select (`lastpost`) from `web-post-track` where `threadid`=\"$threadid\" limit 1");
-        if (($lastpost ne "$checkLast") || ($performFullScan == 1)) {
-          if ($checkLast) {
-            &d("UPDATED: $forumPage | $threadid | $threadtitle | $username\n");
-            &FetchShopPage("$threadid");
-            $dbhf->do("UPDATE `web-post-track` SET
-              `lastpost`=\"$lastpost\",
-              `username`=\"$username\",
-              `originalpost`=\"$originalpost\",
-              `views`=\"$viewcount\",
-              `replies`=\"$replies\",
-              `lastpostepoch`=\"$lastpostepoch\",
-              `title`=\"$threadtitle\"
-              WHERE `threadid`=\"$threadid\"
-              ") || die "SQL ERROR: $DBI::errstr\n";
-
-          } else {
-            &d("NEW: $forumPage | $threadid | $threadtitle | $username\n");
-            &FetchShopPage("$threadid");
-            $dbhf->do("INSERT INTO `web-post-track` SET
-                `threadid`=\"$threadid\",
-                `lastpost`=\"$lastpost\",
-                `username`=\"$username\",
-                `originalpost`=\"$originalpost\",
-                `views`=\"$viewcount\",
-                `replies`=\"$replies\",
-                `lastpostepoch`=\"$lastpostepoch\",
-                `title`=\"$threadtitle\"
-                ") || die "SQL ERROR: $DBI::errstr\n";
-          }
-        } elsif ($fullupdate eq "go") {
-          &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
+      # Check the lastpost information in the DB to see if we've already tracked this edit/post
+      my $checkLast = $dbhf->selectrow_array("select `lastpost` from `web-post-track` where `threadid`=\"$threadid\" limit 1");
+      # If the current lastpost is different than the stored last post, fetch the thread and update the database
+      if ($lastpost ne "$checkLast") {
+        # If we've seen this thread before, then this is a thread update
+        if ($checkLast) {
+          &d(" >ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
           &FetchShopPage("$threadid");
           $dbhf->do("UPDATE `web-post-track` SET
             `lastpost`=\"$lastpost\",
@@ -338,18 +312,48 @@ sub FetchForumPage {
             `lastpostepoch`=\"$lastpostepoch\",
             `title`=\"$threadtitle\"
             WHERE `threadid`=\"$threadid\"
-            ") || die "SQL ERROR: $DBI::errstr\n";
-          my $currentepoch = time();
-          if (($abortme) || ($currentepoch - $lastpostepoch) > ($checkdays * 86400)) {
-            $abortme = "threads older than $checkdays" if (($currentepoch - $lastpostepoch) > ($checkdays * 86400));
-            system("/bin/touch $abortfile");
-            print "ABORTING BECAUSE: $forumPage $threadid $threadtitle $lastpostepoch (abortme: $abortme)\n";
-          }
-
-        } else  {
-          &d("UNCHANGED: $forumPage | $threadid | $threadtitle | $username\n");
+            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+        # Otherwise this is a new thread
+        } else {
+          &d(" >ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+          &FetchShopPage("$threadid");
+          $dbhf->do("INSERT INTO `web-post-track` SET
+              `threadid`=\"$threadid\",
+              `lastpost`=\"$lastpost\",
+              `username`=\"$username\",
+              `originalpost`=\"$originalpost\",
+              `views`=\"$viewcount\",
+              `replies`=\"$replies\",
+              `lastpostepoch`=\"$lastpostepoch\",
+              `title`=\"$threadtitle\"
+              ") || die "FATAL DBI ERROR: $DBI::errstr\n";
         }
+      # If a fullupdate is forced, do this anyway
+      } elsif ($fullupdate eq "go") {
+        &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
+        &FetchShopPage("$threadid");
+        $dbhf->do("UPDATE `web-post-track` SET
+          `lastpost`=\"$lastpost\",
+          `username`=\"$username\",
+          `originalpost`=\"$originalpost\",
+          `views`=\"$viewcount\",
+          `replies`=\"$replies\",
+          `lastpostepoch`=\"$lastpostepoch\",
+          `title`=\"$threadtitle\"
+          WHERE `threadid`=\"$threadid\"
+          ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+        my $currentepoch = time();
+        if (($abortme) || ($currentepoch - $lastpostepoch) > ($checkdays * 86400)) {
+          $abortme = "threads older than $checkdays" if (($currentepoch - $lastpostepoch) > ($checkdays * 86400));
+          system("/bin/touch $abortfile");
+          print "ABORTING BECAUSE: $forumPage $threadid $threadtitle $lastpostepoch (abortme: $abortme)\n";
+        }
+      # Else we already have the latest copy of this thread in the DB so do nothing
+      } else  {
+        &d(" >ThreadInfo: (PID: $$) [$forum] UNCHANGED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
       }
+    }
+  }
   return("$status");
 }
 

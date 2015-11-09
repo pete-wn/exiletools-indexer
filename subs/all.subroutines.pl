@@ -22,6 +22,9 @@ sub sv {
 
 # Subroutine for starting up, including locks/etc.
 sub StartProcess {
+  # Get the start time in epoch for analysis
+  our $startTime = time();
+
   # Keep track of what this program is based on the name
   our $process = $0;
   # This is clumsy, we can probably do this better.
@@ -32,7 +35,7 @@ sub StartProcess {
   # Establish database connection for primary thread
   $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
-  &d("$process started\n");
+  &d("* $process started\n");
 
   # Create a lock to prevent multiple processes from running at once
   &CreateLock("$process");
@@ -44,8 +47,11 @@ sub ExitProcess {
 
   # Disconnect any dbh sessions
   $dbh->disconnect if ($dbh->ping);
+
+  # Get the end time in epoch for analysis
+  our $endTime = time();
   
-  &d("$process completed, exiting.\n");
+  &d("* [".($endTime - $startTime)." seconds] $process completed, exiting.\n");
   exit;
 }
 

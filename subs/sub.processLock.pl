@@ -14,7 +14,7 @@ sub CreateLock {
   if ($lockStatus[0] == 1) {
     die "FATAL: $process was executed at ".localtime($timestamp)." but a lock is in place from ".localtime($lockStatus[1])."!\n";
   } else {
-    &d(">> Creating process lock for $process\n");
+    &d("** Creating process lock for $process\n");
     $dbh->do("INSERT INTO `locks` VALUES
              (\"$process\",\"1\",\"$timestamp\",NULL,NULL)
              ON DUPLICATE KEY UPDATE
@@ -36,7 +36,7 @@ sub RemoveLock {
     $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
   }
 
-  &d(">> Removing process lock for $process\n");
+  &d("** Removing process lock for $process\n");
   $dbh->do("UPDATE `locks` SET
              `process`=\"$process\",
              `locked`=\"0\",
