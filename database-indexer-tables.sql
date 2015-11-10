@@ -235,13 +235,11 @@ CREATE TABLE `thread-last-update` (
   `sellerIGN` varchar(128) CHARACTER SET utf8 DEFAULT NULL,
   `totalItems` int(5) DEFAULT NULL,
   `buyoutCount` int(5) DEFAULT NULL,
-  `forumID` varchar(16) DEFAULT NULL,
   `generatedWith` varchar(128) DEFAULT NULL,
   `threadTitle` varchar(220) CHARACTER SET utf8 DEFAULT NULL,
   UNIQUE KEY `threadid` (`threadid`),
   KEY `updateTimestamp` (`updateTimestamp`),
   KEY `sellerAccount` (`sellerAccount`),
-  KEY `forumID` (`forumID`),
   KEY `sellerIGN` (`sellerIGN`),
   KEY `generatedWith` (`generatedWith`),
   KEY `threadTitle` (`threadTitle`)
@@ -274,13 +272,11 @@ CREATE TABLE `thread-update-history` (
   `sellerIGN` varchar(128) CHARACTER SET utf8 DEFAULT NULL,
   `totalItems` int(5) DEFAULT NULL,
   `buyoutCount` int(5) DEFAULT NULL,
-  `forumID` varchar(16) DEFAULT NULL,
   `generatedWith` varchar(128) DEFAULT NULL,
   `threadTitle` varchar(220) CHARACTER SET utf8 DEFAULT NULL,
   KEY `updateTimestamp` (`updateTimestamp`),
   KEY `threadid` (`threadid`),
   KEY `sellerAccount` (`sellerAccount`),
-  KEY `forumID` (`forumID`),
   KEY `sellerIGN` (`sellerIGN`),
   KEY `generatedWith` (`generatedWith`),
   KEY `threadTitle` (`threadTitle`)
@@ -343,4 +339,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-11-09 22:26:09
+-- Dump completed on 2015-11-10 16:40:09

@@ -13,6 +13,7 @@ use Parallel::ForkManager;
 use Date::Parse;
 use File::Path;
 require("subs/all.subroutines.pl");
+require("subs/sub.threadDataToDB.pl");
 
 # == Initial Options 
 # Whether or not to give basic debug output
@@ -20,7 +21,7 @@ $debug = 1;
 
 # Whether or not to give SUPER VERBOSE output. USE WITH CARE! Will create huge logs
 # and tons of spammy text.
-$sv = 1;
+$sv = 0;
 
 # The depth to crawl each forum for updates
 $maxCheckForumPages = 1;
@@ -112,13 +113,13 @@ $manager->wait_all_children;
 # ==================================================================
 
 sub FetchShopPage {
-  my $threadid = $_[0];
+  local $threadid = $_[0];
   my $targeturl = "http://www.pathofexile.com/forum/view-thread/$threadid";
   &d(">> FetchShopPage: (PID: $$) [$forumName] $targeturl\n");
 
   # =========================================
   # Saving local copy of data
-  my $timestamp = time();
+  local $timestamp = time();
   my $response = $ua->get("$targeturl",'Accept-Encoding' => $can_accept);
   $stats{TotalRequests}++;
   $stats{TotalTransferBytes} += length($response->content);
@@ -141,7 +142,6 @@ sub FetchShopPage {
 
   # Prepare some local variables
   my $nojsonfound;
-  my $generatedWith;
 
   # Extract the raw item JSON data from the javascript in the HTML
   if ($content =~ /require\(\[\"PoE\/Item\/DeferredItemRenderer\"\], function\(R\) \{ \(new R\((.*?)\)\)\.run\(\)\; \}\)\;/) {
@@ -159,23 +159,12 @@ sub FetchShopPage {
     $processed = "0";
   }
 
-  # Find and set the last edit - I should modify this to prevent it from catching edit to replies
-  my $lastedit;
-  if ($content =~ /Last edited by (.*?) on (.*?)<\/div/) {
-    $lastedit = str2time($2);
-  }
-
-  # Quickly see if there is a known imgur link for Procurement
-  if ($content =~ /i.imgur.com\/ZHBMImo.png/) {
-    $generatedWith = "Procurement";
-  }
-
-  # Add the lastedit information to web-post-track
-  $dbhf->do("UPDATE `web-post-track` SET
-            `lastedit`=\"$lastedit\"
-            WHERE `threadid`=\"$threadid\"
-            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
-
+  # NOTE: This queuing system allows us to separate out forum gets from loading data
+  # as of 2015/11/10 we are going to start processing the queue immediately from the
+  # data in memory, but we're still saving a copy and monitoring the queue for record
+  # keeping - this allows me to re-run the queue if needed without having to scan the
+  # filesystem for html files.
+ 
   # Add information on this thread to the processing queue db table
   $dbhf->do("INSERT INTO `shop-queue` SET
             `threadid`=\"$threadid\",
@@ -188,6 +177,16 @@ sub FetchShopPage {
 
   # Done saving local copy of data
   # =========================================
+
+  # Begin processing the data directly:
+  return if ($nojsonfound);
+  &ProcessUpdate("$content","$rawjson");
+  
+  # Go ahead and mark this as processed in the queue
+  $dbhf->do("UPDATE `shop-queue` SET
+                 processed=\"2\"
+                 WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
+                 ") || die "SQL ERROR: $DBI::errstr\n";
 }
 
 sub FetchForumPage {
@@ -217,11 +216,11 @@ sub FetchForumPage {
   }
 
   # Parse the HTML into a tree for scanning
-  my $tree = HTML::Tree->new();
-  $tree->parse($content);
+  my $shoptree = HTML::Tree->new();
+  $shoptree->parse($content);
 
   # Look for the forumTable which has the posts
-  my $table = $tree->look_down('_tag' => 'table', 'class' => 'forumTable viewForumTable');
+  my $table = $shoptree->look_down('_tag' => 'table', 'class' => 'forumTable viewForumTable');
   # Start looking at each row of the table by finding the tr tag
   foreach my $row ($table->find_by_tag_name('tr')) {
     # Check the TR class and skip if it's heading

@@ -38,11 +38,11 @@ sub RemoveLock {
 
   &d("** Removing process lock for $process\n");
   $dbh->do("UPDATE `locks` SET
-             `process`=\"$process\",
              `locked`=\"0\",
              `timestamp`=\"$timestamp\",
              `abort`=NULL,
              `abort-reason`=NULL
+             WHERE `process`=\"$process\"
            ") || die "FATAL SQL ERROR removing process lock: $DBI::errstr\n";
 
 
