@@ -16,6 +16,82 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `fetch-stats`
+--
+
+DROP TABLE IF EXISTS `fetch-stats`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `fetch-stats` (
+  `timestamp` int(11) NOT NULL,
+  `forum` varchar(128) NOT NULL,
+  `TotalRequests` int(20) NOT NULL,
+  `TotalTransferKB` bigint(20) NOT NULL,
+  `TotalUncompressedKB` bigint(20) NOT NULL,
+  `ForumIndexPagesFetched` bigint(20) NOT NULL,
+  `ShopPagesFetched` bigint(20) NOT NULL,
+  `Errors` int(6) NOT NULL,
+  `RunType` varchar(128) NOT NULL,
+  `NewThreads` bigint(20) NOT NULL,
+  `UnchangedThreads` bigint(20) NOT NULL,
+  `UpdatedThreads` bigint(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `fetch-stats`
+--
+
+LOCK TABLES `fetch-stats` WRITE;
+/*!40000 ALTER TABLE `fetch-stats` DISABLE KEYS */;
+/*!40000 ALTER TABLE `fetch-stats` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `items`
+--
+
+DROP TABLE IF EXISTS `items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `items` (
+  `uuid` varchar(48) NOT NULL,
+  `threadid` varchar(16) NOT NULL,
+  `md5sum` char(32) NOT NULL,
+  `added` int(11) NOT NULL,
+  `updated` int(11) NOT NULL,
+  `modified` int(11) NOT NULL,
+  `currency` varchar(64) DEFAULT NULL,
+  `amount` decimal(10,3) DEFAULT NULL,
+  `verified` enum('YES','NO','GONE','OLD') DEFAULT NULL,
+  `priceChanges` int(5) DEFAULT NULL,
+  `lastUpdateDB` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `chaosEquiv` decimal(10,3) DEFAULT NULL,
+  `inES` enum('yes','no') DEFAULT NULL,
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `md5sum` (`md5sum`),
+  KEY `threadid` (`threadid`),
+  KEY `amount` (`amount`),
+  KEY `verified` (`verified`),
+  KEY `modified` (`modified`),
+  KEY `currency` (`currency`),
+  KEY `added` (`added`),
+  KEY `updated` (`updated`),
+  KEY `chaosEquiv` (`chaosEquiv`),
+  KEY `inES` (`inES`)
+) ENGINE=InnoDB DEFAULT CHARSET=ascii;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `items`
+--
+
+LOCK TABLES `items` WRITE;
+/*!40000 ALTER TABLE `items` DISABLE KEYS */;
+/*!40000 ALTER TABLE `items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `league-list`
 --
 
@@ -111,13 +187,13 @@ LOCK TABLES `raw-json` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `shop-threads`
+-- Table structure for table `shop-queue`
 --
 
-DROP TABLE IF EXISTS `shop-threads`;
+DROP TABLE IF EXISTS `shop-queue`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `shop-threads` (
+CREATE TABLE `shop-queue` (
   `threadid` int(16) NOT NULL,
   `timestamp` int(11) NOT NULL,
   `processed` int(1) NOT NULL,
@@ -134,56 +210,12 @@ CREATE TABLE `shop-threads` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `shop-threads`
+-- Dumping data for table `shop-queue`
 --
 
-LOCK TABLES `shop-threads` WRITE;
-/*!40000 ALTER TABLE `shop-threads` DISABLE KEYS */;
-/*!40000 ALTER TABLE `shop-threads` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `thread-items`
---
-
-DROP TABLE IF EXISTS `thread-items`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `thread-items` (
-  `uuid` varchar(48) NOT NULL,
-  `threadid` varchar(16) NOT NULL,
-  `md5sum` char(32) NOT NULL,
-  `added` int(11) NOT NULL,
-  `updated` int(11) NOT NULL,
-  `modified` int(11) NOT NULL,
-  `currency` varchar(64) DEFAULT NULL,
-  `amount` decimal(10,3) DEFAULT NULL,
-  `verified` enum('YES','NO','GONE','OLD') DEFAULT NULL,
-  `priceChanges` int(5) DEFAULT NULL,
-  `lastUpdateDB` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `chaosEquiv` decimal(10,3) DEFAULT NULL,
-  `inES` enum('yes','no') DEFAULT NULL,
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `md5sum` (`md5sum`),
-  KEY `threadid` (`threadid`),
-  KEY `amount` (`amount`),
-  KEY `verified` (`verified`),
-  KEY `modified` (`modified`),
-  KEY `currency` (`currency`),
-  KEY `added` (`added`),
-  KEY `updated` (`updated`),
-  KEY `chaosEquiv` (`chaosEquiv`),
-  KEY `inES` (`inES`)
-) ENGINE=InnoDB DEFAULT CHARSET=ascii;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `thread-items`
---
-
-LOCK TABLES `thread-items` WRITE;
-/*!40000 ALTER TABLE `thread-items` DISABLE KEYS */;
-/*!40000 ALTER TABLE `thread-items` ENABLE KEYS */;
+LOCK TABLES `shop-queue` WRITE;
+/*!40000 ALTER TABLE `shop-queue` DISABLE KEYS */;
+/*!40000 ALTER TABLE `shop-queue` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -311,4 +343,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-11-09 13:05:44
+-- Dump completed on 2015-11-09 22:26:09

@@ -11,6 +11,7 @@ use Encode;
 use utf8::all;
 use Parallel::ForkManager;
 use Date::Parse;
+use File::Path;
 require("subs/all.subroutines.pl");
 
 # == Initial Options 
@@ -29,6 +30,9 @@ $forkMe = 1;
 
 # The time to sleep between each page get
 $sleepFor = 2;
+
+# The run type - this is for later features
+$runType = "normal";
 
 # == Initial Startup
 &StartProcess;
@@ -64,16 +68,38 @@ foreach $forum (keys(%forums)) {
   # it notices need to be updated
   for (my $page=1; $page <= $maxCheckForumPages; $page++) {
     my $status = &FetchForumPage("$forums{$forum}{forumURL}/$page","$forums{$forum}{forumID}","$forum");
+    if ($status eq "Maintenance") {
+      &d("FetchForumPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
+      $stats{Errors}++;
+      last;
+    }
     sleep $sleepFor;
   }
 
-  # Disconnect forked DB connection
-  $dbhf->disconnect if ($dbhf->ping);
 
   # Output some stats for this fork
+  $stats{TotalTransferKB} = int($stats{TotalTransferBytes} / 1024);
+  $stats{TotalUncompressedKB} = int($stats{TotalUncompressedBytes} / 1024);
   foreach $stat (sort(keys(%stats))) {
     &d("STATS: (PID: $$) [$forum] $stat: $stats{$stat}\n");
   }
+
+  my $timestamp = time();
+  # Insert stats for this fork into the DB
+  $dbhf->do("INSERT INTO `fetch-stats` SET
+            `timestamp`=\"$timestamp\",
+            `forum`=\"$forum\",
+            `TotalRequests`=\"$stats{TotalRequests}\",
+            `TotalTransferKB`=\"$stats{TotalTransferKB}\",
+            `TotalUncompressedKB`=\"$stats{TotalUncompressedKB}\",
+            `ForumIndexPagesFetched`=\"$stats{ForumIndexPagesFetched}\",
+            `ShopPagesFetched`=\"$stats{ShopPagesFetched}\",
+            `Errors`=\"$stats{Errors}\",
+            `RunType`=\"$runType\"
+            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+
+  # Disconnect forked DB connection
+  $dbhf->disconnect if ($dbhf->ping);
 
   # FORK DONE
   $manager->finish;
@@ -86,84 +112,83 @@ $manager->wait_all_children;
 # ==================================================================
 
 sub FetchShopPage {
-  my $target = $_[0];
-  if ($_[1]) {
-    $forum = $_[1];
-  }
-  my $targeturl = $conf{$forum}{shopurl}."/".$_[0];
-  &d("FetchShopPage: $targeturl\n");
-  my $threadid = $target;
-
-  # Return for now, don't do anything, for debugging
-  return;
+  my $threadid = $_[0];
+  my $targeturl = "http://www.pathofexile.com/forum/view-thread/$threadid";
+  &d(">> FetchShopPage: (PID: $$) [$forumName] $targeturl\n");
 
   # =========================================
   # Saving local copy of data
   my $timestamp = time();
   my $response = $ua->get("$targeturl",'Accept-Encoding' => $can_accept);
+  $stats{TotalRequests}++;
+  $stats{TotalTransferBytes} += length($response->content);
+  $stats{TotalUncompressedBytes} += length($response->decoded_content);
+  $stats{ShopPagesFetched}++;
   my $content = $response->decoded_content;
 
-  # Retry if the content is crap
+  # Return with an error if the content is bad
   unless ($response->is_success) {
-    print $response->decoded_content;  # or whatever
-    print "WARNING: HTTP Error Received: ".$response->decoded_content." - Trying again\n";
-    sleep 1;
-    $response = $ua->get("$targeturl",'Accept-Encoding' => $can_accept);
-    $content = $response->decoded_content;
-    unless ($response->is_success) {
-      print "ERROR: HTTP Error Recieved Twice: ".$response->decoded_content." (for $targeturl $threadid) Skipping.\n";
-      return;
-    }
+    &d(">> FetchShopPage: (PID: $$) [$forumName] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
+    $stats{Errors}++;
+    return("fail");
   }
 
-  system("mkdir -p $datadir/$target/raw") unless (-d "$datadir/$target/raw");
-  open(RAW, ">$datadir/$target/raw/$timestamp.html") || die "ERROR opening $datadir/$target/raw/$timestamp.html - $1\n";
-#  &d("  RAW HTML: $datadir/$target/raw/$timestamp.html\n");
+  # Take the raw HTML and dump it to a file for later parsing
+  mkpath("$conf{datadir}/$threadid/raw") unless (-d "$conf{datadir}/$threadid/raw");
+  open(RAW, ">$conf{datadir}/$threadid/raw/$timestamp.html") || die "ERROR opening $conf{datadir}/$threadid/raw/$timestamp.html - $1\n";
   print RAW $content;
   close(RAW);
-  my $jsonfound;
+
+  # Prepare some local variables
+  my $nojsonfound;
   my $generatedWith;
 
+  # Extract the raw item JSON data from the javascript in the HTML
   if ($content =~ /require\(\[\"PoE\/Item\/DeferredItemRenderer\"\], function\(R\) \{ \(new R\((.*?)\)\)\.run\(\)\; \}\)\;/) {
     $rawjson = $1;
-#    &d("  JSON found in $target\n");
-    $jsonfound = 1;
   } else {
-    &d("  WARNING: No JSON found in $target\n");
-    $jsonfound = 0;
+    &d(">>> FetchShopPage: (PID: $$) [$forumName]  WARNING: No JSON found in $threadid\n");
+    $nojsonfound = 1;
   }
   my $processed;
-  if ($jsonfound > 0) {
-    $processed = "0";
-  } else {
+  if ($nojsonfound > 0) {
+    # No JSON means we don't need to process it, so we set processed to 5 to indicate it will never be touched by the processor
     $processed = "5";
+  } else {
+    # If we have JSON, setting the processed to 0 ensures it will be loaded by the queue
+    $processed = "0";
   }
 
+  # Find and set the last edit - I should modify this to prevent it from catching edit to replies
   my $lastedit;
   if ($content =~ /Last edited by (.*?) on (.*?)<\/div/) {
     $lastedit = str2time($2);
   }
+
+  # Quickly see if there is a known imgur link for Procurement
   if ($content =~ /i.imgur.com\/ZHBMImo.png/) {
     $generatedWith = "Procurement";
   }
-  $dbhf->do("UPDATE `web-post-track` SET
-                 `lastedit`=\"$lastedit\"
-                 WHERE `threadid`=\"$threadid\"
-                 ") || die "FATAL DBI ERROR: $DBI::errstr\n";
 
-  $dbhf->do("INSERT INTO `shop-threads` SET
-                `threadid`=\"$threadid\",
-                `timestamp`=\"$timestamp\",
-                `processed`=\"$processed\",
-                `forumid`=\"$forumID\",
-                `jsonfound`=\"$jsonfound\",
-                `origin`=\"get-forum-threads\"
-                ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+  # Add the lastedit information to web-post-track
+  $dbhf->do("UPDATE `web-post-track` SET
+            `lastedit`=\"$lastedit\"
+            WHERE `threadid`=\"$threadid\"
+            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+
+  # Add information on this thread to the processing queue db table
+  $dbhf->do("INSERT INTO `shop-queue` SET
+            `threadid`=\"$threadid\",
+            `timestamp`=\"$timestamp\",
+            `processed`=\"$processed\",
+            `forumid`=\"$forumID\",
+            `nojsonfound`=\"$nojsonfound\",
+            `origin`=\"$process\"
+            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
 
   # Done saving local copy of data
   # =========================================
 }
-
 
 sub FetchForumPage {
   local $forumPage = $_[0];
@@ -176,6 +201,7 @@ sub FetchForumPage {
   $stats{TotalRequests}++;
   $stats{TotalTransferBytes} += length($response->content);
   $stats{TotalUncompressedBytes} += length($response->decoded_content);
+  $stats{ForumIndexPagesFetched}++;
 
 # Sometimes you don't even want to see stuff in Super Verbose ^_^
 #  &sv("Content Encoding is ".$response->header ('Content-Encoding')."\n");
@@ -184,6 +210,11 @@ sub FetchForumPage {
 
   # Decode the returned data
   my $content = $response->decoded_content;
+
+  # Check for Maintenance message
+  if ($content =~ /pathofexile.com is currently down for maintenance. Please try again later/) {
+    return("Maintenance");
+  }
 
   # Parse the HTML into a tree for scanning
   my $tree = HTML::Tree->new();
@@ -301,47 +332,56 @@ sub FetchForumPage {
       if ($lastpost ne "$checkLast") {
         # If we've seen this thread before, then this is a thread update
         if ($checkLast) {
-          &d(" >ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-          &FetchShopPage("$threadid");
-          $dbhf->do("UPDATE `web-post-track` SET
-            `lastpost`=\"$lastpost\",
-            `username`=\"$username\",
-            `originalpost`=\"$originalpost\",
-            `views`=\"$viewcount\",
-            `replies`=\"$replies\",
-            `lastpostepoch`=\"$lastpostepoch\",
-            `title`=\"$threadtitle\"
-            WHERE `threadid`=\"$threadid\"
-            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+          &d("> ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+          my $status = &FetchShopPage("$threadid");
+          unless ($status eq "fail") {
+            $dbhf->do("UPDATE `web-post-track` SET
+                      `lastpost`=\"$lastpost\",
+                      `username`=\"$username\",
+                      `originalpost`=\"$originalpost\",
+                      `views`=\"$viewcount\",
+                      `replies`=\"$replies\",
+                      `lastpostepoch`=\"$lastpostepoch\",
+                      `title`=\"$threadtitle\"
+                      WHERE `threadid`=\"$threadid\"
+                      ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+            $stats{UpdatedThreads}++;
+          }
         # Otherwise this is a new thread
         } else {
-          &d(" >ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-          &FetchShopPage("$threadid");
-          $dbhf->do("INSERT INTO `web-post-track` SET
-              `threadid`=\"$threadid\",
-              `lastpost`=\"$lastpost\",
-              `username`=\"$username\",
-              `originalpost`=\"$originalpost\",
-              `views`=\"$viewcount\",
-              `replies`=\"$replies\",
-              `lastpostepoch`=\"$lastpostepoch\",
-              `title`=\"$threadtitle\"
-              ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+          &d("> ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+          my $status = &FetchShopPage("$threadid");
+          unless ($status eq "fail") {
+            $dbhf->do("INSERT INTO `web-post-track` SET
+                      `threadid`=\"$threadid\",
+                      `lastpost`=\"$lastpost\",
+                      `username`=\"$username\",
+                      `originalpost`=\"$originalpost\",
+                      `views`=\"$viewcount\",
+                      `replies`=\"$replies\",
+                      `lastpostepoch`=\"$lastpostepoch\",
+                      `title`=\"$threadtitle\"
+                      ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+            $stats{NewThreads}++;
+          }
         }
       # If a fullupdate is forced, do this anyway
       } elsif ($fullupdate eq "go") {
         &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
-        &FetchShopPage("$threadid");
-        $dbhf->do("UPDATE `web-post-track` SET
-          `lastpost`=\"$lastpost\",
-          `username`=\"$username\",
-          `originalpost`=\"$originalpost\",
-          `views`=\"$viewcount\",
-          `replies`=\"$replies\",
-          `lastpostepoch`=\"$lastpostepoch\",
-          `title`=\"$threadtitle\"
-          WHERE `threadid`=\"$threadid\"
-          ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+        my $status = &FetchShopPage("$threadid");
+        unless ($status eq "fail") {
+          $dbhf->do("UPDATE `web-post-track` SET
+                    `lastpost`=\"$lastpost\",
+                    `username`=\"$username\",
+                    `originalpost`=\"$originalpost\",
+                    `views`=\"$viewcount\",
+                    `replies`=\"$replies\",
+                    `lastpostepoch`=\"$lastpostepoch\",
+                    `title`=\"$threadtitle\"
+                    WHERE `threadid`=\"$threadid\"
+                    ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+        }
+        # Need to update this abort code
         my $currentepoch = time();
         if (($abortme) || ($currentepoch - $lastpostepoch) > ($checkdays * 86400)) {
           $abortme = "threads older than $checkdays" if (($currentepoch - $lastpostepoch) > ($checkdays * 86400));
@@ -350,7 +390,8 @@ sub FetchForumPage {
         }
       # Else we already have the latest copy of this thread in the DB so do nothing
       } else  {
-        &d(" >ThreadInfo: (PID: $$) [$forum] UNCHANGED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+        &d("> ThreadInfo: (PID: $$) [$forum] UNCHANGED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+        $stats{UnchangedThreads}++;
       }
     }
   }
