@@ -88,9 +88,9 @@ sub ProcessUpdate {
   }
 
   # Look for a known Procurement image or Acquisition Plus text
-  if ($tree->as_text  =~ /i\.imgur\.com\/ZHBMImo\.png/) {
+  if ($tree->as_HTML  =~ /i\.imgur\.com\/ZHBMImo\.png/) {
     $threadInfo{generatedWith} = "Procurement";
-  } elsif ($tree->as_text =~ /github.com\/Novynn\/acquisitionplus\/releases/) {
+  } elsif ($tree->as_HTML =~ /github.com\/Novynn\/acquisitionplus\/releases/) {
     $threadInfo{generatedWith} = "Acquisition Plus";
   }
 
@@ -178,17 +178,6 @@ sub ProcessUpdate {
   # encode the JSON data into something perl can reference 
   local $data = decode_json(encode("utf8", $rawjson));
  
-  # set some more local variables 
-  # these are modified by parsing subroutines called from here
-  local $itemsAdded;
-  local $itemsIgnored;
-  local $itemsRemoved;
-  local $itemsModified;
-  local $itemsUpdated;
-  local $buyoutCount;
-  local $totalItems;
-
-
   # Iterate through the ActiveFragment hash to call ProcessItemFragment which will
   # pull out the JSON data and add appropriate data to the database
   foreach $activeFragment(sort {$a <=> $b} (keys(%fragments))) {
@@ -209,42 +198,42 @@ sub ProcessUpdate {
               inES=\"no\"
               WHERE uuid=\"$uuid\"
               ") || die "SQL ERROR: $DBI::errstr\n";
-    $itemsRemoved++;
+    $threadInfo{itemsRemoved}++;
   }
  
   # Add some statistics to the history table  
   $dbhf->do("INSERT IGNORE INTO \`thread-update-history\` SET
             threadid=\"$threadid\",
             updateTimestamp=\"$timestamp\",
-            itemsAdded=\"$itemsAdded\",
-            itemsRemoved=\"$itemsRemoved\",
-            itemsModified=\"$itemsModified\",
+            itemsAdded=\"$threadInfo{itemsAdded}\",
+            itemsRemoved=\"$threadInfo{itemsRemoved}\",
+            itemsModified=\"$threadInfo{itemsModified}\",
             sellerAccount=\"$threadInfo{sellerAccount}\",
             sellerIGN=\"$threadInfo{sellerIGN}\",
-            totalItems=\"$totalItems\",
-            buyoutCount=\"$buyoutCount\",
+            totalItems=\"$threadInfo{totalItems}\",
+            buyoutCount=\"$threadInfo{buyoutCount}\",
             generatedWith=\"$threadInfo{generatedWith}\",
             threadTitle=\"$threadInfo{threadTitle}\"
             ") || die "SQL ERROR: $DBI::errstr\n";
 
   # We also keep a table with only information from the last update for quick searching.
   $dbhf->do("INSERT INTO \`thread-last-update\` VALUES
-            (\"$threadid\",\"$timestamp\",\"$itemsAdded\",\"$itemsRemoved\",\"$itemsModified\",\"$threadInfo{sellerAccount}\",\"$threadInfo{sellerIGN}\",\"$totalItems\",\"$buyoutCount\",\"$threadInfo{generatedWith}\",\"$threadInfo{threadTitle}\")
+            (\"$threadid\",\"$timestamp\",\"$threadInfo{itemsAdded}\",\"$threadInfo{itemsRemoved}\",\"$threadInfo{itemsModified}\",\"$threadInfo{sellerAccount}\",\"$threadInfo{sellerIGN}\",\"$threadInfo{totalItems}\",\"$threadInfo{buyoutCount}\",\"$threadInfo{generatedWith}\",\"$threadInfo{threadTitle}\")
             ON DUPLICATE KEY UPDATE
             threadid=\"$threadid\",
             updateTimestamp=\"$timestamp\",
-            itemsAdded=\"$itemsAdded\",
-            itemsRemoved=\"$itemsRemoved\",
-            itemsModified=\"$itemsModified\",
+            itemsAdded=\"$threadInfo{itemsAdded}\",
+            itemsRemoved=\"$threadInfo{itemsRemoved}\",
+            itemsModified=\"$threadInfo{itemsModified}\",
             sellerAccount=\"$threadInfo{sellerAccount}\",
             sellerIGN=\"$threadInfo{sellerIGN}\",
-            totalItems=\"$totalItems\",
-            buyoutCount=\"$buyoutCount\",
+            totalItems=\"$threadInfo{totalItems}\",
+            buyoutCount=\"$threadInfo{buyoutCount}\",
             generatedWith=\"$threadInfo{generatedWith}\",
             threadTitle=\"$threadInfo{threadTitle}\"
             ") || die "SQL ERROR: $DBI::errstr\n";
 
-  &d("  generatedWith: $threadInfo{generatedWith} | sellerAccount: $threadInfo{sellerAccount} | sellerIGN: $threadInfo{sellerIGN} | $itemsAdded Added | $itemsRemoved Removed | $itemsModified Modified | $itemsUpdated Updated | $buyoutCount Buyouts Detected | $itemsIgnored ignored\n");
+  &d("  generatedWith: $threadInfo{generatedWith} | sellerAccount: $threadInfo{sellerAccount} | sellerIGN: $threadInfo{sellerIGN} | A:$threadInfo{itemsAdded} | R:$threadInfo{itemsRemoved} | M:$threadInfo{itemsModified} | U:$threadInfo{itemsUpdated} | I: $threadInfo{itemsIgnored} | BO:$threadInfo{buyoutCount}\n");
 
   $dbhf->do("UPDATE `shop-queue` SET
                  processed=\"2\"
@@ -260,7 +249,8 @@ sub ProcessItemFragment {
   my $amount = $_[2];
   # Replace commas with periods because that's what most systems work with
   $amount =~ s/\,/\./g;
-  my $currency = $_[3];
+  # Make sure currency is in lower case to match our currency hash
+  my $currency = lc($_[3]);
   my $spoilertag = "[spoilertag] " if ($_[4] eq "spoiler");
   my $threadid = $_[5];
   my $timestamp = $_[6];
@@ -291,8 +281,13 @@ sub ProcessItemFragment {
   } elsif ($currency) {
     $standardCurrency = "Unknown ($currency)"; # We don't know what it is, why isn't this in the currency hash?
   } else{
-    $amount = ""; # if there was an amount set, there's no currency, so nuke it
+    $amount = 0; # if there was an amount set, there's no currency, so nuke it
     $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
+  }
+  # If the amount is set to 0, set the currency to NONE because that's not a real price.
+  # It's amazing how many people create spoiler tags with stuff like "~b/o My Stuff" >_<
+  if ($amount == 0) {
+    $standardCurrency = "NONE";
   }
 
   my $uuid = "$threadid:$md5sum";  
@@ -302,18 +297,18 @@ sub ProcessItemFragment {
 
   # Don't update a record if the information in the database exactly matches this run
   if ($threadshash->{"updated"} == $timestamp) {
-    $itemsIgnored++;
+    $threadInfo{itemsIgnored}++;
     &sv(">>> Data in database matches current data, is this a duplicate? Ignoring.\n");
     return;
   }
 
   # Increment the number of totalItems for this iteration
-  $totalItems++;
+  $threadInfo{totalItems}++;
 
   # If the item was previously added, but the currency or amount has changed, it is considered MODIFIED
   if ($threadshash->{"added"} && (($threadshash->{"currency"} ne "$standardCurrency") || ($threadshash->{"amount"} != "$amount"))) {
     &sv("[$threadid][$timestamp][MODIFIED] $activeFragment ($name) ($uuid) Currency Was ".$threadshash->{"amount"}." ".$threadshash->{"currency"}." | IS NOW $amount $standardCurrency from $fragments{$activeFragment}{PriceSource}\n"); 
-    $itemsModified++;
+    $threadInfo{itemsModified}++;
  
     my $chaosEquiv = &StandardizeCurrency("$amount","$standardCurrency");
     $chaosEquiv = "NULL" unless $chaosEquiv > 0;
@@ -331,7 +326,7 @@ sub ProcessItemFragment {
 
   # Otherwise if everything is the same, but the item had already been added, then this is just a simple update
   } elsif ($threadshash->{"added"}) {
-    $itemsUpdated++;
+    $threadInfo{itemsUpdated}++;
     &sv("[$threadid][$timestamp][UPDATED] No change to $activeFragment ($uuid)\n");
     $dbhf->do("UPDATE \`items\` SET
               verified=\"$data->[$activeFragment]->[1]{verified}\",
@@ -343,7 +338,7 @@ sub ProcessItemFragment {
   # Otherwise, the item is new and just added
   } else {
     &sv("[$threadid][$timestamp][ADDED] $activeFragment ($uuid) | $amount $standardCurrency from $fragments{$activeFragment}{PriceSource}\n");
-    $itemsAdded++;
+    $threadInfo{itemsAdded}++;
     my $chaosEquiv = &StandardizeCurrency("$amount","$standardCurrency");
     $chaosEquiv = "NULL" unless $chaosEquiv > 0;
     $dbhf->do("INSERT IGNORE INTO \`items\` SET uuid=\"$uuid\",
@@ -397,21 +392,21 @@ sub ParseContentForFrags {
         $fragments{$activeFragment}{PriceAmount} = $2;
         $fragments{$activeFragment}{PriceCurrency} = $3;
         $fragments{$activeFragment}{PriceSource} = "Under Item";
-        $buyoutCount++;
+        $threadInfo{buyoutCount}++;
       # also check the spoilerTitle of the current spoiler to see if it has price info
       } elsif ($spoilerTitle =~ /\~(b\/o|price|c\/o)\s*((?:\d+)*(?:(?:\.|,)\d+)?)\s*([A-Za-z]+)\s*<*.*$/) {
         $fragments{$activeFragment}{PriceType} = $1;
         $fragments{$activeFragment}{PriceAmount} = $2;
         $fragments{$activeFragment}{PriceCurrency} = $3;
         $fragments{$activeFragment}{PriceSource} = "Spoiler Title";
-        $buyoutCount++;
+        $threadInfo{buyoutCount}++;
       # and failing that, check for a global buyout
       } elsif ($globalAmount && $globalCurrency) {
         $fragments{$activeFragment}{PriceType} = "b/o";
         $fragments{$activeFragment}{PriceAmount} = $globalAmount;
         $fragments{$activeFragment}{PriceCurrency} = $globalCurrency;
         $fragments{$activeFragment}{PriceSource} = "Global Buyout";
-        $buyoutCount++;
+        $threadInfo{buyoutCount}++;
       } else {
         $fragments{$activeFragment}{PriceSource} = "Nowhere";
       }

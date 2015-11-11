@@ -12,8 +12,10 @@ use utf8::all;
 use Parallel::ForkManager;
 use Date::Parse;
 use File::Path;
+use Time::HiRes qw(usleep); 
 require("subs/all.subroutines.pl");
 require("subs/sub.threadDataToDB.pl");
+require("subs/sub.getThreadFromForum.pl");
 
 # == Initial Options 
 # Whether or not to give basic debug output
@@ -29,8 +31,8 @@ $maxCheckForumPages = 1;
 # The number of processes to fork
 $forkMe = 1;
 
-# The time to sleep between each page get
-$sleepFor = 2;
+# Microseconds to sleep for between page requests to avoid excessive requests
+$sleepFor = 500 * 1000;
 
 # The run type - this is for later features
 $runType = "normal";
@@ -44,10 +46,6 @@ $forums{darkshrine}{forumID} = "597";
 $forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
 $forums{darkshrinehc}{forumID} = "598";
 
-# Create a user agent
-my $ua = LWP::UserAgent->new;
-# Make sure it accepts gzip
-my $can_accept = HTTP::Message::decodable;
 
 # Terminate our DB connection since we're going to do some weird forking
 $dbh->disconnect if ($dbh->ping);
@@ -58,8 +56,12 @@ foreach $forum (keys(%forums)) {
   # FORK START
   $manager->start and next;
 
+  # Create a user agent
+  our $ua = LWP::UserAgent->new;
+  # Make sure it accepts gzip
+  our $can_accept = HTTP::Message::decodable;
   # Prepare the local statistics hash
-  local %stats;
+  our %stats;
 
   # On fork start, we must create a new DB Connection
   $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
@@ -74,7 +76,7 @@ foreach $forum (keys(%forums)) {
       $stats{Errors}++;
       last;
     }
-    sleep $sleepFor;
+    usleep($sleepFor);
   }
 
 
@@ -96,7 +98,10 @@ foreach $forum (keys(%forums)) {
             `ForumIndexPagesFetched`=\"$stats{ForumIndexPagesFetched}\",
             `ShopPagesFetched`=\"$stats{ShopPagesFetched}\",
             `Errors`=\"$stats{Errors}\",
-            `RunType`=\"$runType\"
+            `RunType`=\"$runType\",
+            `NewThreads`=\"$stats{NewThreads}\",
+            `UnchangedThreads`=\"$stats{UnchangedThreads}\",
+            `UpdatedThreads`=\"$stats{UpdatedThreads}\"
             ") || die "FATAL DBI ERROR: $DBI::errstr\n";
 
   # Disconnect forked DB connection
@@ -111,83 +116,6 @@ $manager->wait_all_children;
 &ExitProcess;
 
 # ==================================================================
-
-sub FetchShopPage {
-  local $threadid = $_[0];
-  my $targeturl = "http://www.pathofexile.com/forum/view-thread/$threadid";
-  &d(">> FetchShopPage: (PID: $$) [$forumName] $targeturl\n");
-
-  # =========================================
-  # Saving local copy of data
-  local $timestamp = time();
-  my $response = $ua->get("$targeturl",'Accept-Encoding' => $can_accept);
-  $stats{TotalRequests}++;
-  $stats{TotalTransferBytes} += length($response->content);
-  $stats{TotalUncompressedBytes} += length($response->decoded_content);
-  $stats{ShopPagesFetched}++;
-  my $content = $response->decoded_content;
-
-  # Return with an error if the content is bad
-  unless ($response->is_success) {
-    &d(">> FetchShopPage: (PID: $$) [$forumName] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
-    $stats{Errors}++;
-    return("fail");
-  }
-
-  # Take the raw HTML and dump it to a file for later parsing
-  mkpath("$conf{datadir}/$threadid/raw") unless (-d "$conf{datadir}/$threadid/raw");
-  open(RAW, ">$conf{datadir}/$threadid/raw/$timestamp.html") || die "ERROR opening $conf{datadir}/$threadid/raw/$timestamp.html - $1\n";
-  print RAW $content;
-  close(RAW);
-
-  # Prepare some local variables
-  my $nojsonfound;
-
-  # Extract the raw item JSON data from the javascript in the HTML
-  if ($content =~ /require\(\[\"PoE\/Item\/DeferredItemRenderer\"\], function\(R\) \{ \(new R\((.*?)\)\)\.run\(\)\; \}\)\;/) {
-    $rawjson = $1;
-  } else {
-    &d(">>> FetchShopPage: (PID: $$) [$forumName]  WARNING: No JSON found in $threadid\n");
-    $nojsonfound = 1;
-  }
-  my $processed;
-  if ($nojsonfound > 0) {
-    # No JSON means we don't need to process it, so we set processed to 5 to indicate it will never be touched by the processor
-    $processed = "5";
-  } else {
-    # If we have JSON, setting the processed to 0 ensures it will be loaded by the queue
-    $processed = "0";
-  }
-
-  # NOTE: This queuing system allows us to separate out forum gets from loading data
-  # as of 2015/11/10 we are going to start processing the queue immediately from the
-  # data in memory, but we're still saving a copy and monitoring the queue for record
-  # keeping - this allows me to re-run the queue if needed without having to scan the
-  # filesystem for html files.
- 
-  # Add information on this thread to the processing queue db table
-  $dbhf->do("INSERT INTO `shop-queue` SET
-            `threadid`=\"$threadid\",
-            `timestamp`=\"$timestamp\",
-            `processed`=\"$processed\",
-            `forumid`=\"$forumID\",
-            `nojsonfound`=\"$nojsonfound\",
-            `origin`=\"$process\"
-            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
-
-  # Done saving local copy of data
-  # =========================================
-
-  # Begin processing the data directly:
-  return if ($nojsonfound);
-  &ProcessUpdate("$content","$rawjson");
-  
-  # Go ahead and mark this as processed in the queue
-  $dbhf->do("UPDATE `shop-queue` SET
-                 processed=\"2\"
-                 WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
-                 ") || die "SQL ERROR: $DBI::errstr\n";
-}
 
 sub FetchForumPage {
   local $forumPage = $_[0];
@@ -324,7 +252,6 @@ sub FetchForumPage {
     # We don't just assume everything is good to avoid populating with incomplete data
 
     if ($threadid && $threadtitle && $username && $lastpost) {
-
       # Check the lastpost information in the DB to see if we've already tracked this edit/post
       my $checkLast = $dbhf->selectrow_array("select `lastpost` from `web-post-track` where `threadid`=\"$threadid\" limit 1");
       # If the current lastpost is different than the stored last post, fetch the thread and update the database
@@ -346,6 +273,7 @@ sub FetchForumPage {
                       ") || die "FATAL DBI ERROR: $DBI::errstr\n";
             $stats{UpdatedThreads}++;
           }
+          usleep($sleepFor);
         # Otherwise this is a new thread
         } else {
           &d("> ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
@@ -363,6 +291,7 @@ sub FetchForumPage {
                       ") || die "FATAL DBI ERROR: $DBI::errstr\n";
             $stats{NewThreads}++;
           }
+          usleep($sleepFor);
         }
       # If a fullupdate is forced, do this anyway
       } elsif ($fullupdate eq "go") {
@@ -380,6 +309,7 @@ sub FetchForumPage {
                     WHERE `threadid`=\"$threadid\"
                     ") || die "FATAL DBI ERROR: $DBI::errstr\n";
         }
+        usleep($sleepFor);
         # Need to update this abort code
         my $currentepoch = time();
         if (($abortme) || ($currentepoch - $lastpostepoch) > ($checkdays * 86400)) {
