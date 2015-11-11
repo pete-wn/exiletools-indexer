@@ -108,7 +108,7 @@ It also allows me to occasionally clean up mistakes in the Dynamic Mapping cause
 
 ### Why Perl? Why is your code so sloppy? Why do you use that regexp instead of *magic thingie #3*? Ewww.
 
-I Am Not A Developer (or a Programmer). Aside from programming in BASIC and Pascal growing up, my adult technical background is in systems and infrastructure. I've been using Perl to get things done for 20+ years, back when all the cool kids used it. If you look at my code, I still have some weird conventions and habits that were formed back then (`use strict` was for time wasting suckers), because I haven't had to learn or use anything else since.
+I Am Not A Developer (or a Programmer). Aside from programming in BASIC and Pascal growing up, my adult technical background is in systems and infrastructure. I've been using Perl to get things done for 20+ years - but to me, it was always a *swiss army knife* and I wrote *hacks and scripts*, not code or programs. If you look at my code, I still have some weird conventions and habits that were formed back then (`use strict` was for time wasting suckers), because I haven't really needed to learn or use anything else since (I can read/adapt code in many languages, but starting from scratch I'll always go with Perl).
 
 The result is a bunch of weird code that looks like some dude wrote it twenty years ago because I'm basically still writing code like it's 1995. I've recently tried to do more cool stuff like actually use perl modules instead of parsing everything myself (such as converting my ghetto parsing to using HTML::Tree), but mostly I'm stuck in the past.
 
