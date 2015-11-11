@@ -1,6 +1,8 @@
 # ExileTools Indexer
 
-This is a work in progress: an update of the Exile Tools Indexer, fully open sourced.
+**Note:** This is a re-factor in progress.
+
+Path of Exile Shop Forum Indexer used by http://exiletools.com
 
 ## Why?
 
