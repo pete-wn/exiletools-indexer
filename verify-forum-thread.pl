@@ -44,7 +44,7 @@ $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", 
 
 my $status = &FetchShopPage("$threadid");
 
-
+$dbhf->disconnect;
 # == Exit cleanly
 &ExitProcess;
 

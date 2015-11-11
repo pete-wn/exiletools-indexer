@@ -66,6 +66,8 @@ sub ProcessUpdate {
   # Find the thread title by looking for the h1 class=layoutBoxTitle
   my $threadTitle = $fulltree->look_down('_tag' => 'h1', 'class' => 'topBar last layoutBoxTitle');
   $threadInfo{threadTitle} = $threadTitle->as_text;
+  # Strip stupid stuff from thread title to avoid sketchy stuff in DB
+  $threadInfo{threadTitle} =~ s/(\"|\`)//g;
 
   # Load the first content container TD, which should be the entire first post
   $tree = $fulltree->look_down('_tag' => 'td', 'class' => 'content-container first');

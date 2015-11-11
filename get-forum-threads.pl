@@ -112,6 +112,40 @@ foreach $forum (keys(%forums)) {
 }
 $manager->wait_all_children;
 
+# Find abandoned items that haven't been updated (hence seen by the indexer) recently and 
+# update them, setting the verified status to OLD
+
+my $days = 7; # Number of days after which an item is considered OLD
+my $agelimit = time() - (86400 * $days); # Epoch time for old based on $days
+my $oldcount = "0";
+
+# Reconnect to DB
+$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+
+# This may be a big query sometimes, so instead of loading the entire thing into
+# memory we'll just iterate on it
+$query = "select `uuid`,`updated` from `items` where `updated`<$agelimit and `verified`=\"yes\"";
+$query_handle = $dbh->prepare($query);
+&d("Marking verified items that haven't been updated in $days days as OLD...\n");
+
+# Execute the query and bind the variables
+$query_handle->execute();
+$query_handle->bind_columns(undef, \$uuid, \$updated);
+while($query_handle->fetch()) {
+      &sv(" $uuid too old, modifying verification\n");  
+      # Mark the item has updated 7 days after it was abandoned instead of the current time
+      my $modtimestamp = $updated + (86400 * $days);
+      $dbh->do("UPDATE \`items\` SET
+                updated=\"$modtimestamp\",
+                verified=\"OLD\",
+                inES=\"no\"
+                WHERE uuid=\"$uuid\"
+                ") || die "SQL ERROR: $DBI::errstr\n";
+      $oldcount++;
+}
+&d("$oldcount abandonded items marked as OLD!\n");
+$dbh->disconnect;
+
 # == Exit cleanly
 &ExitProcess;
 
