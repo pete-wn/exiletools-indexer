@@ -69,7 +69,7 @@ my $maxForkCheck = int($updateCount / 10000 / $forkMe) + 1;
 
 if ($maxForkCheck < $forkMe) {
   $forkMe = $maxForkCheck;
-  &d("> Overriding forks of threads to a max of $forkMe as update is small!\n");
+  &d(" > Overriding forks of threads to a max of $forkMe as update is small!\n");
 }
 
 # This is a little weird/clumsy. Basically, we are going to create a hash of uuid's for each
@@ -78,7 +78,7 @@ if ($maxForkCheck < $forkMe) {
 # uuid's each fork should process.
 $maxInHash = int($updateCount / $forkMe) + 1;
 
-&d("> $updateCount uuid's to be updated [$forkMe fork(s), $maxInHash per fork]\n");
+&d(" > $updateCount uuid's to be updated [$forkMe fork(s), $maxInHash per fork]\n");
 
 $t0 = [Time::HiRes::gettimeofday];
 &d("Preparing update hash:\n");
@@ -105,11 +105,11 @@ while($query_handle->fetch()) {
 
 $dbh->disconnect;
 $endelapsed = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
-&d("> Update hash built in $endelapsed seconds.\n");
+&d(" > Update hash built in $endelapsed seconds.\n");
 
 # Prepare forkmanager
 my $manager = new Parallel::ForkManager( $forkMe );
-&d("Spawning processing children:\n");
+&d("Processing started! This may take awhile...\n");
 
 # For each forkID in our hash of UUID's, fork a process and go!
 foreach $forkID (keys(%uhash)) {

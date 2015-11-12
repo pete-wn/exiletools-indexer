@@ -5,7 +5,7 @@ use utf8::all;
 sub FetchShopPage {
   local $threadid = $_[0];
   my $targeturl = "http://www.pathofexile.com/forum/view-thread/$threadid";
-  &d(">> FetchShopPage: (PID: $$) [$forumName] $targeturl\n");
+  &sv(">> FetchShopPage: (PID: $$) [$forumName] $targeturl\n");
 
   # =========================================
   # Saving local copy of data
@@ -37,7 +37,7 @@ sub FetchShopPage {
   if ($content =~ /require\(\[\"PoE\/Item\/DeferredItemRenderer\"\], function\(R\) \{ \(new R\((.*?)\)\)\.run\(\)\; \}\)\;/) {
     $rawjson = $1;
   } else {
-    &d(">>> FetchShopPage: (PID: $$) [$forumName]  WARNING: No JSON found in $threadid\n");
+    &sv(">>> FetchShopPage: (PID: $$) [$forumName]  WARNING: No JSON found in $threadid\n");
     $nojsonfound = 1;
   }
   my $processed;

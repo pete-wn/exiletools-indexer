@@ -26,7 +26,7 @@ $debug = 1;
 $sv = 0;
 
 # The depth to crawl each forum for updates
-$maxCheckForumPages = 50;
+$maxCheckForumPages = 8;
 
 # The number of processes to fork
 $forkMe = 2;
@@ -143,7 +143,7 @@ while($query_handle->fetch()) {
                 ") || die "SQL ERROR: $DBI::errstr\n";
       $oldcount++;
 }
-&d("$oldcount abandonded items marked as OLD!\n");
+&d(" > $oldcount abandonded items marked as OLD!\n");
 $dbh->disconnect;
 
 # == Exit cleanly
@@ -292,7 +292,7 @@ sub FetchForumPage {
       if ($lastpost ne "$checkLast") {
         # If we've seen this thread before, then this is a thread update
         if ($checkLast) {
-          &d("> ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+          &d(" > ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
           my $status = &FetchShopPage("$threadid");
           unless ($status eq "fail") {
             $dbhf->do("UPDATE `web-post-track` SET
@@ -310,7 +310,7 @@ sub FetchForumPage {
           usleep($sleepFor);
         # Otherwise this is a new thread
         } else {
-          &d("> ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+          &d(" > ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
           my $status = &FetchShopPage("$threadid");
           unless ($status eq "fail") {
             $dbhf->do("INSERT INTO `web-post-track` SET
@@ -353,7 +353,7 @@ sub FetchForumPage {
         }
       # Else we already have the latest copy of this thread in the DB so do nothing
       } else  {
-        &d("> ThreadInfo: (PID: $$) [$forum] UNCHANGED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
+        &sv(" > ThreadInfo: (PID: $$) [$forum] UNCHANGED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
         $stats{UnchangedThreads}++;
       }
     }

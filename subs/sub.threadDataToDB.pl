@@ -237,7 +237,7 @@ sub ProcessUpdate {
             threadTitle=\"$threadInfo{threadTitle}\"
             ") || die "SQL ERROR: $DBI::errstr\n";
 
-  &d("  generatedWith: $threadInfo{generatedWith} | sellerAccount: $threadInfo{sellerAccount} | sellerIGN: $threadInfo{sellerIGN} | A:$threadInfo{itemsAdded} | R:$threadInfo{itemsRemoved} | M:$threadInfo{itemsModified} | U:$threadInfo{itemsUpdated} | I: $threadInfo{itemsIgnored} | BO:$threadInfo{buyoutCount}\n");
+  &sv("[$threadid] generatedWith: $threadInfo{generatedWith} | sellerAccount: $threadInfo{sellerAccount} | sellerIGN: $threadInfo{sellerIGN} | A:$threadInfo{itemsAdded} | R:$threadInfo{itemsRemoved} | M:$threadInfo{itemsModified} | U:$threadInfo{itemsUpdated} | I: $threadInfo{itemsIgnored} | BO:$threadInfo{buyoutCount}\n");
 
   $dbhf->do("UPDATE `shop-queue` SET
                  processed=\"2\"
