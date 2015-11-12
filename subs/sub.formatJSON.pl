@@ -1,19 +1,18 @@
 #!/usr/bin/perl
 
 sub formatJSON {
-  my $rawjson = $_[0];
-  $json = JSON::XS->new->utf8->pretty->allow_nonref;
+  # Decode any diacritics and unicode junk in the JSON data for simplicity - everyone just types "mjolner" etc.
+  my $rawjson = unidecode($_[0]);
+
   # De-reference the hash for simplicity
-  %data = %{$json->decode("$rawjson")};
+  $json = JSON::XS->new->utf8->pretty->allow_nonref;
+  %data = %{$json->decode($rawjson)};
   
   $item{info}{fullName} = $data{name}." ".$data{typeLine}; 
+  # Remove the Superior and/or any leading white space from the fullName
   $item{info}{fullName} =~ s/^Superior//g;
   $item{info}{fullName} =~ s/^\s+//g;
-  $item{info}{fullName} =~ s/Maelst(.*?)m/Maelstrom/g;
-  $item{info}{fullName} =~ s/Mj(.*?)lner/Mjolner/g;
-  $item{info}{fullName} =~ s/Ngamahu(.*?)s Sign/Ngamahu\'s Sign/g;
-  $item{info}{fullName} =~ s/Tasalio(.*?)s Sign/Tasalio\'s Sign/g;
-  $item{info}{fullNameTokenized} = $item{info}{fullName};
+  $item{info}{tokenized}{fullName} = $item{info}{fullName};
 
 
   $item{info}{name} = $data{name};
@@ -24,12 +23,17 @@ sub formatJSON {
 
   $item{info}{name} = $item{info}{fullName} unless ($item{info}{name});
   $item{info}{typeLine} = $data{typeLine};
-  $item{info}{descrText} = $data{descrText};
+  if ($data{descrText}) {
+    $item{info}{descrText} = $data{descrText};
+    $item{info}{tokenized}{descrText} = $data{descrText};
 
-  $item{info}{flavourText} = $data{flavourText};
+  }
 
-  $data{icon} =~ /(.*?)\?/;
-  $item{info}{icon} = $1;
+
+  $item{info}{icon} = $data{icon};
+  # Strip anything after a ? from it, no need to have forced dimensions
+  $item{info}{icon} =~ s/\?.*$//g;
+
   $item{attributes}{corrupted} = $data{corrupted};
   $item{attributes}{support} = $data{support};
   $item{attributes}{identified} = $data{identified};
@@ -62,6 +66,13 @@ sub formatJSON {
     $item{attributes}{rarity} = "Quest Item";
   }
 
+  foreach my $flava (@{$data{flavourText}}) {
+    # I strip the \r out because it doesn't blend well
+    $flava =~ s/\r/ /g;
+    $item{info}{flavourText} .= $flava;
+    $item{info}{tokenized}{flavourText} .= $flava;
+  }
+
 
 
   $item{attributes}{league} = $data{league};
@@ -78,7 +89,7 @@ sub formatJSON {
 
   my $p = "0";
   # Find each hash in the array under requirements and do stuff with it
-  foreach my $pval ( @{$data{'requirements'}} ) {
+  foreach my $pval (@{$data{'requirements'}}) {
 #    last unless ($pval); # This isn't strictly necessary, but this loop can hang due to corrupted JSON otherwise
     if ($data{requirements}[$p]{name}) {
       # Set the local requirement name, which is a fixed value in the hash
@@ -112,18 +123,30 @@ sub formatJSON {
       my $property = $data{properties}[$p]{name};
       my $value = $data{properties}[$p]{values}[0][0];
       $value =~ s/\%//g;
-      $value = \1 unless ($value);
+   
+      # Make sure a numeric value of 0 is assigned if the string is 0
+      if ($value eq "0") {
+        $value += 0;
+      } else {
+        # Otherwise value wasn't set because no numbers were found in the string, so it's a true/false setting
+        $value = \1 unless ($value);
+      }
 
       $property =~ s/\%0/#/g;
       $property =~ s/\%1/#/g;
 
       if ($data{properties}[$p]{name} =~ /One Handed/) {
         $item{attributes}{equipType} = "One Handed Melee Weapon";
+        $item{properties}{$property} = $value;
       } elsif ($data{properties}[$p]{name} =~ /Two Handed/) {
         $item{attributes}{equipType} = "Two Handed Melee Weapon";
+        $item{properties}{$property} = $value;
       } elsif ($data{properties}[$p]{name} eq "Quality") {
         $value =~ s/\+//g;
+        $item{properties}{$property} = $value;
       } elsif ($data{properties}[$p]{name} =~ /^(.*?) \%0 (.*?) \%1 (.*?)$/) {
+        # If there are some weird parameters here, put them into a subsection for the item type
+        # This is pretty much exclusive to flasks
         $item{properties}{$item{attributes}{baseItemType}}{$property}{x} += $data{properties}[$p]{values}[0][0];
         $item{properties}{$item{attributes}{baseItemType}}{$property}{y} += $data{properties}[$p]{values}[1][0];
       } elsif ($value =~ /(\d+)-(\d+)/) {
@@ -147,6 +170,11 @@ sub formatJSON {
     }
     $p++;
   }
+
+  &parseExtendedMods("explicitMods","explicit") if ($data{explicitMods});
+  &parseExtendedMods("implicitMods","implicit") if ($data{implicitMods});
+  &parseExtendedMods("craftedMods","crafted") if ($data{craftedMods});
+  &parseExtendedMods("cosmeticMods","cosmetic") if ($data{cosmeticMods});
 
   # If the item is a Weapon, calculate DPS information
   if ($item{attributes}{baseItemType} eq "Weapon") {
@@ -378,4 +406,60 @@ sub setPseudoMods {
   }
 }
 
+sub parseExtendedMods {
+  my $modTypeJSON = $_[0];
+  my $modType = $_[1];
+  return unless (($modTypeJSON) && ($modType));
+  foreach my $modLine ( @{$data{"$modTypeJSON"}} ) {
+    if ($modLine =~ /^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/) {
+      my $modname = $5;
+      my $value = $2;
+      $modname =~ s/\s+$//g;
+      $item{mods}{$item{attributes}{itemType}}{$modType}{"$1#$4 $modname"} += $value;
+      $item{modsTotal}{"$1#$4 $modname"} += $value;
+      $item{attributes}{"$modTypeJSON"."Count"}++;
+      &setPseudoMods("$1","$modname","$value");
+    } elsif ($modLine =~ /^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/) {
+      my $modname;
+      my $value = $2;
+      my $prefix = $1;
+      my $suffix = $6;
+      if ($value =~ /\%/) {
+        $modname = "$prefix #% $suffix";
+        $value =~ s/\%//g;
+      } elsif ($value =~ /\d+-\d+/) {
+        $modname = "$prefix #-# $suffix";
+      } else {
+        $modname = "$prefix # $suffix";
+      }
+      $modname =~ s/\s+$//g;
+      if ($val =~ /Unique Boss deals +(.*?)\% Damage and attacks +(.*?)% faster/) {
+        $value = "$1-$2";
+        $modname = "Unique Boss deals %# Damage and attacks %# faster";
+      }
+      if ($value =~ /(\d+)-(\d+)/) {
+        $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{min} += $1;
+        $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{max} += $2;
+        
+        $item{modsTotal}{$modname}{min} += $1;
+        $item{modsTotal}{$modname}{max} += $2;
+ 
+      } else {
+        $item{mods}{$item{attributes}{itemType}}{$modType}{$modname} += $value;
+        $item{modsTotal}{$modname} += $value;
+      }
+      $item{attributes}{"$modTypeJSON"."Count"}++;
+    } else {
+      $item{mods}{$item{attributes}{itemType}}{$modType}{$modLine} = \1;
+      $item{modsTotal}{$modLine} = \1;
+      $item{attributes}{"$modTypeJSON"."Count"}++;
+    }
+  }
+}
+
+
+
+
+
 return true;
+

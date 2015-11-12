@@ -59,13 +59,7 @@ $config = '
         "properties" : {
           "info" : {
             "properties" : {
-              "descrText" : {
-                "type" : "string"
-              },
-              "flavourText" : {
-                "type" : "string"
-              },
-              "fullNameTokenized" : {
+              "tokenized" : {
                 "type" : "string"
               }
             }

@@ -8,6 +8,8 @@ use Encode;
 use Data::Dumper;
 use Time::HiRes;
 use Parallel::ForkManager;
+use utf8;
+use Text::Unidecode;
 require("subs/all.subroutines.pl");
 require("subs/sub.formatJSON.pl");
 
@@ -24,7 +26,7 @@ $debug = 1;
 $sv = 0;
 
 # The number of processes to fork
-$forkMe = 4;
+$forkMe = 1;
 
 # == Initial Startup
 &StartProcess;
@@ -170,6 +172,8 @@ foreach $forkID (keys(%uhash)) {
         $item{shop}{threadTitle} = "Unknown";
       } 
     }
+    # Decode unicode in threadTitle
+    $item{shop}{threadTitle} = unidecode($item{shop}{threadTitle});
 
     $item{uuid} = $uuid;
     $item{md5sum} = $md5sum;
@@ -185,24 +189,21 @@ foreach $forkID (keys(%uhash)) {
     $item{shop}{chaosEquiv} += $chaosEquiv;
     $item{shop}{sellerAccount} = $sellerHash{$threadid}{sellerAccount};
     $item{shop}{sellerIGN} = $sellerHash{$threadid}{sellerIGN};
-    $item{shop}{forumID} = $sellerHash{$threadid}{forumID};
-    $item{shop}{generatedWith} = $sellerHash{$threadid}{generatedWith};
+    $item{shop}{generatedWith} = $sellerHash{$threadid}{generatedWith} if ($sellerHash{$threadid}{generatedWith});
 
     my $rawjson = $dbh->selectrow_array("select `data` from `raw-json` where `md5sum`=\"$md5sum\" limit 1");
     unless ($rawjson) {
       print "[$forkID] WARNING: $md5sum returned no data from raw json db!\n";
       next;
     }
-    local $data = decode_json(encode("utf8", $rawjson)) || print "$rawjson\n";
-
-    my $jsonout = &reformatJSON("$data");
+    my $jsonout = &formatJSON("$rawjson");
 
   # Some debugging stuff 
   # Pretty Version Output
-  #  my $jsonchunk = JSON->new->utf8;
-  #  my $prettychunk = $jsonchunk->pretty->encode(\%item);
-  #  print "$prettychunk\n";
-  #  exit if ($count > 2500);
+#    my $jsonchunk = JSON->new->utf8;
+#    my $prettychunk = $jsonchunk->pretty->encode(\%item);
+#    print "$prettychunk\n";
+#    last if ($count > 5);
   
     $bulk->index({ id => "$uuid", source => "$jsonout" });
     push @changeFlagInDB, "$uuid";
