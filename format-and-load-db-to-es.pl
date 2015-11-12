@@ -23,7 +23,7 @@ $debug = 1;
 $sv = 0;
 
 # The number of processes to fork
-$forkMe = 1;
+$forkMe = 4;
 
 # == Initial Startup
 &StartProcess;
@@ -65,11 +65,10 @@ if ($updateCount < 1) {
 
 # If this is a small update, override the number of forks to something that isn't wasteful
 # (we shouldn't be processing less than 10k items per fork
-my $maxForkCheck = int($updateCount / 10000 / $forkMe);
+my $maxForkCheck = int($updateCount / 10000 / $forkMe) + 1;
 
 if ($maxForkCheck < $forkMe) {
   $forkMe = $maxForkCheck;
-  $forkMe = 1 if ($forkMe < 1);
   &d("> Overriding forks of threads to a max of $forkMe as update is small!\n");
 }
 
@@ -81,7 +80,8 @@ $maxInHash = int($updateCount / $forkMe) + 1;
 
 &d("> $updateCount uuid's to be updated [$forkMe fork(s), $maxInHash per fork]\n");
 
-&d("Creating hashes of uuid's to be updated...\n");
+$t0 = [Time::HiRes::gettimeofday];
+&d("Preparing update hash:\n");
 $query_handle=$dbh->prepare($pquery);
 $query_handle->{"mysql_use_result"} = 1;
 $query_handle->execute();
@@ -104,9 +104,12 @@ while($query_handle->fetch()) {
 }
 
 $dbh->disconnect;
+$endelapsed = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
+&d("> Update hash built in $endelapsed seconds.\n");
 
 # Prepare forkmanager
 my $manager = new Parallel::ForkManager( $forkMe );
+&d("Spawning processing children:\n");
 
 # For each forkID in our hash of UUID's, fork a process and go!
 foreach $forkID (keys(%uhash)) {
@@ -117,17 +120,19 @@ foreach $forkID (keys(%uhash)) {
   my $e = Search::Elasticsearch->new(
     cxn_pool => 'Sniff',
     nodes =>  [
-      "$conf{eshost}:9200"
+      "$conf{eshost}:9200",
+      "$conf{eshost2}:9200"
     ],
-    request_timeout => 60,
-    ping_timeout => 15
+    trace_to => ['File','/tmp/eslog.txt'],
+    # Huge request timeout for bulk indexing
+    request_timeout => 300
   );
 
   die "some error?"  unless ($e);
   
   my $bulk = $e->bulk_helper(
     index => "$conf{esindex}",
-    max_count => '5000',
+    max_count => '5100',
     max_size => '0',
     type => "$conf{estype}",
   );
@@ -543,67 +548,62 @@ foreach $forkID (keys(%uhash)) {
   #  my $jsonout = encode_json \%item;
   
     my $jsonout = JSON::XS->new->utf8->encode(\%item);
-  
+ 
+  # Some debugging stuff 
   # Pretty Version Output
   #  my $jsonchunk = JSON->new->utf8;
   #  my $prettychunk = $jsonchunk->pretty->encode(\%item);
   #  print "$prettychunk\n";
   #  exit if ($count > 2500);
   
-  #  $e->index(
-  #    index => 'poe',
-  #    type => 'item',
-  #    body => $jsonout
-  #    ) || die "ERROR $!\n";
-  
     $bulk->index({ id => "$uuid", source => "$jsonout" });
     push @changeFlagInDB, "$uuid";
-  
-    if ($count % 3000 == 0) {
-      print "[$forkID] ".localtime()." | $count | Bulk Indexing to Elastic Search...\n";
+ 
+    # We go ahead and bulk flush then update the DB at 5000 manually so we can give some output
+    # for anyone watching 
+    if ($count % 5000 == 0) {
+      &sv("[$forkID] [$count] Bulk Flushing Data to Elastic Search:\n");
       $bulk->flush;
-      print "[$forkID] ".localtime()." |  --> Bulk Flush Completed\n";
-      print "[$forkID] ".localtime()." |  --> Updating $count items in database as added...\n";
+      &sv("[$forkID] [$count] -> Bulk Flush Completed\n");
+      &sv("[$forkID] [$count]  Marking items as imported in DB:\n");
       foreach $updateuuid (@changeFlagInDB) {
         $dbh->do("UPDATE \`items\` SET inES=\"yes\" WHERE uuid=\"$updateuuid\"");
       }
-      print "[$forkID] ".localtime()." |  --> Database update completed...\n";
+      &sv("[$forkID] [$count] -> Database update completed...\n");
       $endelapsed = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
-      print "[$forkID] ".localtime()." |  --> Processing Time: $endelapsed seconds\n";
+      &d("[$forkID] [$count] Bulk Processed in $endelapsed seconds\n");
       $t0 = [Time::HiRes::gettimeofday];
       undef @changeFlagInDB;
     }
   
   }
-  
-  print "[$forkID] ".localtime()." | $count | Bulk Indexing to Elastic Search...\n";
+
+  # Flush the leftover items - I'm lazy and just copy/pasted, should probably make this a subroutine 
+  &sv("[$forkID] [$count] Bulk Flushing Data to Elastic Search:\n"); 
   $bulk->flush;
-  print "[$forkID] ".localtime()." |  --> Bulk Flush Completed\n";
-  print "[$forkID] ".localtime()." |  --> Updating $count items in database as added...\n";
+  &sv("[$forkID] [$count] -> Bulk Flush Completed\n");
+  &sv("[$forkID] [$count]  Marking items as imported in DB:\n");
   foreach $updateuuid (@changeFlagInDB) {
     $dbh->do("UPDATE \`items\` SET inES=\"yes\" WHERE uuid=\"$updateuuid\"");
   }
-  print "[$forkID] ".localtime()." |  --> Database update completed...\n";
+  &sv("[$forkID] [$count] -> Database update completed...\n");
   $endelapsed = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
-  print "[$forkID] ".localtime()." |  --> Processing Time: $endelapsed seconds\n";
+  &d("[$forkID] [$count] Bulk Processed in $endelapsed seconds\n");
   undef @changeFlagInDB;
   
-  print "[$forkID] ".localtime()." Elastic Search import complete!\n";
+  &d("[$forkID] Elastic Search import complete!\n");
   
   $dbh->disconnect;
   $manager->finish;
 }
-
-
 $manager->wait_all_children;
+&d("All processing children have completed their work!\n");
 
 # == Exit cleanly
 &ExitProcess;
 
 
-# == Subroutines copied from load_item_from_disk ======
 sub IdentifyType {
-
   my $localBaseItemType;
   if ($data->{frameType} == 4) {
     $localBaseItemType = "Gem";

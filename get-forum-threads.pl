@@ -26,10 +26,10 @@ $debug = 1;
 $sv = 0;
 
 # The depth to crawl each forum for updates
-$maxCheckForumPages = 1;
+$maxCheckForumPages = 50;
 
 # The number of processes to fork
-$forkMe = 1;
+$forkMe = 2;
 
 # Microseconds to sleep for between page requests to avoid excessive requests
 $sleepFor = 500 * 1000;

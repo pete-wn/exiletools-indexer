@@ -81,6 +81,8 @@ sub ProcessUpdate {
   #  followed by a period or a closing tag or spaces
   if ($tree->as_text =~ /IGN:?\s*(?:is\s*)(\S+?)(<|\.)\s*/) {
     $threadInfo{sellerIGN} = $1;
+    # Remove any bad characters from the sellerIGN
+    $threadInfo{sellerIGN} =~ s/(\'|\")//g;
   }
 
   # Look for a global buyout

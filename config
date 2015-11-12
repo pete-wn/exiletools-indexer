@@ -3,5 +3,6 @@ dbcreds:.dbcreds
 basedir:/pwxdata/poe/dev
 datadir:/pwxdata/poe/shops/devdata
 eshost:elasticsearch
+eshost2:elasticsearch2
 esindex:poedev
 estype:item
