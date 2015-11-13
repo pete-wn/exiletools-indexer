@@ -438,48 +438,73 @@ sub parseExtendedMods {
   my $modType = $_[1];
   return unless (($modTypeJSON) && ($modType));
   foreach my $modLine ( @{$data{"$modTypeJSON"}} ) {
-    if ($modLine =~ /^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/) {
-      my $modname = $5;
-      my $value = $2;
-      $modname =~ s/\s+$//g;
-      $item{mods}{$item{attributes}{itemType}}{$modType}{"$1#$4 $modname"} += $value;
-      $item{modsTotal}{"$1#$4 $modname"} += $value;
-      $item{attributes}{"$modTypeJSON"."Count"}++;
-      &setPseudoMods("$1","$modname","$value");
-    } elsif ($modLine =~ /^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/) {
-      my $modname;
-      my $value = $2;
-      my $prefix = $1;
-      my $suffix = $6;
-      if ($value =~ /\%/) {
-        $modname = "$prefix #% $suffix";
-        $value =~ s/\%//g;
-      } elsif ($value =~ /\d+-\d+/) {
-        $modname = "$prefix #-# $suffix";
-      } else {
-        $modname = "$prefix # $suffix";
+    # Parsing for Divination cards has to be done a bit differently from other items
+    if ($item{attributes}{itemType} eq "Card") {
+      # if there's a default line, it's probably a secondary mod with more information, added it to the reward information
+      if ($modLine =~ /^\<default\>\{(.*?):*\} \<(.*?)\>\{(.*?)\}$/) {
+        $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." ($1: $3)";
+        $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." ($1: $3)";
+        $item{info}{tokenized}{DivinationReward} = $item{info}{tokenized}{DivinationReward}." ($1: $3)";
+      # The corrupted line should be treated differently
+      } elsif ($modLine =~ /^\<corrupted\>\{Corrupted\}\r*$/) {
+        $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." (Corrupted)";
+        $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." (Corrupted)";
+        $item{info}{tokenized}{DivinationReward} = $item{info}{tokenized}{DivinationReward}." (Corrupted)";
+      # if the item is a divination card, it may have a <tag>{reward} line
+      } elsif ($modLine =~ /^\<(.*?)\>\{(.*?)\}\r*$/) {
+        $item{mods}{$item{attributes}{itemType}}{DivinationReward} = "$1: $2";
+        $item{modsTotal}{DivinationReward} = "$1: $2";
+        $item{attributes}{"$modTypeJSON"."Count"}++;
+        # Allows tokenized search to match this so you can search for "kaom" in the info.tokenized.DivinationReward field
+        $item{info}{tokenized}{DivinationReward} = "$1: $2";
       }
-      $modname =~ s/\s+$//g;
-      if ($val =~ /Unique Boss deals +(.*?)\% Damage and attacks +(.*?)% faster/) {
-        $value = "$1-$2";
-        $modname = "Unique Boss deals %# Damage and attacks %# faster";
-      }
-      if ($value =~ /(\d+)-(\d+)/) {
-        $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{min} += $1;
-        $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{max} += $2;
-        
-        $item{modsTotal}{$modname}{min} += $1;
-        $item{modsTotal}{$modname}{max} += $2;
- 
-      } else {
-        $item{mods}{$item{attributes}{itemType}}{$modType}{$modname} += $value;
-        $item{modsTotal}{$modname} += $value;
-      }
-      $item{attributes}{"$modTypeJSON"."Count"}++;
     } else {
-      $item{mods}{$item{attributes}{itemType}}{$modType}{$modLine} = \1;
-      $item{modsTotal}{$modLine} = \1;
-      $item{attributes}{"$modTypeJSON"."Count"}++;
+      # Process the line if it starts with a +/- flat number (i.e. "+1 to Magical Unicorns" becomes (+)(1) (to Magical Unicorns)
+      if ($modLine =~ /^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/) {
+        my $modname = $5;
+        my $value = $2;
+        $modname =~ s/\s+$//g;
+        $item{mods}{$item{attributes}{itemType}}{$modType}{"$1#$4 $modname"} += $value;
+        $item{modsTotal}{"$1#$4 $modname"} += $value;
+        $item{attributes}{"$modTypeJSON"."Count"}++;
+        &setPseudoMods("$1","$modname","$value");
+      # Look for lines with numbers elsewhere, such as "Adds 1 additional Magic Unicorn" or "Increased life by 10%"
+      } elsif ($modLine =~ /^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/) {
+        my $modname;
+        my $value = $2;
+        my $prefix = $1;
+        my $suffix = $6;
+        if ($value =~ /\%/) {
+          $modname = "$prefix #% $suffix";
+          $value =~ s/\%//g;
+        } elsif ($value =~ /\d+-\d+/) {
+          $modname = "$prefix #-# $suffix";
+        } else {
+          $modname = "$prefix # $suffix";
+        }
+        $modname =~ s/\s+$//g;
+        if ($val =~ /Unique Boss deals +(.*?)\% Damage and attacks +(.*?)% faster/) {
+          $value = "$1-$2";
+          $modname = "Unique Boss deals %# Damage and attacks %# faster";
+        }
+        if ($value =~ /(\d+)-(\d+)/) {
+          $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{min} += $1;
+          $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{max} += $2;
+          
+          $item{modsTotal}{$modname}{min} += $1;
+          $item{modsTotal}{$modname}{max} += $2;
+   
+        } else {
+          $item{mods}{$item{attributes}{itemType}}{$modType}{$modname} += $value;
+          $item{modsTotal}{$modname} += $value;
+        }
+        $item{attributes}{"$modTypeJSON"."Count"}++;
+      # Anything left over, just assume that it's a description that should be set to TRUE
+      } else {
+        $item{mods}{$item{attributes}{itemType}}{$modType}{$modLine} = \1;
+        $item{modsTotal}{$modLine} = \1;
+        $item{attributes}{"$modTypeJSON"."Count"}++;
+      }
     }
   }
 }
