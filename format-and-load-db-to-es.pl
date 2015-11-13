@@ -26,7 +26,7 @@ $debug = 1;
 $sv = 0;
 
 # The number of processes to fork
-$forkMe = 1;
+$forkMe = 5;
 
 # == Initial Startup
 &StartProcess;
@@ -158,7 +158,6 @@ foreach $forkID (keys(%uhash)) {
     my $chaosEquiv = $datarow[11];
     my $inES = $datarow[12];
 
-    $count++;
     no autovivification;
     local %item;
 
@@ -198,6 +197,20 @@ foreach $forkID (keys(%uhash)) {
     }
     my $jsonout = &formatJSON("$rawjson");
 
+    if ($item{attributes}{baseItemType} eq "Unknown") {
+      &d("WARNING: item with uuid $item{uuid} ($item{info}{fullName} has an Unknown baseItemType! This item will not be loaded. Please fix.\n");
+      $dbh->do("INSERT IGNORE INTO `log-unknown` SET
+                `uuid`=\"$item{uuid}\",
+                `timestamp`=\"$startTime\",
+                `md5sum`=\"$item{md5sum}\",
+                `fullName`=\"$item{info}{fullName}\"
+                ") || die "SQL ERROR: $DBI::errstr\n";
+      next;
+    }
+
+
+    $count++;
+
   # Some debugging stuff 
   # Pretty Version Output
 #    my $jsonchunk = JSON->new->utf8;
@@ -205,6 +218,7 @@ foreach $forkID (keys(%uhash)) {
 #    print "$prettychunk\n";
 #    last if ($count > 5);
   
+
     $bulk->index({ id => "$uuid", source => "$jsonout" });
     push @changeFlagInDB, "$uuid";
  
