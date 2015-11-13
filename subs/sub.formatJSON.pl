@@ -16,10 +16,6 @@ sub formatJSON {
 
 
   $item{info}{name} = $data{name};
-  $item{info}{name} =~ s/Maelst(.*?)m/Maelstrom/g;
-  $item{info}{name} =~ s/Mj(.*?)lner/Mjolner/g;
-  $item{info}{name} =~ s/Ngamahu(.*?)s Sign/Ngamahu\'s Sign/g;
-  $item{info}{name} =~ s/Tasalio(.*?)s Sign/Tasalio\'s Sign/g;
 
   $item{info}{name} = $item{info}{fullName} unless ($item{info}{name});
   $item{info}{typeLine} = $data{typeLine};
@@ -160,13 +156,23 @@ sub formatJSON {
             $item{properties}{$item{attributes}{baseItemType}}{type}{$prop} = \1;
           }
         } else {
-          $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
+          # Use a string if it's a string, number of it's a number
+          if ($value =~ /^\d+$/) {
+            $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
+          } else {
+            $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
+          }
         }
       }
     } elsif (($data{properties}[$p]{values}[0][0]) && ($data{properties}[$p]{values}[0][1])) {
       my $property = $data{properties}[$p]{values}[0][0];
       my $value = $data{properties}[$p]{values}[0][1];
-      $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
+      # Use a string if it's a string, number of it's a number
+      if ($value =~ /^\d+$/) {
+        $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
+      } else {
+        $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
+      }
     }
     $p++;
   }
@@ -235,9 +241,12 @@ sub formatJSON {
     }
   }
 
-  # Add a PseudoMod for total resists
-  foreach $elekey (keys (%{$item{modsPseudo}})) {
-    $item{modsPseudo}{eleResistNum}++ if ($elekey =~ /^eleResistSum/);
+  # Add a PseudoMod count for total resists
+  if ($item{modsPseudo}) {
+    foreach $elekey (keys (%{$item{modsPseudo}})) {
+      $item{modsPseudo}{eleResistNum}++ if ($elekey =~ /^eleResistSum/);
+      $item{modsPseudo}{allResistNum}++ if ($elekey =~ /^(resistSumChaos|eleResistSum)/);
+    }
   }
 
   my $jsonout = JSON::XS->new->utf8->encode(\%item);
@@ -330,38 +339,56 @@ sub setPseudoMods {
   my $modname = $_[1];
   my $value = $_[2];
 
+  # The code for calculating pseudo mods is a little messy right now.
+  # We can proably do this without so many nested ifs
+
   if ($modname =~ /to (\S+) Resistance/) {
-    if ($modifier eq '+') {
-      $item{modsPseudo}{eleResistTotal} += $value;
-      $item{modsPseudo}{"eleResistSum$1"} += $value;
+    if ($modname =~ /Chaos/i) {
+      if ($modifier eq '+') {
+        $item{modsPseudo}{allResistTotal} += $value;
+        $item{modsPseudo}{resistSumChaos} += $value;
+      } else {
+        $item{modsPseudo}{allResistTotal} -= $value;
+        $item{modsPseudo}{resistSumChaos} -= $value;
+      }
     } else {
-      $item{modsPseudo}{eleResistTotal} -= $value;
-      $item{modsPseudo}{"eleResistSum$1"} -= $value;
+      if ($modifier eq '+') {
+        $item{modsPseudo}{allResistTotal} += $value;
+        $item{modsPseudo}{eleResistTotal} += $value;
+        $item{modsPseudo}{"eleResistSum$1"} += $value;
+      } else {
+        $item{modsPseudo}{allResistTotal} -= $value;
+        $item{modsPseudo}{eleResistTotal} -= $value;
+        $item{modsPseudo}{"eleResistSum$1"} -= $value;
+      }
     }
+  # We're assuming right now there is no "+ to Chaos and Ele" resist mods
   } elsif ($modname =~ /to (\S+) and (\S+) Resistances/) {
+    # If the mod adds to resist, add it to the total twice (one for each resist)
     if ($modifier eq '+') {
-      $item{modsPseudo}{eleResistTotal} += $value;
-      $item{modsPseudo}{eleResistTotal} += $value;
+      $item{modsPseudo}{allResistTotal} += $value + $value;
+      $item{modsPseudo}{eleResistTotal} += $value + $value;
       $item{modsPseudo}{"eleResistSum$1"} += $value;
       $item{modsPseudo}{"eleResistSum$2"} += $value;
+    # Same if it subtracts two resists
     } else {
-      $item{modsPseudo}{eleResistTotal} -= $value;
-      $item{modsPseudo}{eleResistTotal} -= $value;
+      $item{modsPseudo}{eleResistTotal} -= $value - $value;
+      $item{modsPseudo}{allResistTotal} -= $value - $value;
       $item{modsPseudo}{"eleResistSum$1"} -= $value;
       $item{modsPseudo}{"eleResistSum$2"} -= $value;
     }
   } elsif ($modname =~ /to all Elemental Resistances/) {
+    # If the mod adds to resist, add it to the total thrice (one for each resist)
     if ($modifier eq '+') {
-      $item{modsPseudo}{eleResistTotal} += $value;
-      $item{modsPseudo}{eleResistTotal} += $value;
-      $item{modsPseudo}{eleResistTotal} += $value;
+      $item{modsPseudo}{eleResistTotal} += $value + $value + $value;
+      $item{modsPseudo}{allResistTotal} += $value + $value + $value;
       $item{modsPseudo}{eleResistSumFire} += $value;
       $item{modsPseudo}{eleResistSumCold} += $value;
       $item{modsPseudo}{eleResistSumLightning} += $value;
+    # Same if it subtracts all resists
     } else {
-      $item{modsPseudo}{eleResistTotal} -= $value;
-      $item{modsPseudo}{eleResistTotal} -= $value;
-      $item{modsPseudo}{eleResistTotal} -= $value;
+      $item{modsPseudo}{eleResistTotal} -= $value - $value - $value;
+      $item{modsPseudo}{allResistTotal} -= $value - $value - $value;
       $item{modsPseudo}{eleResistSumFire} -= $value;
       $item{modsPseudo}{eleResistSumCold} -= $value;
       $item{modsPseudo}{eleResistSumLightning} -= $value;

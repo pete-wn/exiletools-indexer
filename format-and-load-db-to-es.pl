@@ -68,7 +68,7 @@ if ($updateCount < 1) {
 
 # If this is a small update, override the number of forks to something that isn't wasteful
 # (we shouldn't be processing less than 10k items per fork
-my $maxForkCheck = int($updateCount / 10000 / $forkMe) + 1;
+my $maxForkCheck = int($updateCount / 10000) + 1;
 
 if ($maxForkCheck < $forkMe) {
   $forkMe = $maxForkCheck;
