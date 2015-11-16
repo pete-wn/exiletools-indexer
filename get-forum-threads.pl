@@ -26,13 +26,13 @@ $debug = 1;
 $sv = 0;
 
 # The depth to crawl each forum for updates
-$maxCheckForumPages = 8;
+$maxCheckForumPages = 50;
 
 # The number of processes to fork
 $forkMe = 2;
 
 # Microseconds to sleep for between page requests to avoid excessive requests
-$sleepFor = 500 * 1000;
+$sleepFor = 600 * 1000;
 
 # The run type - this is for later features
 $runType = "normal";
@@ -41,10 +41,15 @@ $runType = "normal";
 &StartProcess;
 
 # Some hard coded variables for testing
-$forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
-$forums{darkshrine}{forumID} = "597";
-$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
-$forums{darkshrinehc}{forumID} = "598";
+#$forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
+#$forums{darkshrine}{forumID} = "597";
+#$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
+#$forums{darkshrinehc}{forumID} = "598";
+
+$forums{standard}{forumURL} = "http://www.pathofexile.com/forum/view-forum/standard-trading-shops/page";
+$forums{standard}{forumID} = "standard-trading-shops";
+$forums{hardcore}{forumURL} = "http://www.pathofexile.com/forum/view-forum/hardcore-trading-shops/page";
+$forums{harcore}{forumID} = "harcore-trading-shops";
 
 
 # Terminate our DB connection since we're going to do some weird forking
@@ -211,7 +216,13 @@ sub FetchForumPage {
       # loop instead of a direct loop in case the ordering changes, might not be
       # the best idea but oh well.
 
-      if ($class eq "views") {
+      # Search to see if this is a sticky thread and ignore it if so
+      if ($class eq "flags first") { 
+        if ($column->as_HTML =~ /\<div class=\"sticky\"\>/) {
+          # This is a sticky thread, abort the iteration of these columns
+          last;
+        }
+      } elsif ($class eq "views") {
         $viewcount = $column->as_text;
       } elsif ($class eq "replies") {
         $replies = $column->as_text;
