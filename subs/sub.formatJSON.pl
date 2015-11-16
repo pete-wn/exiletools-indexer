@@ -180,6 +180,14 @@ sub formatJSON {
     $p++;
   }
 
+  # If the item is a gem, it may have an additionalProperties for experience, let's log that
+  if ($data{additionalProperties}[0]{values}[0][0] =~ /^\d+\/\d+$/) {
+    my ($xpCurrent, $xpGoal) = split(/\//, $data{additionalProperties}[0]{values}[0][0]);
+    $item{properties}{$item{attributes}{baseItemType}}{Experience}{Current} += $xpCurrent;
+    $item{properties}{$item{attributes}{baseItemType}}{Experience}{NextLevel} += $xpGoal;
+    $item{properties}{$item{attributes}{baseItemType}}{Experience}{PercentLeveled} += int($xpCurrent / $xpGoal * 100);
+  }
+
   &parseExtendedMods("explicitMods","explicit") if ($data{explicitMods});
   &parseExtendedMods("implicitMods","implicit") if ($data{implicitMods});
   &parseExtendedMods("craftedMods","crafted") if ($data{craftedMods});
