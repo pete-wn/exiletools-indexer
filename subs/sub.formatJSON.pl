@@ -59,6 +59,8 @@ sub formatJSON {
   } elsif ($data{frameType} == 5) {
     $item{attributes}{rarity} = "Currency";
   } elsif ($data{frameType} == 6) {
+    $item{attributes}{rarity} = "Divination Card";
+  } elsif ($data{frameType} == 7) {
     $item{attributes}{rarity} = "Quest Item";
   }
 
@@ -269,6 +271,10 @@ sub IdentifyType {
   if ($data{frameType} == 4) {
     $localBaseItemType = "Gem";
   } elsif ($data{frameType} == 6) {
+    # frameType has been changed to 6 for Divination Cards and 7 for Quest Items
+    # (See https://github.com/trackpete/exiletools-indexer/issues/30)
+    # However I'm leaving this code in just in case any weird legacy issues get
+    # through
     if ($data{icon} =~ /Divination\/InventoryIcon.png/) {
       $localBaseItemType = "Card";
     } else {
@@ -276,6 +282,8 @@ sub IdentifyType {
     }
   } elsif ($data{frameType} == 5) {
     $localBaseItemType = "Currency";
+  } elsif ($data{frameType} == 7) {
+    $localBaseItemType = "Quest Item";
   } elsif ($data{descrText} =~ /Travel to this Map by using it in the Eternal Laboratory/) {
     $localBaseItemType = "Map";
   } elsif ($data{descrText} =~ /Place into an allocated Jewel Socket/) {

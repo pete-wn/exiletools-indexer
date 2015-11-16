@@ -726,6 +726,7 @@ $gearBaseType{"Infernal Sword"} = Sword;
 $gearBaseType{"Splintered Tower Shield"} = Shield;
 $gearBaseType{"Alder Spiked Shield"} = Shield;
 $gearBaseType{"Burnished Spiked Shield"} = Shield;
+$gearBaseType{"Alloyed Spiked Shield"} = Shield;
 $gearBaseType{"Corroded Tower Shield"} = Shield;
 $gearBaseType{"Rawhide Tower Shield"} = Shield;
 $gearBaseType{"Cedar Tower Shield"} = Shield;

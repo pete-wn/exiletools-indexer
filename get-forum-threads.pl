@@ -49,7 +49,7 @@ $runType = "normal";
 $forums{standard}{forumURL} = "http://www.pathofexile.com/forum/view-forum/standard-trading-shops/page";
 $forums{standard}{forumID} = "standard-trading-shops";
 $forums{hardcore}{forumURL} = "http://www.pathofexile.com/forum/view-forum/hardcore-trading-shops/page";
-$forums{harcore}{forumID} = "harcore-trading-shops";
+$forums{hardcore}{forumID} = "harcore-trading-shops";
 
 
 # Terminate our DB connection since we're going to do some weird forking

@@ -198,7 +198,7 @@ foreach $forkID (keys(%uhash)) {
     my $jsonout = &formatJSON("$rawjson");
 
     # If the item is a Quest Item but not a Divination card, don't load it into the ES index
-    if ($item{attributes}{baseItemType} eq "Quest Item") {
+    if ($item{attributes}{rarity} eq "Quest Item") {
       push @changeFlagInDB, "$uuid";
       next;
     }
