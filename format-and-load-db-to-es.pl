@@ -43,22 +43,33 @@ my %sellerHash = %{$dbh->selectall_hashref("select `threadid`,`sellerAccount`,`s
 # The base query feeding this process will vary depending on the arguments given on the
 # command line. Valid arguments currently include:
 #   full - does a full update of everything
-#   ###### - where ##### is an epoch timestamp, pulls all items newer than this
+#   timestamp ###### - where ##### is an epoch timestamp, pulls all items newer than this
+#   max #### - does a max of #### in one run, ignores if they are inES or not
 if ($ARGV[0] eq "full") {
   &d("!! WARNING: FULL UPDATE SPECIFIED! All previously indexed items will be scanned and re-indexed.\n");
   print localtime()." Selecting items from items\n";
   $pquery = "select `uuid` from `items` where `inES`=\"yes\"";
   $cquery = "select count(`uuid`) from `items` where `inES`=\"yes\"";
-} elsif ($ARGV[0]) {
-  $pquery = "select `uuid` from `items` where `updated`>$ARGV[0]";
-  $cquery = "select count(`uuid`) from `items` where `updated`>$ARGV[0]";
+} elsif ($ARGV[0] eq "timestamp") {
+  &d("Selecting items updated since $ARGV[1]\n");
+  $pquery = "select `uuid` from `items` where `updated`>$ARGV[1]";
+  $cquery = "select count(`uuid`) from `items` where `updated`>$ARGV[1]";
+} elsif ($ARGV[0] eq "max") {
+  &d("Selecting a max of $ARGV[1]\n");
+  $maxSelect = $ARGV[1];
+  $pquery = "select `uuid` from `items` LIMIT $maxSelect";
 } else {
   $pquery = "select `uuid` from `items` where `inES`=\"no\"";
   $cquery = "select count(`uuid`) from `items` where `inES`=\"no\"";
 }
 
 # Get a count of how many items we will process
-my $updateCount = $dbh->selectrow_array("$cquery");
+my $updateCount;
+if ($maxSelect) {
+  $updateCount = $maxSelect;
+} else {
+  $updateCount = $dbh->selectrow_array("$cquery");
+}
 
 if ($updateCount < 1) {
   &d("!! No new uuid's to process! Aborting run.\n");

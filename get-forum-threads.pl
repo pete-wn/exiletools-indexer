@@ -26,7 +26,7 @@ $debug = 1;
 $sv = 0;
 
 # The depth to crawl each forum for updates
-$maxCheckForumPages = 50;
+$maxCheckForumPages = 8;
 
 # The number of processes to fork
 $forkMe = 2;
@@ -41,10 +41,10 @@ $runType = "normal";
 &StartProcess;
 
 # Some hard coded variables for testing
-#$forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
-#$forums{darkshrine}{forumID} = "597";
-#$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
-#$forums{darkshrinehc}{forumID} = "598";
+$forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
+$forums{darkshrine}{forumID} = "597";
+$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
+$forums{darkshrinehc}{forumID} = "598";
 
 $forums{standard}{forumURL} = "http://www.pathofexile.com/forum/view-forum/standard-trading-shops/page";
 $forums{standard}{forumID} = "standard-trading-shops";

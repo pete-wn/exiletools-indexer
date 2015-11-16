@@ -8,95 +8,11 @@ $config = '
 {
   "poedev" : {
     "aliases" : { },
-    "mappings" : {
-      "_default_" : {
-        "_all" : {
-          "enabled" : true
-        },
-        "dynamic_templates" : [ {
-          "string_fields" : {
-            "mapping" : {
-              "index" : "not_analyzed",
-              "omit_norms" : true,
-              "type" : "string"
-            },
-            "match" : "*",
-            "match_mapping_type" : "string"
-          }
-        }, {
-          "number_as_double" : {
-            "mapping" : {
-              "type" : "double"
-            },
-            "match" : "*",
-            "match_mapping_type" : "long"
-          }
-        } ]
-      },
-      "item" : {
-        "_all" : {
-          "enabled" : true
-        },
-        "dynamic_templates" : [ {
-          "string_fields" : {
-            "mapping" : {
-              "index" : "not_analyzed",
-              "omit_norms" : true,
-              "type" : "string"
-            },
-            "match" : "*",
-            "match_mapping_type" : "string"
-          }
-        }, {
-          "number_as_double" : {
-            "mapping" : {
-              "type" : "double"
-            },
-            "match" : "*",
-            "match_mapping_type" : "long"
-          }
-        } ],
-        "properties" : {
-          "info" : {
-            "properties" : {
-              "tokenized" : {
-                "type" : "string"
-              }
-            }
-          },
-          "shop" : {
-            "properties" : {
-              "added" : {
-                "type" : "date",
-                "format" : "strict_date_optional_time||epoch_millis"
-              },
-              "lastUpdateDB" : {
-                "type" : "date",
-                "format" : "yyyy-MM-dd HH:mm:ss"
-              },
-              "modified" : {
-                "type" : "date",
-                "format" : "strict_date_optional_time||epoch_millis"
-              },
-              "updated" : {
-                "type" : "date",
-                "format" : "strict_date_optional_time||epoch_millis"
-              }
-            }
-          }
-        }
-      }
-    },
     "settings" : {
       "index" : {
-        "creation_date" : "1447276364474",
         "refresh_interval" : "60s",
         "number_of_shards" : "5",
-        "number_of_replicas" : "1",
-        "uuid" : "WyjvreIeSP2B7982jWZzAQ",
-        "version" : {
-          "created" : "2000099"
-        }
+        "number_of_replicas" : "1"
       }
     },
     "warmers" : { }
@@ -104,9 +20,116 @@ $config = '
 }
 ';
 
+# Change poedev here as needed
+$template = '
+{
+  "template" : "poedev*",
+  "settings" : {
+    "index" : {
+      "refresh_interval" : "60s",
+      "number_of_shards" : "5",
+      "number_of_replicas" : "1"
+    },
+    "analysis" : {
+      "analyzer" : {
+        "edge_ngram" : {
+          "tokenizer" : "edge_ngram"
+        }
+      },
+      "tokenizer" : {
+        "edge_ngram" : {
+          "type" : "edgeNGram",
+          "min_gram" : "3",
+          "max_gram" : "6",
+          "token_chars": [ "letter", "digit" ]
+        }
+      }
+    }
+  },
+  "mappings" : {
+    "_default_" : {
+      "_all" : {
+        "enabled" : true
+      },
+      "dynamic_templates" : [ 
+      {
+        "do_not_analyze_string_fields" : {
+          "match_mapping_type" : "string",
+          "match" : "*",
+          "mapping" : {
+            "type" : "string",
+            "index" : "not_analyzed"
+          }
+        }
+      }, {
+        "all_numbers_as_long_for_decimals" : {
+          "mapping" : {
+            "type" : "double"
+          },
+          "match_mapping_type" : "long"
+        }
+      }
+      ],
+      "properties" : {
+        "shop" : {
+          "properties" : {
+            "added" : {
+              "type" : "date",
+              "format" : "strict_date_optional_time||epoch_millis"
+            },
+            "lastUpdateDB" : {
+              "type" : "date",
+              "format" : "yyyy-MM-dd HH:mm:ss"
+            },
+            "modified" : {
+              "type" : "date",
+              "format" : "strict_date_optional_time||epoch_millis"
+            },
+            "updated" : {
+              "type" : "date",
+              "format" : "strict_date_optional_time||epoch_millis"
+            }
+          }
+        },
+        "info" : {
+          "properties" : {
+            "tokenized" : {
+              "properties" : {
+                "fullName" : {
+                  "type" : "string",
+                  "index" : "analyzed",
+                  "analyzer" : "edge_ngram"
+                },
+                "descrText" : {
+                  "type" : "string",
+                  "index" : "analyzed",
+                  "analyzer" : "edge_ngram"
+                },
+                "DivinationReward" : {
+                  "type" : "string",
+                  "index" : "analyzed",
+                  "analyzer" : "edge_ngram"
+                },
+                "flavourText" : {
+                  "type" : "string",
+                  "index" : "analyzed",
+                  "analyzer" : "edge_ngram"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+';
+
 print "Deleting $indexName Index:\n";
 system("curl -XDELETE \'http://elasticsearch:9200/$indexName/?pretty\'");
 
+print "Adding Template for $indexName Index:\n";
+system("curl -XPUT \'http://elasticsearch:9200/_template/$indexName/?pretty\' -d \'$template\'");
+
 print "Creating New $indexName Index:\n";
 system("curl -XPUT \'http://elasticsearch:9200/$indexName/?pretty\' -d \'$config\'");
-
