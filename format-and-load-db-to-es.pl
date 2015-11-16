@@ -197,6 +197,13 @@ foreach $forkID (keys(%uhash)) {
     }
     my $jsonout = &formatJSON("$rawjson");
 
+    # If the item is a Quest Item but not a Divination card, don't load it into the ES index
+    if ($item{attributes}{baseItemType} eq "Quest Item") {
+      push @changeFlagInDB, "$uuid";
+      next;
+    }
+
+    # Skip if the item is otherwise Unknown, but log and alert
     if ($item{attributes}{baseItemType} eq "Unknown") {
       &d("WARNING: item with uuid $item{uuid} ($item{info}{fullName} has an Unknown baseItemType! This item will not be loaded. Please fix.\n");
       $dbh->do("INSERT IGNORE INTO `log-unknown` SET

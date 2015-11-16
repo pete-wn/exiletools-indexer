@@ -128,6 +128,9 @@ sub formatJSON {
         $value = \1 unless ($value);
       }
 
+      # If the property contains (MAX) (for gems) just remove that portion so it's numeric
+      $value =~ s/ \(MAX\)//ig;
+
       $property =~ s/\%0/#/g;
       $property =~ s/\%1/#/g;
 
