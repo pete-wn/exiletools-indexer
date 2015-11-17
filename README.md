@@ -8,8 +8,8 @@ Path of Exile Shop Forum Indexer used by http://exiletools.com
 
 There are a few major reasons I'm doing this:
 
-1. The indexer itself grew very organically over the last year and is now very messy and a bit inefficient. For example, there is no reason to save data files to disk anymore, and it reads from a ton of different databases.
-2. Github will help me track improvements and changes in order to streamline the system
+1. The old indexer backend grew very organically and ended up being somewhat clumsy. I needed to re-factor it and decided to use open sourcing it as a goal.
+2. Github will help me track improvements and changes in order to streamline the system (check out the Issues page!)
 3. If someone else wants to contribute or just run their own indexer, they can
 4. Interested people can see some of the weird stuff that goes into this and maybe give me some better ideas about things
 
@@ -20,6 +20,8 @@ The Exile Tools Indexer requires:
 1. Perl w/ many modules (detail to be added, but perl will tell you)
 2. MariaDB server
 3. ElasticSearch server
+
+The setup directory contains an example SQL file that will set up the databases required, and a simple perl script that will create the necessary Elastic Search indexes with the right settings/dynamic mappings/etc. Then you'll need to edit the config file with the locations, database information (including a credentials file), Elastic Search host, etc. Once everything is up and running you should be able to start running the pipeline! :o
 
 # Indexer Pipeline
 

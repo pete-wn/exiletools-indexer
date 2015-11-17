@@ -1,7 +1,7 @@
 dbhost:localhost
 dbcreds:.dbcreds
 basedir:/pwxdata/poe/dev
-datadir:/pwxdata/poe/shops/devdata
+datadir:/pwxdata/poe/shops/data/threads
 eshost:elasticsearch
 eshost2:elasticsearch2
 esindex:poedev

@@ -25,7 +25,7 @@ $debug = 1;
 $sv = 0;
 
 # The number of processes to fork
-$forkMe = 5;
+$forkMe = 8;
 
 # For debugging, the maximum number of threads to process before aborting
 $maxProcess = 99999999999999999;
@@ -47,15 +47,6 @@ $dbh->disconnect;
 my $updateCount = (keys(%updateHash));
 &d("Preparing to process $updateCount updates...\n");
 
-# Temporarily added
-#$dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-
-#&LoadUpdate("1467641","1447170542");
-
-# Early exit for testing!!
-# == Exit cleanly
-#&ExitProcess;
-
 my $manager = new Parallel::ForkManager( $forkMe );
 
 #foreach $threadid(sort keys(%updateHash)) {
@@ -64,7 +55,7 @@ foreach $threadid(keys(%updateHash)) {
   last if ($processcount > $maxProcess);
   $manager->start and next;
     $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-    print "Processing THREAD $threadid ($processcount of $updateCount)\n";
+    print "[$$] Processing THREAD $threadid ($processcount of $updateCount)\n";
     foreach $timestamp (sort keys(%{$updateHash{$threadid}})) {
       &LoadUpdate("$threadid","$timestamp");
     }

@@ -170,7 +170,7 @@ sub ProcessUpdate {
     &d("  WARNING: JSON data not found in $conf{datadir}/raw/$timestamp.html - possible empty update. Skipping.\n");
     $dbhf->do("UPDATE `shop-queue` SET
                    processed=\"5\",
-                   jsonfound=\"0\"
+                   nojsonfound=\"1\"
                    WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
                    ") || die "SQL ERROR: $DBI::errstr\n";
     return;
