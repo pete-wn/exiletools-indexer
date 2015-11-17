@@ -39,6 +39,8 @@ $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") |
 &d("Building Thread/Account Lookup Table...\n");
 my %sellerHash = %{$dbh->selectall_hashref("select `threadid`,`sellerAccount`,`sellerIGN`,`generatedWith`,`threadTitle` FROM `thread-last-update`","threadid")};
 
+&d("Building list of unique item names based on icons in currently loaded data...\n");
+&BuildUniqueInfoHash;
 
 # The base query feeding this process will vary depending on the arguments given on the
 # command line. Valid arguments currently include:
@@ -137,7 +139,9 @@ foreach $forkID (keys(%uhash)) {
       "$conf{eshost}:9200",
       "$conf{eshost2}:9200"
     ],
-    trace_to => ['File','/tmp/eslog.txt'],
+    # enable this for debug but BE CAREFUL it will create huge log files super fast
+    # trace_to => ['File','/tmp/eslog.txt'],
+
     # Huge request timeout for bulk indexing
     request_timeout => 300
   );

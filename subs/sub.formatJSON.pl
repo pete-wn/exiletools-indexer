@@ -7,45 +7,17 @@ sub formatJSON {
   # De-reference the hash for simplicity
   $json = JSON::XS->new->utf8->pretty->allow_nonref;
   %data = %{$json->decode($rawjson)};
-  
-  $item{info}{fullName} = $data{name}." ".$data{typeLine}; 
-  # Remove the Superior and/or any leading white space from the fullName
-  $item{info}{fullName} =~ s/^Superior//g;
-  $item{info}{fullName} =~ s/^\s+//g;
-  $item{info}{tokenized}{fullName} = $item{info}{fullName};
 
-
-  $item{info}{name} = $data{name};
-
-  $item{info}{name} = $item{info}{fullName} unless ($item{info}{name});
-  $item{info}{typeLine} = $data{typeLine};
-  if ($data{descrText}) {
-    $item{info}{descrText} = $data{descrText};
-    $item{info}{tokenized}{descrText} = $data{descrText};
-
-  }
-
-
+  $item{attributes}{identified} = $data{identified};
   $item{info}{icon} = $data{icon};
   # Strip anything after a ? from it, no need to have forced dimensions
   $item{info}{icon} =~ s/\?.*$//g;
 
-  $item{attributes}{corrupted} = $data{corrupted};
-  $item{attributes}{support} = $data{support};
-  $item{attributes}{identified} = $data{identified};
+  # Remove the Superior and/or any leading white space from typeLine
+  $data{typeLine} =~ s/^(Superior |\s+)//o;
+
   $item{attributes}{frameType} = $data{frameType};
-  if ($data{duplicated}) {
-    $item{attributes}{mirrored} = $data{duplicated};
-  } else {
-    $item{attributes}{mirrored} = \0;
-  }
-  if ($data{lockedToCharacter}) {
-    $item{attributes}{lockedToCharacter} = $data{lockedToCharacter};
-  } else {
-    $item{attributes}{lockedToCharacter} = \0;
-  }
-  $item{attributes}{inventoryWidth} = $data{w};
-  $item{attributes}{inventoryHeight} = $data{h};
+  # Set the item rarity based on frameType digit
   if ($data{frameType} == 0) {
     $item{attributes}{rarity} = "Normal";
   } elsif ($data{frameType} == 1) {
@@ -63,6 +35,39 @@ sub formatJSON {
   } elsif ($data{frameType} == 7) {
     $item{attributes}{rarity} = "Quest Item";
   }
+  # If the item is an unidentified rare, use the %uniqueInfoHash to see if we can identify it
+  if (($item{attributes}{rarity} eq "Unique") && ($item{attributes}{identified} <1)) {
+    $data{name} = $uniqueInfoHash{$item{info}{icon}} if ($uniqueInfoHash{$item{info}{icon}});
+  }
+ 
+  $item{info}{fullName} = $data{name}." ".$data{typeLine}; 
+  # Remove the Superior and/or any leading white space from fullName in case we got it somewhere in the merge
+  $item{info}{fullName} =~ s/^(Superior |\s+)//o;
+  $item{info}{tokenized}{fullName} = $item{info}{fullName};
+  $item{info}{name} = $data{name};
+
+  $item{info}{name} = $item{info}{fullName} unless ($item{info}{name});
+  $item{info}{typeLine} = $data{typeLine};
+
+  if ($data{descrText}) {
+    $item{info}{descrText} = $data{descrText};
+    $item{info}{tokenized}{descrText} = $data{descrText};
+  }
+
+  $item{attributes}{corrupted} = $data{corrupted};
+  $item{attributes}{support} = $data{support};
+  if ($data{duplicated}) {
+    $item{attributes}{mirrored} = $data{duplicated};
+  } else {
+    $item{attributes}{mirrored} = \0;
+  }
+  if ($data{lockedToCharacter}) {
+    $item{attributes}{lockedToCharacter} = $data{lockedToCharacter};
+  } else {
+    $item{attributes}{lockedToCharacter} = \0;
+  }
+  $item{attributes}{inventoryWidth} = $data{w};
+  $item{attributes}{inventoryHeight} = $data{h};
 
   foreach my $flava (@{$data{flavourText}}) {
     # I strip the \r out because it doesn't blend well
@@ -528,7 +533,37 @@ sub parseExtendedMods {
   }
 }
 
+sub BuildUniqueInfoHash {
+  our %uniqueInfoHash;
 
+  $el = Search::Elasticsearch->new(
+    nodes =>  [
+      "$conf{eshost}:9200"
+    ]
+  );
+
+  my %search;
+  $search{index} = "$conf{esindex}";
+  $search{type} = "$conf{estype}";
+  $search{body}{size} = 0;
+  $search{body}{query}{bool}{filter}[0]{term}{"attributes.rarity"} = "Unique";
+  $search{body}{query}{bool}{filter}[1]{term}{"attributes.identified"} = "True";
+  $search{body}{aggs}{"Icons"}{terms}{field} = "info.icon";
+  $search{body}{aggs}{"Icons"}{terms}{size} = 5000;
+  $search{body}{aggs}{"Icons"}{terms}{min_doc_count} = 20;
+  $search{body}{aggs}{"Icons"}{aggs}{"Names"}{terms}{field} = "info.name";
+  $search{body}{aggs}{"Icons"}{aggs}{"Names"}{terms}{min_doc_count} = 20;
+  $search{body}{aggs}{"Icons"}{aggs}{"Names"}{terms}{size} = 20;
+  my $results = $el->search(%search);
+
+  foreach $iconName (@{$results->{aggregations}->{Icons}->{buckets}}) {
+    next if ($iconName->{key} =~ /Alt\.png/);
+    foreach $itemName (@{$iconName->{Names}->{buckets}}) {
+      next if ($itemName->{key} =~ /Agnerod/);
+      $uniqueInfoHash{$iconName->{key}} = $itemName->{key};
+    }
+  }
+}
 
 
 
