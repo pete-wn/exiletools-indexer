@@ -26,7 +26,7 @@ $debug = 1;
 $sv = 0;
 
 # The depth to crawl each forum for updates
-$maxCheckForumPages = 8;
+$maxCheckForumPages = 1;
 
 # The number of processes to fork
 $forkMe = 2;
@@ -40,24 +40,12 @@ $runType = "normal";
 # == Initial Startup
 &StartProcess;
 
-# Some hard coded variables for testing
-$forums{darkshrine}{forumURL} = "http://www.pathofexile.com/forum/view-forum/597/page";
-$forums{darkshrine}{forumID} = "597";
-$forums{darkshrinehc}{forumURL} = "http://www.pathofexile.com/forum/view-forum/598/page";
-$forums{darkshrinehc}{forumID} = "598";
-
-$forums{standard}{forumURL} = "http://www.pathofexile.com/forum/view-forum/standard-trading-shops/page";
-$forums{standard}{forumID} = "standard-trading-shops";
-$forums{hardcore}{forumURL} = "http://www.pathofexile.com/forum/view-forum/hardcore-trading-shops/page";
-$forums{hardcore}{forumID} = "harcore-trading-shops";
-
-
 # Terminate our DB connection since we're going to do some weird forking
 $dbh->disconnect if ($dbh->ping);
 
 # Fork a new process for each forum to scan, up to a max of $forkMe processes
 my $manager = new Parallel::ForkManager( $forkMe );
-foreach $forum (keys(%forums)) {
+foreach $forum (keys(%activeLeagues)) {
   # FORK START
   $manager->start and next;
 
@@ -75,7 +63,7 @@ foreach $forum (keys(%forums)) {
   # This subroutine will grab the forum page and look for updates, calling FetchShopPage for any
   # it notices need to be updated
   for (my $page=1; $page <= $maxCheckForumPages; $page++) {
-    my $status = &FetchForumPage("$forums{$forum}{forumURL}/$page","$forums{$forum}{forumID}","$forum");
+    my $status = &FetchForumPage("$activeLeagues{$forum}{shopForumURL}/$page","$activeLeagues{$forum}{shopForumID}","$forum");
     if ($status eq "Maintenance") {
       &d("FetchForumPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
       $stats{Errors}++;

@@ -164,6 +164,34 @@ LOCK TABLES `locks` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `log-unknown`
+--
+
+DROP TABLE IF EXISTS `log-unknown`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `log-unknown` (
+  `timestamp` int(11) NOT NULL,
+  `uuid` varchar(128) NOT NULL,
+  `md5sum` char(32) NOT NULL,
+  `fullName` varchar(196) NOT NULL,
+  UNIQUE KEY `md5sum` (`md5sum`),
+  UNIQUE KEY `uuid` (`uuid`),
+  UNIQUE KEY `fullName` (`fullName`),
+  KEY `timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `log-unknown`
+--
+
+LOCK TABLES `log-unknown` WRITE;
+/*!40000 ALTER TABLE `log-unknown` DISABLE KEYS */;
+/*!40000 ALTER TABLE `log-unknown` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `raw-json`
 --
 
@@ -339,4 +367,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-11-11 16:55:59
+-- Dump completed on 2015-11-17 11:13:11
