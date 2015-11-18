@@ -41,15 +41,14 @@ if ($args{maxthreads}) {
 if ($args{forks}) {
   $forkMe = $args{forks};
 } else {
-  $forkMe = 5;
+  $forkMe = 4;
 }
 
 # Microseconds to sleep for between page requests to avoid excessive requests
-# Note that we're much more aggressive for this script by default
 if ($args{sleep}) {
   $sleepFor = $args{sleep} * 1000;
 } else {
-  $sleepFor = 300 * 1000;
+  $sleepFor = 500 * 1000;
 }
 
 # How many hours a thread should be idle for before we mark it for refresh
@@ -57,7 +56,7 @@ if ($args{sleep}) {
 if ($args{stale}) {
   $staleBefore = $startTime - ($args{stale} * 3600);
 } else {
-  $staleBefore = $startTime - (36 * 3600);
+  $staleBefore = $startTime - (12 * 3600);
 }
 
 # This tells fetch-stats why type of run this was
@@ -82,7 +81,7 @@ $maxInHash = int($updateCount / $forkMe) + 1;
 &d(" > $updateCount stale threads to be updated [$forkMe fork(s), $maxInHash per fork]\n");
 
 # Build hashes of threads to update based on count, forks, etc.
-&d("Preparing update hash:\n");
+&d("Preparing update hash\n");
 $query_handle=$dbh->prepare($pquery);
 $query_handle->{"mysql_use_result"} = 1;
 $query_handle->execute();
@@ -116,6 +115,7 @@ my $manager = new Parallel::ForkManager( $forkMe );
 foreach $forkID (keys(%uhash)) {
   # FORK START
   $manager->start and next;
+  &d("Fork $$ Spawned & Processing\n");
 
   # Create a user agent
   our $ua = LWP::UserAgent->new;
@@ -129,7 +129,7 @@ foreach $forkID (keys(%uhash)) {
 
   foreach $threadid (keys(%{$uhash{$forkID}})) {
     my $status = &FetchShopPage("$threadid");
-    &d(" Refreshing stale thread $threadid\n");
+    &d(" [$$] Refreshing: $threadid \@ http://pathofexile.com/forum/view-thread/$threadid\n");
     if ($status eq "Maintenance") {
       &d("FetchShopPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
       $stats{Errors}++;

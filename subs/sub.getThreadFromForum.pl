@@ -19,7 +19,7 @@ sub FetchShopPage {
 
   # Return with an error if the content is bad
   unless ($response->is_success) {
-    &d(">> FetchShopPage: (PID: $$) [$forumName] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
+    &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
     $stats{Errors}++;
     return("fail");
   }
