@@ -69,7 +69,10 @@ sub FetchShopPage {
   # =========================================
 
   # Begin processing the data directly:
-  return if ($nojsonfound);
+  if ($nojsonfound) {
+    &UpdateThreadTables;
+    return;
+  }
   &ProcessUpdate("$content","$rawjson");
   
   # Go ahead and mark this as processed in the queue

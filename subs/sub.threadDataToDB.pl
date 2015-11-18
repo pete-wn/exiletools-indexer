@@ -60,8 +60,8 @@ sub LoadUpdate {
 }
 
 sub ProcessUpdate {
-  my $content = $_[0];
-  my $rawjson = $_[1];
+  local $content = $_[0];
+  local $rawjson = $_[1];
 
   # Prepare some hashes to make sure they don't leak globally
   local %fragments;
@@ -70,12 +70,14 @@ sub ProcessUpdate {
   my $fulltree = HTML::Tree->new();
   $fulltree->parse($content);
   unless ($fulltree) {
+    &UpdateThreadTables; 
     return "WARNING: Some sort of problem parsing the HTML content, possible bad HTML!\n";
   }
 
   # Find the thread title by looking for the h1 class=layoutBoxTitle
   my $threadTitle = $fulltree->look_down('_tag' => 'h1', 'class' => 'topBar last layoutBoxTitle');
   unless ($threadTitle) {
+    &UpdateThreadTables; 
     return "WARNING: Thread Title not found, possible corrupted HTML file!";
   }
   $threadInfo{threadTitle} = $threadTitle->as_text;
@@ -178,11 +180,13 @@ sub ProcessUpdate {
   # Look down to find the profile-link post_by_account span
   my $postInfo = $fulltree->look_down('_tag' => 'span', 'class' => qr/profile-link post_by_account/);
   unless ($postInfo) {
+    &UpdateThreadTables; 
     return("WARNING: Unable to find seller account information, possible corrupted HTML file!");
   }
   $threadInfo{sellerAccount} = $postInfo->as_text;
 
   unless ($rawjson) {
+    &UpdateThreadTables; 
     return("WARNING: JSON data not found in $conf{datadir}/raw/$timestamp.html - possible empty update. Skipping.");
   }
 
@@ -214,7 +218,18 @@ sub ProcessUpdate {
               ") || die "SQL ERROR: $DBI::errstr\n";
     $threadInfo{itemsRemoved}++;
   }
- 
+
+  &UpdateThreadTables; 
+
+  &sv("[$threadid] generatedWith: $threadInfo{generatedWith} | sellerAccount: $threadInfo{sellerAccount} | sellerIGN: $threadInfo{sellerIGN} | A:$threadInfo{itemsAdded} | R:$threadInfo{itemsRemoved} | M:$threadInfo{itemsModified} | U:$threadInfo{itemsUpdated} | I: $threadInfo{itemsIgnored} | BO:$threadInfo{buyoutCount}\n");
+
+  $dbhf->do("UPDATE `shop-queue` SET
+                 processed=\"2\"
+                 WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
+                 ") || die "SQL ERROR: $DBI::errstr\n";
+}
+
+sub UpdateThreadTables {
   # Add some statistics to the history table  
   $dbhf->do("INSERT IGNORE INTO \`thread-update-history\` SET
             threadid=\"$threadid\",
@@ -246,13 +261,6 @@ sub ProcessUpdate {
             generatedWith=\"$threadInfo{generatedWith}\",
             threadTitle=\"$threadInfo{threadTitle}\"
             ") || die "SQL ERROR: $DBI::errstr\n";
-
-  &sv("[$threadid] generatedWith: $threadInfo{generatedWith} | sellerAccount: $threadInfo{sellerAccount} | sellerIGN: $threadInfo{sellerIGN} | A:$threadInfo{itemsAdded} | R:$threadInfo{itemsRemoved} | M:$threadInfo{itemsModified} | U:$threadInfo{itemsUpdated} | I: $threadInfo{itemsIgnored} | BO:$threadInfo{buyoutCount}\n");
-
-  $dbhf->do("UPDATE `shop-queue` SET
-                 processed=\"2\"
-                 WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
-                 ") || die "SQL ERROR: $DBI::errstr\n";
 }
 
 sub ProcessItemFragment {

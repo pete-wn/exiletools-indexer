@@ -1,5 +1,12 @@
 #!/usr/bin/perl
 
+# This is similar to get-forum-threads, however it uses the database as a source rather than the
+# forum index. The goal is to get a list of threads which we know about (i.e. are open shops)
+# but that haven't been updated recently.
+#
+# The theory is that this will keep items in the index fresh as well as keep track of some things
+# like old Acquisition threads.
+
 $|=1;
 
 use LWP::UserAgent;
@@ -21,37 +28,92 @@ require("subs/sub.getThreadFromForum.pl");
 &StartProcess;
 
 # == Initial Options 
-# The depth to crawl each forum for updates
-if ($args{maxpages}) {
-  $maxCheckForumPages = $args{maxpages};
+# Maximum number of threads to refresh per update
+# The theory is that we can spread out updates over a few hour period by not doing all of them
+# at once
+if ($args{maxthreads}) {
+  $maxThreads = $args{maxthreads};
 } else {
-  $maxCheckForumPages = 8;
+  $maxThreads = 5000;
 }
 
 # The number of processes to fork
 if ($args{forks}) {
   $forkMe = $args{forks};
 } else {
-  $forkMe = 4;
+  $forkMe = 5;
 }
 
 # Microseconds to sleep for between page requests to avoid excessive requests
+# Note that we're much more aggressive for this script by default
 if ($args{sleep}) {
   $sleepFor = $args{sleep} * 1000;
 } else {
-  $sleepFor = 600 * 1000;
+  $sleepFor = 300 * 1000;
 }
 
-# This tells fetch-stats what time of stats run this was
-$runType = "normal";
+# How many hours a thread should be idle for before we mark it for refresh
+# Change the "(x * 3600)" to change the default (x is in hours)
+if ($args{stale}) {
+  $staleBefore = $startTime - ($args{stale} * 3600);
+} else {
+  $staleBefore = $startTime - (36 * 3600);
+}
 
+# This tells fetch-stats why type of run this was
+$runType = "refresh";
+
+# Make sure the dbh is connected
+$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+
+# Construct the queries to get the thread count and contents
+$pquery = "SELECT distinct(`threadid`) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\" ORDER BY `updateTimestamp` ASC LIMIT $maxThreads";
+$cquery = "SELECT count(distinct(`threadid`)) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\"";
+
+# Get a count of threads that we are going to update, up to maxThreads
+my $updateCount = $dbh->selectrow_array("$cquery");
+
+# Set the updateCount to maxThreads if it's too high
+if ($updateCount > $maxThreads) {
+  $updateCount = $maxThreads;
+}
+$maxInHash = int($updateCount / $forkMe) + 1;
+
+&d(" > $updateCount stale threads to be updated [$forkMe fork(s), $maxInHash per fork]\n");
+
+# Build hashes of threads to update based on count, forks, etc.
+&d("Preparing update hash:\n");
+$query_handle=$dbh->prepare($pquery);
+$query_handle->{"mysql_use_result"} = 1;
+$query_handle->execute();
+$query_handle->bind_columns(undef, \$threadid);
+# Keeps track of our active fork ID's
+$forkID = 1;
+# For tracking our iterations through the query
+my $ucount = 0;
+
+# Basically, iterate through the select by threadid, and add all threadid's to a hash table for
+# the forkID until the count exceeds maxInHash, then increment the forkID
+while($query_handle->fetch()) {
+  $ucount++;
+  if ($ucount > $maxInHash) {
+    $forkID++;
+    $ucount = 0;
+  }
+  $uhash{"$forkID"}{"$threadid"} = 1;
+}
 
 # Terminate our DB connection since we're going to do some weird forking
 $dbh->disconnect if ($dbh->ping);
 
+# Set the forum to refresh
+$forum = "refresh";
+
 # Fork a new process for each forum to scan, up to a max of $forkMe processes
 my $manager = new Parallel::ForkManager( $forkMe );
-foreach $forum (keys(%activeLeagues)) {
+
+# For each forkID in our hash of threadid's, fork a process and go!
+foreach $forkID (keys(%uhash)) {
   # FORK START
   $manager->start and next;
 
@@ -65,13 +127,11 @@ foreach $forum (keys(%activeLeagues)) {
   # On fork start, we must create a new DB Connection
   $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
-  # Every $sleepFor seconds, iterate from page 1 to $maxCheckForumPages on the forums for the shop
-  # This subroutine will grab the forum page and look for updates, calling FetchShopPage for any
-  # it notices need to be updated
-  for (my $page=1; $page <= $maxCheckForumPages; $page++) {
-    my $status = &FetchForumPage("$activeLeagues{$forum}{shopForumURL}/$page","$activeLeagues{$forum}{shopForumID}","$forum");
+  foreach $threadid (keys(%{$uhash{$forkID}})) {
+    my $status = &FetchShopPage("$threadid");
+    &d(" Refreshing stale thread $threadid\n");
     if ($status eq "Maintenance") {
-      &d("FetchForumPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
+      &d("FetchShopPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
       $stats{Errors}++;
       last;
     }
