@@ -130,7 +130,7 @@ foreach $forkID (keys(%uhash)) {
 
   foreach $threadid (keys(%{$uhash{$forkID}})) {
     my $status = &FetchShopPage("$threadid");
-    &d(" [$$] Refreshing: $threadid \@ http://pathofexile.com/forum/view-thread/$threadid\n");
+    &d(" [$forkID] Refreshing: $threadid \@ http://pathofexile.com/forum/view-thread/$threadid\n");
     if ($status eq "Maintenance") {
       &d("FetchShopPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
       $stats{Errors}++;
