@@ -53,10 +53,11 @@ if ($args{sleep}) {
 
 # How many hours a thread should be idle for before we mark it for refresh
 # Change the "(x * 3600)" to change the default (x is in hours)
+# Defaulting to 24 hours for now
 if ($args{stale}) {
   $staleBefore = $startTime - ($args{stale} * 3600);
 } else {
-  $staleBefore = $startTime - (12 * 3600);
+  $staleBefore = $startTime - (24 * 3600);
 }
 
 # This tells fetch-stats why type of run this was
