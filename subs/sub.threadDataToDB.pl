@@ -40,7 +40,14 @@ sub LoadUpdate {
     close(IN);
 
     my ($status) = &ProcessUpdate("$content","$rawjson");
-
+    if ($status =~ /WARNING/) {
+      &d("  $status\n");
+      $dbhf->do("UPDATE `shop-queue` SET
+                     processed=\"5\",
+                     nojsonfound=\"1\"
+                     WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
+                     ") || die "SQL ERROR: $DBI::errstr\n";
+    }
   } else {
     &d("WARNING: HTML data not found for $conf{datadir}/raw/$timestamp.html - possible ERROR. Skipping.\n");
     $dbhf->do("UPDATE `shop-queue` SET
@@ -62,12 +69,18 @@ sub ProcessUpdate {
 
   my $fulltree = HTML::Tree->new();
   $fulltree->parse($content);
+  unless ($fulltree) {
+    return "WARNING: Some sort of problem parsing the HTML content, possible bad HTML!\n";
+  }
 
   # Find the thread title by looking for the h1 class=layoutBoxTitle
   my $threadTitle = $fulltree->look_down('_tag' => 'h1', 'class' => 'topBar last layoutBoxTitle');
+  unless ($threadTitle) {
+    return "WARNING: Thread Title not found, possible corrupted HTML file!";
+  }
   $threadInfo{threadTitle} = $threadTitle->as_text;
   # Strip stupid stuff from thread title to avoid sketchy stuff in DB
-  $threadInfo{threadTitle} =~ s/(\"|\`)//g;
+  $threadInfo{threadTitle} =~ s/(\"|\`|\\|\/)//g;
 
   # Load the first content container TD, which should be the entire first post
   $tree = $fulltree->look_down('_tag' => 'td', 'class' => 'content-container first');
@@ -164,16 +177,13 @@ sub ProcessUpdate {
 
   # Look down to find the profile-link post_by_account span
   my $postInfo = $fulltree->look_down('_tag' => 'span', 'class' => qr/profile-link post_by_account/);
+  unless ($postInfo) {
+    return("WARNING: Unable to find seller account information, possible corrupted HTML file!");
+  }
   $threadInfo{sellerAccount} = $postInfo->as_text;
 
   unless ($rawjson) {
-    &d("  WARNING: JSON data not found in $conf{datadir}/raw/$timestamp.html - possible empty update. Skipping.\n");
-    $dbhf->do("UPDATE `shop-queue` SET
-                   processed=\"5\",
-                   nojsonfound=\"1\"
-                   WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
-                   ") || die "SQL ERROR: $DBI::errstr\n";
-    return;
+    return("WARNING: JSON data not found in $conf{datadir}/raw/$timestamp.html - possible empty update. Skipping.");
   }
 
   # Remove funky <<set formatting from raw json
@@ -243,7 +253,6 @@ sub ProcessUpdate {
                  processed=\"2\"
                  WHERE `threadid`=\"$threadid\" AND `timestamp`=\"$timestamp\"
                  ") || die "SQL ERROR: $DBI::errstr\n";
-
 }
 
 sub ProcessItemFragment {

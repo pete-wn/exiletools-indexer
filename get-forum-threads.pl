@@ -17,28 +17,38 @@ require("subs/all.subroutines.pl");
 require("subs/sub.threadDataToDB.pl");
 require("subs/sub.getThreadFromForum.pl");
 
-# == Initial Options 
-# Whether or not to give basic debug output
-$debug = 1;
-
-# Whether or not to give SUPER VERBOSE output. USE WITH CARE! Will create huge logs
-# and tons of spammy text.
-$sv = 0;
-
-# The depth to crawl each forum for updates
-$maxCheckForumPages = 1;
-
-# The number of processes to fork
-$forkMe = 2;
-
-# Microseconds to sleep for between page requests to avoid excessive requests
-$sleepFor = 600 * 1000;
-
-# The run type - this is for later features
-$runType = "normal";
-
 # == Initial Startup
 &StartProcess;
+
+# == Initial Options 
+# The depth to crawl each forum for updates
+if ($args{maxpages}) {
+  $maxCheckForumPages = $args{maxpages};
+} else {
+  $maxCheckForumPages = 1;
+}
+
+# The number of processes to fork
+if ($args{forks}) {
+  $forkMe = $args{forks};
+} else {
+  $forkMe = 5;
+}
+
+# Microseconds to sleep for between page requests to avoid excessive requests
+if ($args{sleep}) {
+  $sleepFor = $args{sleep} * 1000;
+} else {
+  $sleepFor = 600 * 1000;
+}
+
+# The run type - this is for later features
+if ($args{type}) {
+  $runType = $args{type};
+} else {
+  $runType = "normal";
+}
+
 
 # Terminate our DB connection since we're going to do some weird forking
 $dbh->disconnect if ($dbh->ping);

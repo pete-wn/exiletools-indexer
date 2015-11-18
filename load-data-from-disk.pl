@@ -16,27 +16,16 @@ use Date::Parse;
 require("subs/all.subroutines.pl");
 require("subs/sub.threadDataToDB.pl");
 
+# == Initial Startup
+&StartProcess;
+
 # == Initial Options 
-# Whether or not to give basic debug output
-$debug = 1;
-
-# Whether or not to give SUPER VERBOSE output. USE WITH CARE! Will create huge logs
-# and tons of spammy text.
-$sv = 0;
-
 # The number of processes to fork
 $forkMe = 8;
 
 # For debugging, the maximum number of threads to process before aborting
 $maxProcess = 99999999999999999;
 #$maxProcess = 1;
-
-# == Initial Startup
-&StartProcess;
-
-
-#$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
-
 
 # Initial start, to be cleaned up
 # Get a list of all items in the queue that haven't been processed and push it into a hash based on the threadid and timestamp

@@ -13,23 +13,16 @@ use Text::Unidecode;
 require("subs/all.subroutines.pl");
 require("subs/sub.formatJSON.pl");
 
-# TO DO STUFF:
-#
-# identify unidentified uniques?
-
-# == Initial Options 
-# Whether or not to give basic debug output
-$debug = 1;
-
-# Whether or not to give SUPER VERBOSE output. USE WITH CARE! Will create huge logs
-# and tons of spammy text.
-$sv = 0;
-
-# The number of processes to fork
-$forkMe = 5;
-
 # == Initial Startup
 &StartProcess;
+
+# == Initial Options 
+# The number of processes to fork
+if ($args{forks}) {
+  $forkMe = $args{forks};
+} else {
+  $forkMe = 5;
+}
 
 $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") || die "DBI Connection Error: $DBI::errstr\n";
 
@@ -39,37 +32,31 @@ $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") |
 &d("Building Thread/Account Lookup Table...\n");
 my %sellerHash = %{$dbh->selectall_hashref("select `threadid`,`sellerAccount`,`sellerIGN`,`generatedWith`,`threadTitle` FROM `thread-last-update`","threadid")};
 
-&d("Building list of unique item names based on icons in currently loaded data...\n");
-&BuildUniqueInfoHash;
-
 # The base query feeding this process will vary depending on the arguments given on the
 # command line. Valid arguments currently include:
 #   full - does a full update of everything
 #   timestamp ###### - where ##### is an epoch timestamp, pulls all items newer than this
 #   max #### - does a max of #### in one run, ignores if they are inES or not
-if ($ARGV[0] eq "full") {
+if ($args{full}) {
   &d("!! WARNING: FULL UPDATE SPECIFIED! All previously indexed items will be scanned and re-indexed.\n");
   print localtime()." Selecting items from items\n";
   $pquery = "select `uuid` from `items` where `inES`=\"yes\"";
   $cquery = "select count(`uuid`) from `items` where `inES`=\"yes\"";
-} elsif ($ARGV[0] eq "timestamp") {
+} elsif ($args{timestamp}) {
   &d("Selecting items updated since $ARGV[1]\n");
-  $pquery = "select `uuid` from `items` where `updated`>$ARGV[1]";
-  $cquery = "select count(`uuid`) from `items` where `updated`>$ARGV[1]";
-} elsif ($ARGV[0] eq "max") {
-  &d("Selecting a max of $ARGV[1]\n");
-  $maxSelect = $ARGV[1];
-  $pquery = "select `uuid` from `items` LIMIT $maxSelect";
+  $pquery = "select `uuid` from `items` where `updated`>$args{timestamp}";
+  $cquery = "select count(`uuid`) from `items` where `updated`>$args{timestamp}";
+} elsif ($args{max}) {
+  &d("[Selecting a max of $args{max}]\n");
+  $pquery = "select `uuid` from `items` LIMIT $args{max}";
+  $updateCount = $args{max};
 } else {
   $pquery = "select `uuid` from `items` where `inES`=\"no\"";
   $cquery = "select count(`uuid`) from `items` where `inES`=\"no\"";
 }
 
-# Get a count of how many items we will process
-my $updateCount;
-if ($maxSelect) {
-  $updateCount = $maxSelect;
-} else {
+# Get a count of how many items we will process if it wasn't set by max
+unless ($updateCount) {
   $updateCount = $dbh->selectrow_array("$cquery");
 }
 

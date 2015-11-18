@@ -26,10 +26,6 @@ $sv = 1;
 
 $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") || die "DBI Connection Error: $DBI::errstr\n";
 
-# Enable this to check unique detection, otherwise it's too expensive in time
-#&d("Building list of unique item names based on icons in currently loaded data...\n");
-#&BuildUniqueInfoHash;
-
 if ($ARGV[0] eq "random") {
   # This is so ghetto
   my @array = @{$dbh->selectcol_arrayref("select `md5sum` from `raw-json`")};

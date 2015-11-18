@@ -32,6 +32,30 @@ sub StartProcess {
     $process =~ s/.*?\///g;
   }
 
+  # Actually, just default to debug on for everything
+  # debug is really a poor choice, it's more like "show anything on screen"
+  our $debug = 1;
+
+  our %args;
+  # Get the command line arguments and set things appropriately
+  while (my $arg = shift(@ARGV)) {
+    if ($arg eq "-v") {
+      our $debug = 1;
+      print "Options: debug=1\n";
+    } elsif ($arg eq "-sv") {
+      our $sv = 1;
+      print "Options: sv=1\n";
+    } elsif ($arg eq "-full") {
+      $args{full} = 1;
+    } elsif ($arg eq "-unlock") {
+      &RemoveLock("$process");
+    } else {
+      $arg =~ s/^\-//o;
+      $args{$arg} = shift(@ARGV);
+      print "Options: $arg=$args{$arg}\n";
+    }
+  }
+
   # Establish database connection for primary thread
   $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
