@@ -466,16 +466,23 @@ sub parseExtendedMods {
   foreach my $modLine ( @{$data{"$modTypeJSON"}} ) {
     # Parsing for Divination cards has to be done a bit differently from other items
     if ($item{attributes}{itemType} eq "Card") {
+      # clear any <size:#>{} crap out
+      # oh but those stupid close } may be on another line, nice. WTF.
+      $modLine =~ s/^\<size:\d+\>\{(.*?)/$1/o;
+      $modLine =~ s/\}\}/\}/o;
+
       # if there's a default line, it's probably a secondary mod with more information, added it to the reward information
-      if ($modLine =~ /^\<default\>\{(.*?):*\} \<(.*?)\>\{(.*?)\}$/) {
+      if ($modLine =~ /^\<default\>\{(.*?):*\}\s+\<(.*?)\>\{(.*?)\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." ($1: $3)";
         $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." ($1: $3)";
         $item{info}{tokenized}{DivinationReward} = $item{info}{tokenized}{DivinationReward}." ($1: $3)";
+
       # The corrupted line should be treated differently
       } elsif ($modLine =~ /^\<corrupted\>\{Corrupted\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." (Corrupted)";
         $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." (Corrupted)";
         $item{info}{tokenized}{DivinationReward} = $item{info}{tokenized}{DivinationReward}." (Corrupted)";
+
       # if the item is a divination card, it may have a <tag>{reward} line
       } elsif ($modLine =~ /^\<(.*?)\>\{(.*?)\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = "$1: $2";

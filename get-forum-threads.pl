@@ -25,14 +25,14 @@ require("subs/sub.getThreadFromForum.pl");
 if ($args{maxpages}) {
   $maxCheckForumPages = $args{maxpages};
 } else {
-  $maxCheckForumPages = 1;
+  $maxCheckForumPages = 8;
 }
 
 # The number of processes to fork
 if ($args{forks}) {
   $forkMe = $args{forks};
 } else {
-  $forkMe = 5;
+  $forkMe = 2;
 }
 
 # Microseconds to sleep for between page requests to avoid excessive requests
