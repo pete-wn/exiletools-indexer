@@ -19,7 +19,11 @@ sub FetchShopPage {
 
   # Return with an error if the content is bad
   unless ($response->is_success) {
-    &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
+    if ($response->decoded_content =~ /The resource you are looking for does not exist or has been removed/) {
+      &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: This thread has been REMOVED!\n");
+    } else {
+      &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
+    }
     $stats{Errors}++;
     return("fail");
   }
