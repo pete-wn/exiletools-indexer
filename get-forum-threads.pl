@@ -52,6 +52,13 @@ $dbh->disconnect if ($dbh->ping);
 # Fork a new process for each forum to scan, up to a max of $forkMe processes
 my $manager = new Parallel::ForkManager( $forkMe );
 foreach $forum (keys(%activeLeagues)) {
+
+  # If only a single forum is specified, skip all other forums
+  if ($args{forum}) {
+    next unless ($forum eq $args{forum});
+  }
+
+
   # FORK START
   $manager->start and next;
 
