@@ -56,6 +56,8 @@ Notes:
 
 * The archival of this thread data can be disabled by removing the relevant portion of the code. The regular pipeline process does not reference or require these files.
 
+* You can also specify only a single forum to check. This is useful for populating historic thread information when starting from scratch - you don't want to just get 500 pages from every forum, because some of them (like the Hardcore forum) have low activity and going back 500 pages will get you year old threads.
+
 ##2. format-and-load-db-to-es.pl
 
 This is the secondary pipeline process which takes all modified items from the database, re-formats them to a more powerful indexable JSON format, then bulk loads them into ElasticSearch.
@@ -73,6 +75,14 @@ Notes:
 * This process is multi-fork and bulk capable, with loading speed depending primarily on IO and tuning of the ES instance and database. At Exile Tools, I achieve an average bulk loading rate of ~4000 items/second on spinning disk. This appears to be mostly limited by the speed of database selects from `raw-json` with tokudb due to the spinning disk backend. Memory cache on the database is tuned to limit this as much as possible by keeping recent inserts/updates in memory from the get-forum-threads.pl process. 
 
 * Average run-time for this process during a routine index is measured in seconds.
+
+##3. refresh-forum-threads.pl
+
+This is a tertiary process that is designed to be run less often than the main pipeline. It pulls a list of threads in the database that haven't been updated recently (default 24 hours), then fetches and processes them. This part of the pipeline is by far the most impactful and resource intensive, both on the local side and on GGG's side. The goal is to refresh every known thread at least once a day to keep item information "fresh" such as finding items that are gone.
+
+It also attempts to alleviate some of the problems we have indexing because GGG doesn't allow us to sort the shop forums by Last Edit Time. If someone updates their thread but doesn't bump it, the indexer won't know about it because the shop forum index can only be sorted effectively by Last Post. This is especially a problem with threads made with Acquisition, which does not play well with the community and doesn't bump threads.
+
+I run it hourly, with a maximum of 5000 threads updated per hour. The item information is automatically loaded into ES by format-and-load-es-to-.pl which runs after the noraml get-forum-threads.pl operation. A full refresh of 5000 threads can take up to 40 minutes depending on the settings.
 
 # F.A.Q.
 
