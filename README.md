@@ -1,8 +1,6 @@
 # ExileTools Indexer
 
-**Note:** This is a re-factor in progress.
-
-Path of Exile Shop Forum Indexer used by http://exiletools.com
+This is the Path of Exile Shop Forum Indexer used by http://exiletools.com including all of the pipeline code required to take items from pathofexile.com and turn them into Elastic Search documents.
 
 ## Why?
 
