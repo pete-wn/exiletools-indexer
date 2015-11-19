@@ -45,7 +45,7 @@ sub formatJSON {
   $item{info}{fullName} = $data{name}." ".$data{typeLine}; 
   # Remove the Superior and/or any leading white space from fullName in case we got it somewhere in the merge
   $item{info}{fullName} =~ s/^(Superior |\s+)//o;
-  $item{info}{tokenized}{fullName} = $item{info}{fullName};
+  $item{info}{tokenized}{fullName} = lc($item{info}{fullName});
   $item{info}{name} = $data{name};
 
   $item{info}{name} = $item{info}{fullName} unless ($item{info}{name});
@@ -53,7 +53,7 @@ sub formatJSON {
 
   if ($data{descrText}) {
     $item{info}{descrText} = $data{descrText};
-    $item{info}{tokenized}{descrText} = $data{descrText};
+    $item{info}{tokenized}{descrText} = lc($data{descrText});
   }
 
   $item{attributes}{corrupted} = $data{corrupted};
@@ -75,7 +75,7 @@ sub formatJSON {
     # I strip the \r out because it doesn't blend well
     $flava =~ s/\r/ /g;
     $item{info}{flavourText} .= $flava;
-    $item{info}{tokenized}{flavourText} .= $flava;
+    $item{info}{tokenized}{flavourText} .= lc($flava);
   }
 
 
@@ -475,13 +475,13 @@ sub parseExtendedMods {
       if ($modLine =~ /^\<default\>\{(.*?):*\}\s+\<(.*?)\>\{(.*?)\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." ($1: $3)";
         $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." ($1: $3)";
-        $item{info}{tokenized}{DivinationReward} = $item{info}{tokenized}{DivinationReward}." ($1: $3)";
+        $item{info}{tokenized}{DivinationReward} = lc($item{info}{tokenized}{DivinationReward}." ($1: $3)");
 
       # The corrupted line should be treated differently
       } elsif ($modLine =~ /^\<corrupted\>\{Corrupted\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." (Corrupted)";
         $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." (Corrupted)";
-        $item{info}{tokenized}{DivinationReward} = $item{info}{tokenized}{DivinationReward}." (Corrupted)";
+        $item{info}{tokenized}{DivinationReward} = lc($item{info}{tokenized}{DivinationReward}." (Corrupted)");
 
       # if the item is a divination card, it may have a <tag>{reward} line
       } elsif ($modLine =~ /^\<(.*?)\>\{(.*?)\}\r*$/) {
@@ -489,7 +489,7 @@ sub parseExtendedMods {
         $item{modsTotal}{DivinationReward} = "$1: $2";
         $item{attributes}{"$modTypeJSON"."Count"}++;
         # Allows tokenized search to match this so you can search for "kaom" in the info.tokenized.DivinationReward field
-        $item{info}{tokenized}{DivinationReward} = "$1: $2";
+        $item{info}{tokenized}{DivinationReward} = lc("$1: $2");
       }
     } else {
       # Process the line if it starts with a +/- flat number (i.e. "+1 to Magical Unicorns" becomes (+)(1) (to Magical Unicorns)
