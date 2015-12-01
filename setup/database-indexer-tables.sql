@@ -68,6 +68,7 @@ CREATE TABLE `items` (
   `lastUpdateDB` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `chaosEquiv` decimal(10,3) DEFAULT NULL,
   `inES` enum('yes','no') DEFAULT NULL,
+  `saleType` varchar(16) DEFAULT NULL,
   UNIQUE KEY `uuid` (`uuid`),
   KEY `md5sum` (`md5sum`),
   KEY `threadid` (`threadid`),
@@ -78,7 +79,8 @@ CREATE TABLE `items` (
   KEY `added` (`added`),
   KEY `updated` (`updated`),
   KEY `chaosEquiv` (`chaosEquiv`),
-  KEY `inES` (`inES`)
+  KEY `inES` (`inES`),
+  KEY `saleType` (`saleType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

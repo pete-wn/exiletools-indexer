@@ -159,6 +159,7 @@ foreach $forkID (keys(%uhash)) {
     my $lastUpdateDB = $datarow[10];
     my $chaosEquiv = $datarow[11];
     my $inES = $datarow[12];
+    my $saleType = $datarow[13];
 
     no autovivification;
     local %item;
@@ -191,6 +192,7 @@ foreach $forkID (keys(%uhash)) {
     $item{shop}{sellerAccount} = $sellerHash{$threadid}{sellerAccount};
     $item{shop}{sellerIGN} = $sellerHash{$threadid}{sellerIGN};
     $item{shop}{generatedWith} = $sellerHash{$threadid}{generatedWith} if ($sellerHash{$threadid}{generatedWith});
+    $item{shop}{saleType} = $saleType;
 
     my $rawjson = $dbh->selectrow_array("select `data` from `raw-json` where `md5sum`=\"$md5sum\" limit 1");
     unless ($rawjson) {

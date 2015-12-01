@@ -30,7 +30,12 @@ $maxProcess = 99999999999999999;
 # Initial start, to be cleaned up
 # Get a list of all items in the queue that haven't been processed and push it into a hash based on the threadid and timestamp
 @keyfields = ("threadid","timestamp");
-%updateHash = %{$dbh->selectall_hashref("SELECT `threadid`,`timestamp`,`processed` FROM `shop-queue` WHERE `processed`<2",\@keyfields)};
+
+if ($args{after}) {
+  %updateHash = %{$dbh->selectall_hashref("SELECT `threadid`,`timestamp`,`processed` FROM `shop-queue` WHERE `nojsonfound`<1 AND `timestamp`>$args{after}",\@keyfields)};
+} else {
+  %updateHash = %{$dbh->selectall_hashref("SELECT `threadid`,`timestamp`,`processed` FROM `shop-queue` WHERE `nojsonfound`<1 AND `processed`<2",\@keyfields)};
+}
 $dbh->disconnect;
 
 my $updateCount = (keys(%updateHash));

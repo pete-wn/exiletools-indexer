@@ -267,6 +267,7 @@ sub ProcessItemFragment {
   # Set some local variables based on the data input to the subroutine
   my $activeFragment = $_[0];
   my $type = $_[1];
+  $type = "offer" unless ($type);
   my $amount = $_[2];
   # Replace commas with periods because that's what most systems work with
   $amount =~ s/\,/\./g;
@@ -341,6 +342,7 @@ sub ProcessItemFragment {
               verified=\"$data->[$activeFragment]->[1]{verified}\",
               chaosEquiv=$chaosEquiv,
               currency=\"$standardCurrency\",
+              saleType=\"$type\",
               inES=\"no\"
               WHERE uuid=\"$uuid\"
               ") || die "SQL ERROR: $DBI::errstr\n";
@@ -373,6 +375,7 @@ sub ProcessItemFragment {
               verified=\"$data->[$activeFragment]->[1]{verified}\",
               chaosEquiv=$chaosEquiv,
               currency=\"$standardCurrency\",
+              saleType=\"$type\",
               inES=\"no\"
               ") || die "SQL ERROR: $DBI::errstr\n";
 
