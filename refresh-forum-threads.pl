@@ -20,6 +20,8 @@ use Parallel::ForkManager;
 use Date::Parse;
 use File::Path;
 use Time::HiRes qw(usleep); 
+use Search::Elasticsearch;
+
 require("subs/all.subroutines.pl");
 require("subs/sub.threadDataToDB.pl");
 require("subs/sub.getThreadFromForum.pl");
@@ -130,6 +132,22 @@ foreach $forkID (keys(%uhash)) {
 
   # On fork start, we must create a new DB Connection
   $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+
+  # New ElasticSearch Connection also
+  $e = Search::Elasticsearch->new(
+    cxn_pool => 'Sniff',
+    nodes =>  [
+      "$conf{eshost}:9200",
+      "$conf{eshost2}:9200"
+    ],
+    # enable this for debug but BE CAREFUL it will create huge log files super fast
+    # trace_to => ['File','/tmp/eslog.txt'],
+
+    # Huge request timeout for bulk indexing
+    request_timeout => 300
+  );
+
+  die "some error?"  unless ($e);
 
   foreach $threadid (keys(%{$uhash{$forkID}})) {
     my $status = &FetchShopPage("$threadid");

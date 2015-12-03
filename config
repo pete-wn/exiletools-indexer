@@ -9,3 +9,4 @@ estype:item
 # I probably should've used Camel Case or similar before
 esStatsIndex:indexing-stats
 esStatsType:run
+esThreadStatsType:thread

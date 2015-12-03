@@ -230,20 +230,35 @@ sub ProcessUpdate {
 }
 
 sub UpdateThreadTables {
+  # These statistics now go into elastic search also, we may remove the database stuff later
+  $threadInfo{threadid} = $threadid;
+  $threadInfo{updateTimestamp} = $timestamp;
+  my $esid = $threadid.$timestamp;
+  my $threadInfoJSON = JSON::XS->new->utf8->encode(\%threadInfo);
+
+  # Insert this into ES
+  $e->index(
+    index => "$conf{esStatsIndex}",
+    type => "$conf{esThreadStatsType}",
+    body => "$threadInfoJSON"
+  );
+
+  # We no longer do this per Issue 41, data is saved in ES now
+  # https://github.com/trackpete/exiletools-indexer/issues/41
   # Add some statistics to the history table  
-  $dbhf->do("INSERT IGNORE INTO \`thread-update-history\` SET
-            threadid=\"$threadid\",
-            updateTimestamp=\"$timestamp\",
-            itemsAdded=\"$threadInfo{itemsAdded}\",
-            itemsRemoved=\"$threadInfo{itemsRemoved}\",
-            itemsModified=\"$threadInfo{itemsModified}\",
-            sellerAccount=\"$threadInfo{sellerAccount}\",
-            sellerIGN=\"$threadInfo{sellerIGN}\",
-            totalItems=\"$threadInfo{totalItems}\",
-            buyoutCount=\"$threadInfo{buyoutCount}\",
-            generatedWith=\"$threadInfo{generatedWith}\",
-            threadTitle=\"$threadInfo{threadTitle}\"
-            ") || die "SQL ERROR: $DBI::errstr\n";
+#  $dbhf->do("INSERT IGNORE INTO \`thread-update-history\` SET
+#            threadid=\"$threadid\",
+#            updateTimestamp=\"$timestamp\",
+#            itemsAdded=\"$threadInfo{itemsAdded}\",
+#            itemsRemoved=\"$threadInfo{itemsRemoved}\",
+#            itemsModified=\"$threadInfo{itemsModified}\",
+#            sellerAccount=\"$threadInfo{sellerAccount}\",
+#            sellerIGN=\"$threadInfo{sellerIGN}\",
+#            totalItems=\"$threadInfo{totalItems}\",
+#            buyoutCount=\"$threadInfo{buyoutCount}\",
+#            generatedWith=\"$threadInfo{generatedWith}\",
+#            threadTitle=\"$threadInfo{threadTitle}\"
+#            ") || die "SQL ERROR: $DBI::errstr\n";
 
   # We also keep a table with only information from the last update for quick searching.
   $dbhf->do("INSERT INTO \`thread-last-update\` VALUES

@@ -12,6 +12,8 @@ use Parallel::ForkManager;
 use DBI;
 use HTML::Tree;
 use Date::Parse;
+use Search::Elasticsearch;
+
 #use Unicode::Diacritic::Strip;
 require("subs/all.subroutines.pl");
 require("subs/sub.threadDataToDB.pl");
@@ -48,6 +50,23 @@ foreach $threadid(keys(%updateHash)) {
   $processcount++;
   last if ($processcount > $maxProcess);
   $manager->start and next;
+
+  # New ElasticSearch Connection also
+  $e = Search::Elasticsearch->new(
+    cxn_pool => 'Sniff',
+    nodes =>  [
+      "$conf{eshost}:9200",
+      "$conf{eshost2}:9200"
+    ],
+    # enable this for debug but BE CAREFUL it will create huge log files super fast
+    # trace_to => ['File','/tmp/eslog.txt'],
+
+    # Huge request timeout for bulk indexing
+    request_timeout => 300
+  );
+
+  die "some error?"  unless ($e);
+
     $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
     print "[$$] Processing THREAD $threadid ($processcount of $updateCount)\n";
     foreach $timestamp (sort keys(%{$updateHash{$threadid}})) {
