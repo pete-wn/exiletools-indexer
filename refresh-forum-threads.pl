@@ -106,8 +106,8 @@ while($query_handle->fetch()) {
 # Terminate our DB connection since we're going to do some weird forking
 $dbh->disconnect if ($dbh->ping);
 
-# Set the forum to refresh
-$forum = "refresh";
+# Set the forum to all
+$forum = "all";
 
 # Fork a new process for each forum to scan, up to a max of $forkMe processes
 my $manager = new Parallel::ForkManager( $forkMe );
@@ -117,6 +117,9 @@ foreach $forkID (keys(%uhash)) {
   # FORK START
   $manager->start and next;
   &d("Fork $$ Spawned & Processing\n");
+
+  # log the start time for this run
+  local $runStartTime = time();
 
   # Create a user agent
   our $ua = LWP::UserAgent->new;
@@ -139,30 +142,8 @@ foreach $forkID (keys(%uhash)) {
     usleep($sleepFor);
   }
 
-
-  # Output some stats for this fork
-  $stats{TotalTransferKB} = int($stats{TotalTransferBytes} / 1024);
-  $stats{TotalUncompressedKB} = int($stats{TotalUncompressedBytes} / 1024);
-  foreach $stat (sort(keys(%stats))) {
-    &d("STATS: (PID: $$) [$forum] $stat: $stats{$stat}\n");
-  }
-
-  my $timestamp = time();
-  # Insert stats for this fork into the DB
-  $dbhf->do("INSERT INTO `fetch-stats` SET
-            `timestamp`=\"$timestamp\",
-            `forum`=\"$forum\",
-            `TotalRequests`=\"$stats{TotalRequests}\",
-            `TotalTransferKB`=\"$stats{TotalTransferKB}\",
-            `TotalUncompressedKB`=\"$stats{TotalUncompressedKB}\",
-            `ForumIndexPagesFetched`=\"$stats{ForumIndexPagesFetched}\",
-            `ShopPagesFetched`=\"$stats{ShopPagesFetched}\",
-            `Errors`=\"$stats{Errors}\",
-            `RunType`=\"$runType\",
-            `NewThreads`=\"$stats{NewThreads}\",
-            `UnchangedThreads`=\"$stats{UnchangedThreads}\",
-            `UpdatedThreads`=\"$stats{UpdatedThreads}\"
-            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+  # Output some statistics from the run
+  &OutputRunStats;
 
   # Disconnect forked DB connection
   $dbhf->disconnect if ($dbhf->ping);

@@ -86,4 +86,62 @@ sub FetchShopPage {
                  ") || die "SQL ERROR: $DBI::errstr\n";
 }
 
+sub OutputRunStats {
+
+  # Output some stats for this fork
+  $stats{TotalTransferKB} = int($stats{TotalTransferBytes} / 1024);
+  $stats{TotalUncompressedKB} = int($stats{TotalUncompressedBytes} / 1024);
+  foreach $stat (sort(keys(%stats))) {
+    &d("STATS: (PID: $$) [$forum] $stat: $stats{$stat}\n");
+  }
+
+  use Search::Elasticsearch;
+
+  my $e = Search::Elasticsearch->new(
+    cxn_pool => 'Sniff',
+    nodes =>  [
+      "$conf{eshost}:9200",
+      "$conf{eshost2}:9200"
+    ],
+    # enable this for debug but BE CAREFUL it will create huge log files super fast
+    # trace_to => ['File','/tmp/eslog.txt'],
+  
+    # Huge request timeout for bulk indexing
+    request_timeout => 300
+  );
+
+  die "some error?"  unless ($e);
+
+  # Calculate the run time 
+  my $runTime = (time() - $runStartTime);
+
+  my $timestamp = time();
+  
+  # Create the ES JSON data
+  my %fetchData;
+  $fetchData{RunTimestamp} = $timestamp;
+  $fetchData{Forum} = $forum;
+  $fetchData{TotalRequests} += $stats{TotalRequests};
+  $fetchData{TotalTransferKB} += $stats{TotalTransferKB};
+  $fetchData{TotalUncompressedKB} += $stats{TotalUncompressedKB};
+  $fetchData{ForumIndexPagesFetched} += $stats{ForumIndexPagesFetched};
+  $fetchData{ShopPagesFetched} += $stats{ShopPagesFetched};
+  $fetchData{Errors} += $stats{Errors};
+  $fetchData{RunType} = $runType;
+  $fetchData{NewThreads} += $stats{NewThreads};
+  $fetchData{UnchangedThreads} += $stats{UnchangedThreads};
+  $fetchData{UpdatedThreads} += $stats{UpdatedThreads};
+  $fetchData{RunTime} += $runTime;
+  my $fetchDataJSON = JSON::XS->new->utf8->encode(\%fetchData);
+
+  # Insert stats for this fork into ES
+  $e->index(
+    index => "$conf{esStatsIndex}",
+    type => "$conf{esStatsType}",
+    body => "$fetchDataJSON" 
+  );
+  
+  return;
+}
+
 return true;

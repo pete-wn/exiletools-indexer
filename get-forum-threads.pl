@@ -62,12 +62,15 @@ foreach $forum (keys(%activeLeagues)) {
   # FORK START
   $manager->start and next;
 
+  # log the start time for this run
+  local $runStartTime = time();
+
   # Create a user agent
   our $ua = LWP::UserAgent->new;
   # Make sure it accepts gzip
   our $can_accept = HTTP::Message::decodable;
   # Prepare the local statistics hash
-  our %stats;
+  local %stats;
 
   # On fork start, we must create a new DB Connection
   $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
@@ -85,30 +88,8 @@ foreach $forum (keys(%activeLeagues)) {
     usleep($sleepFor);
   }
 
-
-  # Output some stats for this fork
-  $stats{TotalTransferKB} = int($stats{TotalTransferBytes} / 1024);
-  $stats{TotalUncompressedKB} = int($stats{TotalUncompressedBytes} / 1024);
-  foreach $stat (sort(keys(%stats))) {
-    &d("STATS: (PID: $$) [$forum] $stat: $stats{$stat}\n");
-  }
-
-  my $timestamp = time();
-  # Insert stats for this fork into the DB
-  $dbhf->do("INSERT INTO `fetch-stats` SET
-            `timestamp`=\"$timestamp\",
-            `forum`=\"$forum\",
-            `TotalRequests`=\"$stats{TotalRequests}\",
-            `TotalTransferKB`=\"$stats{TotalTransferKB}\",
-            `TotalUncompressedKB`=\"$stats{TotalUncompressedKB}\",
-            `ForumIndexPagesFetched`=\"$stats{ForumIndexPagesFetched}\",
-            `ShopPagesFetched`=\"$stats{ShopPagesFetched}\",
-            `Errors`=\"$stats{Errors}\",
-            `RunType`=\"$runType\",
-            `NewThreads`=\"$stats{NewThreads}\",
-            `UnchangedThreads`=\"$stats{UnchangedThreads}\",
-            `UpdatedThreads`=\"$stats{UpdatedThreads}\"
-            ") || die "FATAL DBI ERROR: $DBI::errstr\n";
+  # Output some statistics from the run
+  &OutputRunStats;
 
   # Disconnect forked DB connection
   $dbhf->disconnect if ($dbhf->ping);
