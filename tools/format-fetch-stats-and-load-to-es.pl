@@ -25,13 +25,13 @@ require("subs/all.subroutines.pl");
 # == Initial Startup
 &StartProcess;
 
-$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") || die "DBI Connection Error: $DBI::errstr\n";
+$dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}") || die "DBI Connection Error: $DBI::errstr\n";
 
 my $e = Search::Elasticsearch->new(
   cxn_pool => 'Sniff',
   nodes =>  [
-    "$conf{eshost}:9200",
-    "$conf{eshost2}:9200"
+    "$conf{esHost}:9200",
+    "$conf{esHost2}:9200"
   ],
   # enable this for debug but BE CAREFUL it will create huge log files super fast
   # trace_to => ['File','/tmp/eslog.txt'],
@@ -46,7 +46,7 @@ my $bulk = $e->bulk_helper(
   index => "$conf{esStatsIndex}",
   max_count => '5100',
   max_size => '0',
-  type => "$conf{esStatsType}",
+  type => "$conf{esRunStatsType}",
 );
 
 $pquery = "select * from `fetch-stats`";

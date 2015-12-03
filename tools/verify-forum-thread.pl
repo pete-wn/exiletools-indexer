@@ -12,6 +12,7 @@ use utf8::all;
 use Parallel::ForkManager;
 use Date::Parse;
 use File::Path;
+use Search::Elasticsearch;
 require("subs/all.subroutines.pl");
 require("subs/sub.threadDataToDB.pl");
 require("subs/sub.getThreadFromForum.pl");
@@ -40,7 +41,23 @@ our $can_accept = HTTP::Message::decodable;
 
 # Create a database filehandle, we use dbhf because the subroutine assumes we will
 # be called from a forked dbh from get-forum-threads
-$dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+$dbhf = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+
+# New ElasticSearch Connection also
+$e = Search::Elasticsearch->new(
+  cxn_pool => 'Sniff',
+  nodes =>  [
+    "$conf{esHost}:9200",
+    "$conf{esHost2}:9200"
+  ],
+  # enable this for debug but BE CAREFUL it will create huge log files super fast
+  # trace_to => ['File','/tmp/eslog.txt'],
+
+  # Huge request timeout for bulk indexing
+  request_timeout => 300
+);
+
+die "some error?"  unless ($e);
 
 my $status = &FetchShopPage("$threadid");
 

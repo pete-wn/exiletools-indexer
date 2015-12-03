@@ -24,7 +24,7 @@ $debug = 1;
 # and tons of spammy text.
 $sv = 1;
 
-$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") || die "DBI Connection Error: $DBI::errstr\n";
+$dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}") || die "DBI Connection Error: $DBI::errstr\n";
 
 if ($ARGV[0] eq "random") {
   # This is so ghetto

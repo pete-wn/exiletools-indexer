@@ -21,16 +21,18 @@ sub FetchShopPage {
   unless ($response->is_success) {
     if ($response->decoded_content =~ /The resource you are looking for does not exist or has been removed/) {
       &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: This thread has been REMOVED!\n");
+      $stats{Errors}++;
+      return("Removed");
     } else {
       &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
+      $stats{Errors}++;
+      return("http error");
     }
-    $stats{Errors}++;
-    return("fail");
   }
 
   # Take the raw HTML and dump it to a file for later parsing
-  mkpath("$conf{datadir}/$threadid/raw") unless (-d "$conf{datadir}/$threadid/raw");
-  open(RAW, ">$conf{datadir}/$threadid/raw/$timestamp.html") || die "ERROR opening $conf{datadir}/$threadid/raw/$timestamp.html - $1\n";
+  mkpath("$conf{dataDir}/$threadid/raw") unless (-d "$conf{dataDir}/$threadid/raw");
+  open(RAW, ">$conf{dataDir}/$threadid/raw/$timestamp.html") || die "ERROR opening $conf{dataDir}/$threadid/raw/$timestamp.html - $1\n";
   print RAW $content;
   close(RAW);
 
@@ -100,8 +102,8 @@ sub OutputRunStats {
   my $e = Search::Elasticsearch->new(
     cxn_pool => 'Sniff',
     nodes =>  [
-      "$conf{eshost}:9200",
-      "$conf{eshost2}:9200"
+      "$conf{esHost}:9200",
+      "$conf{esHost2}:9200"
     ],
     # enable this for debug but BE CAREFUL it will create huge log files super fast
     # trace_to => ['File','/tmp/eslog.txt'],
@@ -137,7 +139,7 @@ sub OutputRunStats {
   # Insert stats for this fork into ES
   $e->index(
     index => "$conf{esStatsIndex}",
-    type => "$conf{esStatsType}",
+    type => "$conf{esRunStatsType}",
     body => "$fetchDataJSON" 
   );
   

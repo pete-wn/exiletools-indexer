@@ -1,12 +1,37 @@
-dbhost:localhost
-dbcreds:.dbcreds
-basedir:/pwxdata/poe/dev
-datadir:/pwxdata/poe/shops/data/threads
-eshost:elasticsearch
-eshost2:elasticsearch2
-esindex:poedev
-estype:item
-# I probably should've used Camel Case or similar before
+# Hostname to connect to mysql/mariadb
+dbHost:localhost
+
+# A flat file with database credentials (user/pass/database name)
+dbCreds:.dbcreds
+# Here is an example .dbcreds file: (these aren't my credientials :p )
+#
+# dbUser:mariadb
+# dbPass:totallysecurepassword
+# dbName:indexer
+
+# NOTE: baseDir is not fully implemented, you must run programs from the root path!
+baseDir:/pwxdata/poe/dev
+
+# Location to store raw HTML thread data
+dataDir:/pwxdata/poe/shops/data/threads
+
+# The primary elasticsearch host
+esHost:elasticsearch
+
+# The secondary elasticsearch host (if any)
+esHost2:elasticsearch2
+
+# The main Elastic Search Index (recommended: 'poe')
+esItemIndex:poedev
+
+# The default type for items (recommended: 'type')
+esItemType:item
+
+# The Elastic Search stats index for thread/indexing stats
 esStatsIndex:indexing-stats
-esStatsType:run
+
+# The type to use for indexer run statistics (recommended: 'run')
+esRunStatsType:run
+
+# The type to use for thread update statistics (recommended: 'thread')
 esThreadStatsType:thread

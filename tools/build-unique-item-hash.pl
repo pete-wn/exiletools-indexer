@@ -23,13 +23,13 @@ sub BuildUniqueInfoHash {
 
   $el = Search::Elasticsearch->new(
     nodes =>  [
-      "$conf{eshost}:9200"
+      "$conf{esHost}:9200"
     ]
   );
 
   my %search;
-  $search{index} = "$conf{esindex}";
-  $search{type} = "$conf{estype}";
+  $search{index} = "$conf{esItemIndex}";
+  $search{type} = "$conf{esItemType}";
   $search{body}{size} = 0;
   $search{body}{query}{bool}{filter}[0]{term}{"attributes.rarity"} = "Unique";
   $search{body}{query}{bool}{filter}[1]{term}{"attributes.identified"} = "True";

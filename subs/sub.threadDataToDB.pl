@@ -14,7 +14,7 @@ use Date::Parse;
 sub LoadUpdate {
   local $threadid = $_[0];
   local $timestamp = $_[1];
-  local $conf{datadir} = "$conf{datadir}/$threadid";
+  local $conf{dataDir} = "$conf{dataDir}/$threadid";
   my $content;
 
   $dbhf->do("UPDATE `shop-queue` SET
@@ -24,10 +24,10 @@ sub LoadUpdate {
 
 
   # Need to clean this up too
-  if (-f "$conf{datadir}/raw/$timestamp.html") {
-    &d("  Found $conf{datadir}/raw/$timestamp.html\n");
+  if (-f "$conf{dataDir}/raw/$timestamp.html") {
+    &d("  Found $conf{dataDir}/raw/$timestamp.html\n");
     my $parseActive;
-    open(IN, "$conf{datadir}/raw/$timestamp.html") || die "ERROR unable to open $conf{datadir}/raw/$timestamp.html - $!\n";
+    open(IN, "$conf{dataDir}/raw/$timestamp.html") || die "ERROR unable to open $conf{dataDir}/raw/$timestamp.html - $!\n";
     while(<IN>) {
       my $line = $_;
       $content .= $line;
@@ -49,7 +49,7 @@ sub LoadUpdate {
                      ") || die "SQL ERROR: $DBI::errstr\n";
     }
   } else {
-    &d("WARNING: HTML data not found for $conf{datadir}/raw/$timestamp.html - possible ERROR. Skipping.\n");
+    &d("WARNING: HTML data not found for $conf{dataDir}/raw/$timestamp.html - possible ERROR. Skipping.\n");
     $dbhf->do("UPDATE `shop-queue` SET
                    processed=\"5\",
                    nojsonfound=\"1\"
@@ -187,7 +187,7 @@ sub ProcessUpdate {
 
   unless ($rawjson) {
     &UpdateThreadTables; 
-    return("WARNING: JSON data not found in $conf{datadir}/raw/$timestamp.html - possible empty update. Skipping.");
+    return("WARNING: JSON data not found in $conf{dataDir}/raw/$timestamp.html - possible empty update. Skipping.");
   }
 
   # Remove funky <<set formatting from raw json

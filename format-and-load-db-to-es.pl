@@ -24,7 +24,7 @@ if ($args{forks}) {
   $forkMe = 5;
 }
 
-$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") || die "DBI Connection Error: $DBI::errstr\n";
+$dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}") || die "DBI Connection Error: $DBI::errstr\n";
 
 # Access the database to build a lookup table of threadid information so that we don't waste
 # time pulling this on an item-by-item basis.
@@ -118,13 +118,13 @@ my $manager = new Parallel::ForkManager( $forkMe );
 foreach $forkID (keys(%uhash)) {
 
   $manager->start and next;
-  $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}") || die "DBI Connection Error: $DBI::errstr\n";
+  $dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}") || die "DBI Connection Error: $DBI::errstr\n";
 
   my $e = Search::Elasticsearch->new(
     cxn_pool => 'Sniff',
     nodes =>  [
-      "$conf{eshost}:9200",
-      "$conf{eshost2}:9200"
+      "$conf{esHost}:9200",
+      "$conf{esHost2}:9200"
     ],
     # enable this for debug but BE CAREFUL it will create huge log files super fast
     # trace_to => ['File','/tmp/eslog.txt'],
@@ -136,10 +136,10 @@ foreach $forkID (keys(%uhash)) {
   die "some error?"  unless ($e);
   
   my $bulk = $e->bulk_helper(
-    index => "$conf{esindex}",
+    index => "$conf{esItemIndex}",
     max_count => '5100',
     max_size => '0',
-    type => "$conf{estype}",
+    type => "$conf{esItemType}",
   );
 
   $t0 = [Time::HiRes::gettimeofday];

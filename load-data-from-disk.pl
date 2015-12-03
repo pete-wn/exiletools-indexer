@@ -55,8 +55,8 @@ foreach $threadid(keys(%updateHash)) {
   $e = Search::Elasticsearch->new(
     cxn_pool => 'Sniff',
     nodes =>  [
-      "$conf{eshost}:9200",
-      "$conf{eshost2}:9200"
+      "$conf{esHost}:9200",
+      "$conf{esHost2}:9200"
     ],
     # enable this for debug but BE CAREFUL it will create huge log files super fast
     # trace_to => ['File','/tmp/eslog.txt'],
@@ -67,7 +67,7 @@ foreach $threadid(keys(%updateHash)) {
 
   die "some error?"  unless ($e);
 
-    $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+    $dbhf = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
     print "[$$] Processing THREAD $threadid ($processcount of $updateCount)\n";
     foreach $timestamp (sort keys(%{$updateHash{$threadid}})) {
       &LoadUpdate("$threadid","$timestamp");

@@ -6,7 +6,7 @@ sub CreateLock {
 
   # Reconnect a DB session if it's not connected
   unless ($dbh->ping) {
-    $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+    $dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
   }
 
   # Check to see if this process is already locked
@@ -33,7 +33,7 @@ sub RemoveLock {
 
   # Reconnect a DB session if it's not connected
   unless ($dbh->ping) {
-    $dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+    $dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
   }
 
   &d("** Removing process lock for $process\n");

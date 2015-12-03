@@ -66,7 +66,7 @@ if ($args{stale}) {
 $runType = "refresh";
 
 # Make sure the dbh is connected
-$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+$dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
 # Construct the queries to get the thread count and contents
 $pquery = "SELECT distinct(`threadid`) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\" ORDER BY `updateTimestamp` ASC LIMIT $maxThreads";
@@ -131,14 +131,14 @@ foreach $forkID (keys(%uhash)) {
   our %stats;
 
   # On fork start, we must create a new DB Connection
-  $dbhf = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+  $dbhf = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
   # New ElasticSearch Connection also
   $e = Search::Elasticsearch->new(
     cxn_pool => 'Sniff',
     nodes =>  [
-      "$conf{eshost}:9200",
-      "$conf{eshost2}:9200"
+      "$conf{esHost}:9200",
+      "$conf{esHost2}:9200"
     ],
     # enable this for debug but BE CAREFUL it will create huge log files super fast
     # trace_to => ['File','/tmp/eslog.txt'],
@@ -156,6 +156,9 @@ foreach $forkID (keys(%uhash)) {
       &d("FetchShopPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
       $stats{Errors}++;
       last;
+    } elsif ($status eq "Removed") {
+      &d(" [$forkID] Cleaning up removed thread $threadid\n");
+      $dbhf->do("DELETE FROM `thread-last-update` WHERE `threadid`=\"$threadid\"");
     }
     usleep($sleepFor);
   }
@@ -179,7 +182,7 @@ my $agelimit = time() - (86400 * $days); # Epoch time for old based on $days
 my $oldcount = "0";
 
 # Reconnect to DB
-$dbh = DBI->connect("dbi:mysql:$conf{dbname}","$conf{dbuser}","$conf{dbpass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+$dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
 # This may be a big query sometimes, so instead of loading the entire thing into
 # memory we'll just iterate on it
