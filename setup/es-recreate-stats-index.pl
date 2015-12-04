@@ -51,11 +51,11 @@ $template = '
       "properties" : {
         "RunTimestamp" : {
           "type" : "date",
-          "format" : "strict_date_optional_time||epoch_millis"
+          "format" : "epoch_second"
         },
         "updateTimestamp" : {
           "type" : "date",
-          "format" : "strict_date_optional_time||epoch_millis"
+          "format" : "epoch_second"
         }
       }
     }
