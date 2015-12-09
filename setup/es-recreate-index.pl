@@ -34,6 +34,10 @@ $template = '
       "analyzer" : {
         "edge_ngram" : {
           "tokenizer" : "edge_ngram"
+        },
+        "analyzer_keyword": {
+          "tokenizer" : "keyword",
+          "filter" : "lowercase"
         }
       },
       "tokenizer" : {
@@ -71,6 +75,13 @@ $template = '
       }
       ],
       "properties" : {
+        "properties" : {
+          "properties" : {
+            "Quality" : {
+              "type" : "double"
+            }
+          }
+        },
         "shop" : {
           "properties" : {
             "added" : {
@@ -88,6 +99,18 @@ $template = '
             "updated" : {
               "type" : "date",
               "format" : "strict_date_optional_time||epoch_millis"
+            },
+            "verified" : {
+              "analyzer":"analyzer_keyword",
+              "type":"string"
+            },
+            "sellerIGN" : {
+              "analyzer":"analyzer_keyword",
+              "type":"string"
+            },
+            "sellerAccount" : {
+              "analyzer":"analyzer_keyword",
+              "type":"string"
             }
           }
         },

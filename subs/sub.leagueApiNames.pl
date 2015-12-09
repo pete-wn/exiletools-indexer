@@ -4,7 +4,10 @@ use DBI;
 
 # Create a hash of league short names vs API Names
 
-$dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+unless ($dbh->ping) {
+  $dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+}
+
 $statement = $dbh->prepare("SELECT * FROM `league-list`");
 $statement->execute;
 $statement->bind_columns(undef, \$myleague, \$prettyName, \$apiName, \$startTime, \$endTime, \$active, \$itemjsonName, \$archivedLadder, \$shopForumURL, \$shopURL, \$shopForumID);
