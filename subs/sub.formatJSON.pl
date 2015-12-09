@@ -85,6 +85,13 @@ sub formatJSON {
   $item{attributes}{baseItemType} = $localBaseItemType;
   $item{attributes}{itemType} = $localItemType;
 
+  # Don't further process items if it is unknown
+  if ($item{attributes}{baseItemType} eq "Unknown") {
+    my $jsonout = JSON::XS->new->utf8->encode(\%item);
+    return($jsonout);
+  }
+
+
   # Determine Item Requirements & Properties
 
   # I'm not a JSON expert, but the way the JSON is laid out here makes it very difficult to reference.
@@ -312,7 +319,7 @@ sub IdentifyType {
   }
   unless ($localBaseItemType) {
     if ($data{typeLine} =~ /\bTalisman\b/) {
-      $localBaseItemType = "Amulet";
+      $localBaseItemType = "Talisman";
     } else {
       $localBaseItemType = "Unknown";
     }
