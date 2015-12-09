@@ -145,10 +145,10 @@ sub formatJSON {
 
       if ($data{properties}[$p]{name} =~ /One Handed/) {
         $item{attributes}{equipType} = "One Handed Melee Weapon";
-        $item{properties}{$property} = $value;
+        $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
       } elsif ($data{properties}[$p]{name} =~ /Two Handed/) {
         $item{attributes}{equipType} = "Two Handed Melee Weapon";
-        $item{properties}{$property} = $value;
+        $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
       } elsif ($data{properties}[$p]{name} eq "Quality") {
         $value =~ s/\+//g;
         $item{properties}{$property} = $value;
@@ -248,6 +248,8 @@ sub formatJSON {
       } elsif ($item{attributes}{itemType} =~ /^(Bow)$/) {
         $item{attributes}{equipType} = "Bow";
       }
+    } elsif ($item{info}{typeLine} =~ /\bTalisman\b/) {
+      $item{attributes}{equipType} = "Talisman";
     } else {
       $item{attributes}{equipType} = $item{attributes}{itemType};
     } 
@@ -301,13 +303,20 @@ sub IdentifyType {
     $localBaseItemType = $gearBaseType{"$data{typeLine}"};
   } else {
     foreach my $gearbase (keys(%gearBaseType)) {
-      if ($data{typeLine} =~ /$gearbase/) {
+      if ($data{typeLine} =~ /\b$gearbase\b/) {
+        &sv("Matched $data{typeLine} to $gearbase\n");
         $localBaseItemType = $gearBaseType{"$gearbase"};
         last;
       }
     }
   }
-  $localBaseItemType = "Unknown" unless ($localBaseItemType);
+  unless ($localBaseItemType) {
+    if ($data{typeLine} =~ /\bTalisman\b/) {
+      $localBaseItemType = "Amulet";
+    } else {
+      $localBaseItemType = "Unknown";
+    }
+  }
 
   my $localItemType;
   if ($localBaseItemType =~ /^(Bow|Axe|Sword|Dagger|Mace|Staff|Claw|Sceptre|Wand|Fishing Rod)$/) {
