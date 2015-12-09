@@ -36,9 +36,15 @@ if ($ARGV[0] eq "random") {
 
 
 my $rawjson = $dbh->selectrow_array("select `data` from `raw-json` where `md5sum`=\"$md5sum\"");
+
 local %item;
 $item{DEBUG}{"This isn't valid JSON for import!"} = 1;
 my $jsonout = &formatJSON("$rawjson");
+if ($jsonout =~ /^FAIL/) {
+  print "ERROR: Item parsing failed with $jsonout\n";
+  exit;
+}
+
 my $json = JSON->new;
 print "== [$md5sum] Original JSON = ==============================\n";
 print $json->pretty->encode($json->decode($rawjson))."\n";

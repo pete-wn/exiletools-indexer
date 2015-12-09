@@ -200,6 +200,12 @@ foreach $forkID (keys(%uhash)) {
       next;
     }
     my $jsonout = &formatJSON("$rawjson");
+    # If we got a FAIL rejection, don't load it into the ES index
+    if ($jsonout =~ /^FAIL/) {
+      print "ERROR: $item{uuid} $jsonout\n";
+      push @changeFlagInDB, "$uuid";
+      next;
+    }
 
     # If the item is a Quest Item but not a Divination card, don't load it into the ES index
     if ($item{attributes}{rarity} eq "Quest Item") {

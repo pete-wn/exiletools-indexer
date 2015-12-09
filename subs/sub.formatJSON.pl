@@ -10,6 +10,8 @@ sub formatJSON {
   $json = JSON::XS->new->utf8->pretty->allow_nonref;
   %data = %{$json->decode($rawjson)};
 
+  $item{attributes}{league} = $data{league};
+  return("FAIL: Unknown League") if ($data{league} eq "Unknown");
   $item{attributes}{identified} = $data{identified};
   $item{info}{icon} = $data{icon};
   # Strip anything after a ? from it, no need to have forced dimensions
@@ -80,7 +82,9 @@ sub formatJSON {
 
 
 
-  $item{attributes}{league} = $data{league};
+
+
+
   local ($localItemType, $localBaseItemType) = &IdentifyType("");
   $item{attributes}{baseItemType} = $localBaseItemType;
   $item{attributes}{itemType} = $localItemType;
