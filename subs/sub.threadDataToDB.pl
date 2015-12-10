@@ -62,6 +62,7 @@ sub LoadUpdate {
 sub ProcessUpdate {
   local $content = $_[0];
   local $rawjson = $_[1];
+  local $forumID = $_[2];
 
   # Prepare some hashes to make sure they don't leak globally
   local %fragments;
@@ -262,7 +263,7 @@ sub UpdateThreadTables {
 
   # We also keep a table with only information from the last update for quick searching.
   $dbhf->do("INSERT INTO \`thread-last-update\` VALUES
-            (\"$threadid\",\"$timestamp\",\"$threadInfo{itemsAdded}\",\"$threadInfo{itemsRemoved}\",\"$threadInfo{itemsModified}\",\"$threadInfo{sellerAccount}\",\"$threadInfo{sellerIGN}\",\"$threadInfo{totalItems}\",\"$threadInfo{buyoutCount}\",\"$threadInfo{generatedWith}\",\"$threadInfo{threadTitle}\")
+            (\"$threadid\",\"$timestamp\",\"$threadInfo{itemsAdded}\",\"$threadInfo{itemsRemoved}\",\"$threadInfo{itemsModified}\",\"$threadInfo{sellerAccount}\",\"$threadInfo{sellerIGN}\",\"$threadInfo{totalItems}\",\"$threadInfo{buyoutCount}\",\"$threadInfo{generatedWith}\",\"$threadInfo{threadTitle}\",\"$forumID\")
             ON DUPLICATE KEY UPDATE
             threadid=\"$threadid\",
             updateTimestamp=\"$timestamp\",
@@ -274,7 +275,8 @@ sub UpdateThreadTables {
             totalItems=\"$threadInfo{totalItems}\",
             buyoutCount=\"$threadInfo{buyoutCount}\",
             generatedWith=\"$threadInfo{generatedWith}\",
-            threadTitle=\"$threadInfo{threadTitle}\"
+            threadTitle=\"$threadInfo{threadTitle}\",
+            forumID=\"$forumID\"
             ") || die "SQL ERROR: $DBI::errstr\n";
 }
 

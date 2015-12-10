@@ -69,8 +69,14 @@ $runType = "refresh";
 $dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
 
 # Construct the queries to get the thread count and contents
-$pquery = "SELECT distinct(`threadid`) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\" ORDER BY `updateTimestamp` ASC LIMIT $maxThreads";
-$cquery = "SELECT count(distinct(`threadid`)) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\"";
+if ($args{forumID}) {
+  our $forumID = $args{forumID};
+  $pquery = "SELECT distinct(`threadid`) FROM `thread-last-update` WHERE `forumID`=\"$args{forumID}\" AND `updateTimestamp`<\"$staleBefore\" ORDER BY `updateTimestamp` ASC LIMIT $maxThreads";
+  $cquery = "SELECT count(distinct(`threadid`)) FROM `thread-last-update` WHERE `forumID`=\"$args{forumID}\" AND `updateTimestamp`<\"$staleBefore\"";
+} else {
+  $pquery = "SELECT distinct(`threadid`) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\" ORDER BY `updateTimestamp` ASC LIMIT $maxThreads";
+  $cquery = "SELECT count(distinct(`threadid`)) FROM `thread-last-update` WHERE `updateTimestamp`<\"$staleBefore\"";
+}
 
 # Get a count of threads that we are going to update, up to maxThreads
 my $updateCount = $dbh->selectrow_array("$cquery");
@@ -150,7 +156,7 @@ foreach $forkID (keys(%uhash)) {
   die "some error?"  unless ($e);
 
   foreach $threadid (keys(%{$uhash{$forkID}})) {
-    my $status = &FetchShopPage("$threadid");
+    my $status = &FetchShopPage("$threadid","$forumID");
     &d(" [$forkID] Refreshing: $threadid \@ http://pathofexile.com/forum/view-thread/$threadid\n");
     if ($status eq "Maintenance") {
       &d("FetchShopPage: (PID: $$) [$forum] WARNING: Got maintenance message, cancelling this run!\n");
@@ -361,7 +367,7 @@ sub FetchForumPage {
         # If we've seen this thread before, then this is a thread update
         if ($checkLast) {
           &d(" > ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-          my $status = &FetchShopPage("$threadid");
+          my $status = &FetchShopPage("$threadid","$forumID");
           unless ($status eq "fail") {
             $dbhf->do("UPDATE `web-post-track` SET
                       `lastpost`=\"$lastpost\",
@@ -379,7 +385,7 @@ sub FetchForumPage {
         # Otherwise this is a new thread
         } else {
           &d(" > ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-          my $status = &FetchShopPage("$threadid");
+          my $status = &FetchShopPage("$threadid","$forumID");
           unless ($status eq "fail") {
             $dbhf->do("INSERT INTO `web-post-track` SET
                       `threadid`=\"$threadid\",
@@ -398,7 +404,7 @@ sub FetchForumPage {
       # If a fullupdate is forced, do this anyway
       } elsif ($fullupdate eq "go") {
         &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
-        my $status = &FetchShopPage("$threadid");
+        my $status = &FetchShopPage("$threadid","$forumID");
         unless ($status eq "fail") {
           $dbhf->do("UPDATE `web-post-track` SET
                     `lastpost`=\"$lastpost\",

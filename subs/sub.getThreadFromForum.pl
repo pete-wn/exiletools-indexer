@@ -4,8 +4,9 @@ use utf8::all;
 
 sub FetchShopPage {
   local $threadid = $_[0];
+  local $forumID = $_[1];
   my $targeturl = "http://www.pathofexile.com/forum/view-thread/$threadid";
-  &sv(">> FetchShopPage: (PID: $$) [$forumName] $targeturl\n");
+  &sv(">> FetchShopPage: (PID: $$) [$forumName($forumID)] $targeturl\n");
 
   # =========================================
   # Saving local copy of data
@@ -20,11 +21,11 @@ sub FetchShopPage {
   # Return with an error if the content is bad
   unless ($response->is_success) {
     if ($response->decoded_content =~ /The resource you are looking for does not exist or has been removed/) {
-      &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: This thread has been REMOVED!\n");
+      &d(">> FetchShopPage: (PID: $$) [$forumName($forumID)] [$targeturl] WARNING: This thread has been REMOVED!\n");
       $stats{Errors}++;
       return("Removed");
     } else {
-      &d(">> FetchShopPage: (PID: $$) [$forumName] [$targeturl] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
+      &d(">> FetchShopPage: (PID: $$) [$forumName($forumID)] [$targeturl] WARNING: HTTP Error Received: ".$response->decoded_content." Aborting request!\n");
       $stats{Errors}++;
       return("http error");
     }
@@ -43,7 +44,7 @@ sub FetchShopPage {
   if ($content =~ /require\(\[\"PoE\/Item\/DeferredItemRenderer\"\], function\(R\) \{ \(new R\((.*?)\)\)\.run\(\)\; \}\)\;/) {
     $rawjson = $1;
   } else {
-    &sv(">>> FetchShopPage: (PID: $$) [$forumName]  WARNING: No JSON found in $threadid\n");
+    &sv(">>> FetchShopPage: (PID: $$) [$forumName($forumID)]  WARNING: No JSON found in $threadid\n");
     $nojsonfound = 1;
   }
   my $processed;
@@ -79,7 +80,7 @@ sub FetchShopPage {
     &UpdateThreadTables;
     return;
   }
-  &ProcessUpdate("$content","$rawjson");
+  &ProcessUpdate("$content","$rawjson","$forumID");
   
   # Go ahead and mark this as processed in the queue
   $dbhf->do("UPDATE `shop-queue` SET

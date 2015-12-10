@@ -99,18 +99,6 @@ $template = '
             "updated" : {
               "type" : "date",
               "format" : "strict_date_optional_time||epoch_millis"
-            },
-            "verified" : {
-              "analyzer":"analyzer_keyword",
-              "type":"string"
-            },
-            "sellerIGN" : {
-              "analyzer":"analyzer_keyword",
-              "type":"string"
-            },
-            "sellerAccount" : {
-              "analyzer":"analyzer_keyword",
-              "type":"string"
             }
           }
         },

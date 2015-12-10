@@ -304,7 +304,7 @@ sub FetchForumPage {
         # If we've seen this thread before, then this is a thread update
         if ($checkLast) {
           &d(" > ThreadInfo: (PID: $$) [$forum] UPDATED: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-          my $status = &FetchShopPage("$threadid");
+          my $status = &FetchShopPage("$threadid","$forumID");
           unless ($status eq "fail") {
             $dbhf->do("UPDATE `web-post-track` SET
                       `lastpost`=\"$lastpost\",
@@ -322,7 +322,7 @@ sub FetchForumPage {
         # Otherwise this is a new thread
         } else {
           &d(" > ThreadInfo: (PID: $$) [$forum] NEW: $threadid | $threadtitle | $username | $lastpost | $lastpostepoch | $originalpost | $viewcount | $replies\n");
-          my $status = &FetchShopPage("$threadid");
+          my $status = &FetchShopPage("$threadid","$forumID");
           unless ($status eq "fail") {
             $dbhf->do("INSERT INTO `web-post-track` SET
                       `threadid`=\"$threadid\",
@@ -341,7 +341,7 @@ sub FetchForumPage {
       # If a fullupdate is forced, do this anyway
       } elsif ($fullupdate eq "go") {
         &d("$$ FORCE UPDATE: $forumPage | $threadid | $threadtitle | $username\n");
-        my $status = &FetchShopPage("$threadid");
+        my $status = &FetchShopPage("$threadid","$forumID");
         unless ($status eq "fail") {
           $dbhf->do("UPDATE `web-post-track` SET
                     `lastpost`=\"$lastpost\",
