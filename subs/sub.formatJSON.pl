@@ -139,13 +139,17 @@ sub formatJSON {
       my $property = $data{properties}[$p]{name};
       my $value = $data{properties}[$p]{values}[0][0];
       $value =~ s/\%//g;
-   
+  
+      my $isboolean = 0; 
       # Make sure a numeric value of 0 is assigned if the string is 0
       if ($value eq "0") {
         $value += 0;
       } else {
         # Otherwise value wasn't set because no numbers were found in the string, so it's a true/false setting
-        $value = \1 unless ($value);
+        unless ($value) {
+          $value = \1;
+          $isboolean = 1;
+        }
       }
 
       # If the property contains (MAX) (for gems) just remove that portion so it's numeric
@@ -178,6 +182,10 @@ sub formatJSON {
             $prop =~ s/^\s+//g;
             $item{properties}{$item{attributes}{baseItemType}}{type}{$prop} = \1;
           }
+        } elsif (($item{attributes}{baseItemType} eq "Gem") && ($isboolean > 0))  {
+          # Assume any boolean in a Gem Property is actually a type
+          # see https://github.com/trackpete/exiletools-indexer/issues/52
+          $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = \1;
         } else {
           # Use a string if it's a string, number of it's a number
           if ($value =~ /^\d+$/) {
