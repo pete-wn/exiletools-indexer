@@ -34,7 +34,8 @@ CREATE TABLE `fetch-stats` (
   `RunType` varchar(128) NOT NULL,
   `NewThreads` bigint(20) NOT NULL,
   `UnchangedThreads` bigint(20) NOT NULL,
-  `UpdatedThreads` bigint(20) NOT NULL
+  `UpdatedThreads` bigint(20) NOT NULL,
+  `RunTime` int(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -132,6 +133,7 @@ CREATE TABLE `league-list` (
 
 LOCK TABLES `league-list` WRITE;
 /*!40000 ALTER TABLE `league-list` DISABLE KEYS */;
+INSERT INTO `league-list` VALUES ('5dsolo','Five Day Solo','5%20Day%20Solo%20(IV001)',1429990800,1430425200,0,'',0,'','',''),('5dsolohc','Five Day Solo Hardcore','5%20Day%20Solo%20Hardcore%20(IV002)',1429990800,1430425200,0,'',0,'','',''),('ambush','Ambush','Ambush',NULL,946728000,0,'',1,'','',''),('anarchy','Anarchy','anarchy',NULL,946728000,0,'',1,'','',''),('beyond','Beyond','Beyond',NULL,946728000,0,'',1,'','',''),('bloodlines','Bloodlines','Bloodlines',1418385600,1427198400,0,'',0,'','',''),('darkshrine','Darkshrine','Darkshrine (IC003)',1446490800,1449520528,0,'Darkshrine (IC003)',0,'http://www.pathofexile.com/forum/view-forum/597/page','http://www.pathofexile.com/forum/view-thread','597'),('darkshrinehc','Darkshrine Hardcore','Darkshrine HC (IC004)',1446490800,1449501528,0,'Darkshrine HC (IC004)',0,'http://www.pathofexile.com/forum/view-forum/598/page','http://www.pathofexile.com/forum/view-thread','598'),('domination','Domination','domination',NULL,946728000,0,'',1,'','',''),('flashback','One Month Flashback','1%20Month%20Flashback%20(IC006)',1431114000,1433708400,0,'',0,'http://www.pathofexile.com/forum/view-forum/586/page','http://www.pathofexile.com/forum/view-thread','586'),('flashback2','One Month Flashback 2','Flashback Event (IC001)',1443808800,1446408000,0,'Flashback Event (IC001)',0,'http://www.pathofexile.com/forum/view-forum/595/page','http://www.pathofexile.com/forum/view-thread','595'),('flashback2hc','One Month Flashback 2 HC','Flashback Event HC (IC002)',1443808800,1446408000,0,'Flashback Event HC (IC002)',0,'http://www.pathofexile.com/forum/view-forum/594/page','http://www.pathofexile.com/forum/view-thread','594'),('flashbackhc','One Month Flashback Hardcore','1%20Month%20Flashback%20HC%20(IC007)',1431114000,1433708400,0,'',0,'http://www.pathofexile.com/forum/view-forum/587/page','http://www.pathofexile.com/forum/view-thread','587'),('hardcore','Hardcore','Hardcore',NULL,2147483647,1,'Hardcore',0,'http://www.pathofexile.com/forum/view-forum/305/page','http://www.pathofexile.com/forum/view-thread','305'),('invasion','Invasion','invasion',NULL,946728000,0,'',1,'','',''),('nemesis','Nemesis','nemesis',NULL,946728000,0,'',1,'','',''),('omr2014','One Month Race 2014','one%20month%20race',NULL,946728000,0,'',1,'','',''),('omrhc2014','One Month Race 2014 Hardcore','one%20month%20race%20hc',NULL,946728000,0,'',1,'','',''),('omrtb','One Month Race Torment / Bloodlines','Torment%2FBloodlines',1427215200,1429921200,0,'',0,'','',''),('omrtbhc','One Month Race Torment / Bloodlines Hardcore','Torment%2FBloodlines%20HC',1427215200,1429921200,0,'',0,'','',''),('onslaught','Onslaught','onslaught',NULL,946728000,0,'',1,'','',''),('owcutthroat','One-Week Cut-Throat','1%20Week%20Cutthroat%20(IV008)',1433968200,1434576000,0,'',0,'','',''),('owrnemesis','One Week Race Nemesis','nemesis%20one%20week%20race',NULL,946728000,0,'',1,'','',''),('owrrb2014','One Week Race Beyond / Rampage','One%20Week%20Rampage%2FBeyond',NULL,946728000,0,'',1,'','',''),('owrrbhc2014','One Week Race Beyond / Rampage Hardcore','One%20Week%20HC%20Rampage%2FBeyond',NULL,946728000,0,'',1,'','',''),('rampage','Rampage','Rampage',NULL,946728000,0,'',1,'','',''),('standard','Standard','Standard',NULL,2147483647,1,'Standard',0,'http://www.pathofexile.com/forum/view-forum/306/page','http://www.pathofexile.com/forum/view-thread','306'),('talisman','Talisman','Talisman',1449865800,1457127000,1,'',0,'http://www.pathofexile.com/forum/view-forum/600/page','http://www.pathofexile.com/forum/view-thread','600'),('talismanhc','Talisman Hardcore','Talisman Hardcore',1449865800,1457127000,1,'',0,'http://www.pathofexile.com/forum/view-forum/599/page','http://www.pathofexile.com/forum/view-thread','599'),('tempest','Tempest','Tempest',1436553900,1443805200,0,'',0,'http://www.pathofexile.com/forum/view-forum/588/page','http://www.pathofexile.com/forum/view-thread','588'),('torment','Torment','Torment',1418385600,1427198400,0,'',0,'','',''),('warbands','Warbands','Warbands',1436553900,1443805200,0,'',0,'http://www.pathofexile.com/forum/view-forum/591/page','http://www.pathofexile.com/forum/view-thread','591');
 /*!40000 ALTER TABLE `league-list` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -267,12 +269,14 @@ CREATE TABLE `thread-last-update` (
   `buyoutCount` int(5) DEFAULT NULL,
   `generatedWith` varchar(128) DEFAULT NULL,
   `threadTitle` varchar(220) CHARACTER SET utf8 DEFAULT NULL,
+  `forumID` varchar(128) CHARACTER SET utf8 DEFAULT NULL,
   UNIQUE KEY `threadid` (`threadid`),
   KEY `updateTimestamp` (`updateTimestamp`),
   KEY `sellerAccount` (`sellerAccount`),
   KEY `sellerIGN` (`sellerIGN`),
   KEY `generatedWith` (`generatedWith`),
-  KEY `threadTitle` (`threadTitle`)
+  KEY `threadTitle` (`threadTitle`),
+  KEY `forumID` (`forumID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -369,4 +373,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-11-17 11:13:11
+-- Dump completed on 2015-12-11 10:58:51

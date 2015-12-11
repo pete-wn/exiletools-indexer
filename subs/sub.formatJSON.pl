@@ -158,16 +158,16 @@ sub formatJSON {
       $property =~ s/\%0/#/g;
       $property =~ s/\%1/#/g;
 
-      if ($data{properties}[$p]{name} =~ /One Handed/) {
+      if ($property =~ /One Handed/) {
         $item{attributes}{equipType} = "One Handed Melee Weapon";
         $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = $value;
-      } elsif ($data{properties}[$p]{name} =~ /Two Handed/) {
+      } elsif ($property =~ /Two Handed/) {
         $item{attributes}{equipType} = "Two Handed Melee Weapon";
         $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = $value;
-      } elsif ($data{properties}[$p]{name} eq "Quality") {
+      } elsif ($property eq "Quality") {
         $value =~ s/\+//g;
         $item{properties}{$property} = $value;
-      } elsif ($data{properties}[$p]{name} =~ /^(.*?) \%0 (.*?) \%1 (.*?)$/) {
+      } elsif ($property =~ /^(.*?) \%0 (.*?) \%1 (.*?)$/) {
         # If there are some weird parameters here, put them into a subsection for the item type
         # This is pretty much exclusive to flasks
         $item{properties}{$item{attributes}{baseItemType}}{$property}{x} += $data{properties}[$p]{values}[0][0];
@@ -175,7 +175,7 @@ sub formatJSON {
       } elsif ($value =~ /(\d+)-(\d+)/) {
         $item{properties}{$item{attributes}{baseItemType}}{$property}{min} += $1;
         $item{properties}{$item{attributes}{baseItemType}}{$property}{max} += $2;
-      } elsif ($item{attributes}{baseItemType} eq "Gem") {
+      } elsif (($item{attributes}{baseItemType} eq "Gem") && (($property =~ /\,/) || ($isboolean))) {
         if ($property =~ /\,/) {
           my @props = split(/\,/, $property);
           foreach $prop (@props) {
@@ -197,11 +197,11 @@ sub formatJSON {
         $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
       } else {                                                                                                                                                                        
         # Use a string if it's a string, number of it's a number                                                                                                                      
-        if ($value =~ /^\d+$/) {                                                                                                                                                      
-          $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;                                                                                                    
-        } else {                                                                                                                                                                      
-          $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;                                                                                                     
-        }                                                                                                                                                                             
+        if ($value =~ /^\d+$/) {                                                   
+          $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;                                                                 
+        } else {                                                                                                                                  
+          $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;                                                                             
+        }                                                                                                                                                      
       }
     } elsif (($data{properties}[$p]{values}[0][0]) && ($data{properties}[$p]{values}[0][1])) {
       my $property = $data{properties}[$p]{values}[0][0];
@@ -299,8 +299,8 @@ sub formatJSON {
   # Add a PseudoMod count for total resists
   if ($item{modsPseudo}) {
     foreach $elekey (keys (%{$item{modsPseudo}})) {
-      $item{modsPseudo}{eleResistNum}++ if ($elekey =~ /^eleResistSum/);
-      $item{modsPseudo}{allResistNum}++ if ($elekey =~ /^(resistSumChaos|eleResistSum)/);
+      $item{modsPseudo}{"# of Elemental Resistances"}++ if ($elekey =~ /(Cold|Fire|Lightning)/);
+      $item{modsPseudo}{"# of Resistances"}++ if ($elekey =~ /(Cold|Fire|Lightning|Chaos)/);
     }
   }
 
@@ -413,98 +413,101 @@ sub setPseudoMods {
   if ($modname =~ /to (\S+) Resistance/) {
     if ($modname =~ /Chaos/i) {
       if ($modifier eq '+') {
-        $item{modsPseudo}{allResistTotal} += $value;
-        $item{modsPseudo}{resistSumChaos} += $value;
+        $item{modsPseudo}{"+#% Total to Resistances"} += $value;
+        $item{modsPseudo}{"+#% Total to Chaos Resistance"} += $value;
       } else {
-        $item{modsPseudo}{allResistTotal} -= $value;
-        $item{modsPseudo}{resistSumChaos} -= $value;
+        $item{modsPseudo}{"+#% Total to Resistances"} -= $value;
+        $item{modsPseudo}{"+#% Total to Chaos Resistance"} -= $value;
       }
     } else {
       if ($modifier eq '+') {
-        $item{modsPseudo}{allResistTotal} += $value;
-        $item{modsPseudo}{eleResistTotal} += $value;
-        $item{modsPseudo}{"eleResistSum$1"} += $value;
+        $item{modsPseudo}{"+#% Total to Resistances"} += $value;
+        $item{modsPseudo}{"+#% Total to Elemental Resistances"} += $value;
+        $item{modsPseudo}{"+#% Total to $1 Resistance"} += $value;
       } else {
-        $item{modsPseudo}{allResistTotal} -= $value;
-        $item{modsPseudo}{eleResistTotal} -= $value;
-        $item{modsPseudo}{"eleResistSum$1"} -= $value;
+        $item{modsPseudo}{"+#% Total to Resistances"} -= $value;
+        $item{modsPseudo}{"+#% Total to Elemental Resistances"} -= $value;
+        $item{modsPseudo}{"+#% Total to $1 Resistance"} -= $value;
       }
     }
   # We're assuming right now there is no "+ to Chaos and Ele" resist mods
   } elsif ($modname =~ /to (\S+) and (\S+) Resistances/) {
     # If the mod adds to resist, add it to the total twice (one for each resist)
     if ($modifier eq '+') {
-      $item{modsPseudo}{allResistTotal} += $value + $value;
-      $item{modsPseudo}{eleResistTotal} += $value + $value;
-      $item{modsPseudo}{"eleResistSum$1"} += $value;
-      $item{modsPseudo}{"eleResistSum$2"} += $value;
+      $item{modsPseudo}{"+#% Total to Resistances"} += $value + $value;
+      $item{modsPseudo}{"+#% Total to Elemental Resistances"} += $value + $value;
+      $item{modsPseudo}{"+#% Total to $1 Resistance"} += $value;
+      $item{modsPseudo}{"+#% Total to $2 Resistance"} += $value;
     # Same if it subtracts two resists
     } else {
-      $item{modsPseudo}{eleResistTotal} -= $value - $value;
-      $item{modsPseudo}{allResistTotal} -= $value - $value;
-      $item{modsPseudo}{"eleResistSum$1"} -= $value;
-      $item{modsPseudo}{"eleResistSum$2"} -= $value;
+      $item{modsPseudo}{"+#% Total to Elemental Resistances"} -= $value - $value;
+      $item{modsPseudo}{"+#% Total to Resistances"} -= $value - $value;
+      $item{modsPseudo}{"+#% Total to $1 Resistance"} -= $value;
+      $item{modsPseudo}{"+#% Total to $2 Resistance"} -= $value;
     }
   } elsif ($modname =~ /to all Elemental Resistances/) {
     # If the mod adds to resist, add it to the total thrice (one for each resist)
     if ($modifier eq '+') {
-      $item{modsPseudo}{eleResistTotal} += $value + $value + $value;
-      $item{modsPseudo}{allResistTotal} += $value + $value + $value;
-      $item{modsPseudo}{eleResistSumFire} += $value;
-      $item{modsPseudo}{eleResistSumCold} += $value;
-      $item{modsPseudo}{eleResistSumLightning} += $value;
+      $item{modsPseudo}{"+#% Total to Elemental Resistances"} += $value + $value + $value;
+      $item{modsPseudo}{"+#% Total to Resistances"} += $value + $value + $value;
+      $item{modsPseudo}{"+#% Total to Fire Resistance"} += $value;
+      $item{modsPseudo}{"+#% Total to Cold Resistance"} += $value;
+      $item{modsPseudo}{"+#% Total to Lightning Resistance"} += $value;
     # Same if it subtracts all resists
     } else {
-      $item{modsPseudo}{eleResistTotal} -= $value - $value - $value;
-      $item{modsPseudo}{allResistTotal} -= $value - $value - $value;
-      $item{modsPseudo}{eleResistSumFire} -= $value;
-      $item{modsPseudo}{eleResistSumCold} -= $value;
-      $item{modsPseudo}{eleResistSumLightning} -= $value;
+      $item{modsPseudo}{"+#% Total to Elemental Resistances"} -= $value - $value - $value;
+      $item{modsPseudo}{"+#% Total to Resistances"} -= $value - $value - $value;
+      $item{modsPseudo}{"+#% Total to Fire Resistance"} -= $value;
+      $item{modsPseudo}{"+#% Total to Cold Resistance"} -= $value;
+      $item{modsPseudo}{"+#% Total to Lightning Resistance"} -= $value;
     }
   } elsif ($modname =~ /to Intelligence$/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumInt} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Intelligence"} += $value;
   } elsif ($modname =~ /to Dexterity$/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumDex} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Dexterity"} += $value;
   } elsif ($modname =~ /to Strength$/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumStr} += $value;
-    $item{modsPseudo}{"maxLife"} += int($value / 2);
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Strength"} += $value;
+    $item{modsPseudo}{"+# Total to maximum Life"} += int($value / 2);
   } elsif ($modname =~ /to Strength and Intelligence$/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumStr} += $value;
-    $item{modsPseudo}{flatSumInt} += $value;
-    $item{modsPseudo}{"maxLife"} += int($value / 2);
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Strength"} += $value;
+    $item{modsPseudo}{"+# Total to Intelligence"} += $value;
+    $item{modsPseudo}{"+# Total to maximum Life"} += int($value / 2);
   } elsif ($modname =~ /to Dexterity and Intelligence$/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumDex} += $value;
-    $item{modsPseudo}{flatSumInt} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Dexterity"} += $value;
+    $item{modsPseudo}{"+# Total to Intelligence"} += $value;
   } elsif ($modname =~ /to Strength and Dexterity/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumStr} += $value;
-    $item{modsPseudo}{flatSumDex} += $value;
-    $item{modsPseudo}{"maxLife"} += int($value / 2);
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Strength"} += $value;
+    $item{modsPseudo}{"+# Total to Dexterity"} += $value;
+    $item{modsPseudo}{"+# Total to maximum Life"} += int($value / 2);
   } elsif ($modname =~ /to all Attributes/) {
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatAttributesTotal} += $value;
-    $item{modsPseudo}{flatSumStr} += $value;
-    $item{modsPseudo}{flatSumDex} += $value;
-    $item{modsPseudo}{flatSumInt} += $value;
-    $item{modsPseudo}{"maxLife"} += int($value / 2);
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Attributes"} += $value;
+    $item{modsPseudo}{"+# Total to Strength"} += $value;
+    $item{modsPseudo}{"+# Total to Dexterity"} += $value;
+    $item{modsPseudo}{"+# Total to Intelligence"} += $value;
+    $item{modsPseudo}{"+# Total to maximum Life"} += int($value / 2);
   } elsif ($modname =~ /to maximum Life/) {
-    $item{modsPseudo}{"maxLife"} += $value;
+    $item{modsPseudo}{"+# Total to maximum Life"} += $value;
   }
 }
 
 sub parseExtendedMods {
+  # i.e. explicitMods
   my $modTypeJSON = $_[0];
+  # i.e. explicit
   my $modType = $_[1];
   return unless (($modTypeJSON) && ($modType));
+
   foreach my $modLine ( @{$data{"$modTypeJSON"}} ) {
     # Parsing for Divination cards has to be done a bit differently from other items
     if ($item{attributes}{itemType} eq "Card") {
@@ -516,19 +519,22 @@ sub parseExtendedMods {
       # if there's a default line, it's probably a secondary mod with more information, added it to the reward information
       if ($modLine =~ /^\<default\>\{(.*?):*\}\s+\<(.*?)\>\{(.*?)\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." ($1: $3)";
-        $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." ($1: $3)";
+# Removed per https://github.com/trackpete/exiletools-indexer/issues/28
+#        $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." ($1: $3)";
         $item{info}{tokenized}{DivinationReward} = lc($item{info}{tokenized}{DivinationReward}." ($1: $3)");
 
       # The corrupted line should be treated differently
       } elsif ($modLine =~ /^\<corrupted\>\{Corrupted\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = $item{mods}{$item{attributes}{itemType}}{DivinationReward}." (Corrupted)";
-        $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." (Corrupted)";
+# Removed per https://github.com/trackpete/exiletools-indexer/issues/28
+#        $item{modsTotal}{DivinationReward} = $item{modsTotal}{DivinationReward}." (Corrupted)";
         $item{info}{tokenized}{DivinationReward} = lc($item{info}{tokenized}{DivinationReward}." (Corrupted)");
 
       # if the item is a divination card, it may have a <tag>{reward} line
       } elsif ($modLine =~ /^\<(.*?)\>\{(.*?)\}\r*$/) {
         $item{mods}{$item{attributes}{itemType}}{DivinationReward} = "$1: $2";
-        $item{modsTotal}{DivinationReward} = "$1: $2";
+# Removed per https://github.com/trackpete/exiletools-indexer/issues/28
+#        $item{modsTotal}{DivinationReward} = "$1: $2";
         $item{attributes}{"$modTypeJSON"."Count"}++;
         # Allows tokenized search to match this so you can search for "kaom" in the info.tokenized.DivinationReward field
         $item{info}{tokenized}{DivinationReward} = lc("$1: $2");
@@ -540,9 +546,11 @@ sub parseExtendedMods {
         my $value = $2;
         $modname =~ s/\s+$//g;
         $item{mods}{$item{attributes}{itemType}}{$modType}{"$1#$4 $modname"} += $value;
-        $item{modsTotal}{"$1#$4 $modname"} += $value;
         $item{attributes}{"$modTypeJSON"."Count"}++;
         &setPseudoMods("$1","$modname","$value");
+        unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
+          $item{modsTotal}{"$1#$4 $modname"} += $value;
+        }
       # Look for lines with numbers elsewhere, such as "Adds 1 additional Magic Unicorn" or "Increased life by 10%"
       } elsif ($modLine =~ /^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/) {
         my $modname;
@@ -566,18 +574,25 @@ sub parseExtendedMods {
           $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{min} += $1;
           $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{max} += $2;
           
-          $item{modsTotal}{$modname}{min} += $1;
-          $item{modsTotal}{$modname}{max} += $2;
+          unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
+            $item{modsTotal}{$modname}{min} += $1;
+            $item{modsTotal}{$modname}{max} += $2;
+          }
    
         } else {
           $item{mods}{$item{attributes}{itemType}}{$modType}{$modname} += $value;
-          $item{modsTotal}{$modname} += $value;
+          unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
+            $item{modsTotal}{$modname} += $value;
+          }
         }
         $item{attributes}{"$modTypeJSON"."Count"}++;
       # Anything left over, just assume that it's a description that should be set to TRUE
       } else {
         $item{mods}{$item{attributes}{itemType}}{$modType}{$modLine} = \1;
-        $item{modsTotal}{$modLine} = \1;
+# Skip booleans for modsTotal too
+#        unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
+#          $item{modsTotal}{$modLine} = \1;
+#        }
         $item{attributes}{"$modTypeJSON"."Count"}++;
       }
     }
