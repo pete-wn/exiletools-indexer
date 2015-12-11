@@ -160,10 +160,10 @@ sub formatJSON {
 
       if ($data{properties}[$p]{name} =~ /One Handed/) {
         $item{attributes}{equipType} = "One Handed Melee Weapon";
-        $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
+        $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = $value;
       } elsif ($data{properties}[$p]{name} =~ /Two Handed/) {
         $item{attributes}{equipType} = "Two Handed Melee Weapon";
-        $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
+        $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = $value;
       } elsif ($data{properties}[$p]{name} eq "Quality") {
         $value =~ s/\+//g;
         $item{properties}{$property} = $value;
@@ -185,6 +185,10 @@ sub formatJSON {
         } elsif (($item{attributes}{baseItemType} eq "Gem") && ($isboolean > 0))  {
           # Assume any boolean in a Gem Property is actually a type
           # see https://github.com/trackpete/exiletools-indexer/issues/52
+          $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = \1;
+        } elsif (($item{attributes}{baseItemType} eq "Weapon") && ($isboolean > 0))  {
+          # Assume any boolean in a Weapon Property is actually a type
+          # see https://github.com/trackpete/exiletools-indexer/issues/54
           $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = \1;
         } else {
           # Use a string if it's a string, number of it's a number
@@ -224,15 +228,21 @@ sub formatJSON {
   # If the item is a Weapon, calculate DPS information
   if ($item{attributes}{baseItemType} eq "Weapon") {
 
-  # Calculate DPS
-    if (($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
-      $item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+    # Calculate DPS
+    if ($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}) {
+      if (($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
+        $item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+      }
     }
-    if (($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
-      $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+    if ($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}) {
+      if (($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
+        $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+      }
     }
-    if (($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
-      $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+    if ($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}) {
+      if (($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
+        $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+      }
     }
     if ($item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} || $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} || $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"}) {
       $item{properties}{$item{attributes}{baseItemType}}{"Total DPS"} += $item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} + $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} + $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"};
