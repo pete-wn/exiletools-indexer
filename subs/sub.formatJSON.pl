@@ -175,29 +175,33 @@ sub formatJSON {
       } elsif ($value =~ /(\d+)-(\d+)/) {
         $item{properties}{$item{attributes}{baseItemType}}{$property}{min} += $1;
         $item{properties}{$item{attributes}{baseItemType}}{$property}{max} += $2;
-      } else {
+      } elsif ($item{attributes}{baseItemType} eq "Gem") {
         if ($property =~ /\,/) {
           my @props = split(/\,/, $property);
           foreach $prop (@props) {
             $prop =~ s/^\s+//g;
             $item{properties}{$item{attributes}{baseItemType}}{type}{$prop} = \1;
           }
-        } elsif (($item{attributes}{baseItemType} eq "Gem") && ($isboolean > 0))  {
+        } elsif ($isboolean > 0)  {
           # Assume any boolean in a Gem Property is actually a type
           # see https://github.com/trackpete/exiletools-indexer/issues/52
           $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = \1;
-        } elsif (($item{attributes}{baseItemType} eq "Weapon") && ($isboolean > 0))  {
-          # Assume any boolean in a Weapon Property is actually a type
-          # see https://github.com/trackpete/exiletools-indexer/issues/54
-          $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = \1;
-        } else {
-          # Use a string if it's a string, number of it's a number
-          if ($value =~ /^\d+$/) {
-            $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
-          } else {
-            $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
-          }
         }
+      } elsif (($item{attributes}{baseItemType} eq "Weapon") && ($isboolean > 0))  {
+        # Assume any boolean in a Weapon Property is actually a type
+        # see https://github.com/trackpete/exiletools-indexer/issues/54
+        $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = \1;
+      } elsif (($item{attributes}{baseItemType} eq "Map") && ($value =~ /\+/))  {
+        # Remove the +'s from map attributes and set them to integers
+        # see https://github.com/trackpete/exiletools-indexer/issues/53
+        $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
+      } else {                                                                                                                                                                        
+        # Use a string if it's a string, number of it's a number                                                                                                                      
+        if ($value =~ /^\d+$/) {                                                                                                                                                      
+          $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;                                                                                                    
+        } else {                                                                                                                                                                      
+          $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;                                                                                                     
+        }                                                                                                                                                                             
       }
     } elsif (($data{properties}[$p]{values}[0][0]) && ($data{properties}[$p]{values}[0][1])) {
       my $property = $data{properties}[$p]{values}[0][0];
