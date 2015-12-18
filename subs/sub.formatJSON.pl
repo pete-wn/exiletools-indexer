@@ -197,7 +197,7 @@ sub formatJSON {
         $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
       } else {                                                                                                                                                                        
         # Use a string if it's a string, number of it's a number                                                                                                                      
-        if ($value =~ /^\d+$/) {                                                   
+        if (($value =~ /^\d+$/) || ($value =~ /^\d+(\.\d{1,2})?$/)) {                                                   
           $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;                                                                 
         } else {                                                                                                                                  
           $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;                                                                             
@@ -207,7 +207,7 @@ sub formatJSON {
       my $property = $data{properties}[$p]{values}[0][0];
       my $value = $data{properties}[$p]{values}[0][1];
       # Use a string if it's a string, number of it's a number
-      if ($value =~ /^\d+$/) {
+      if (($value =~ /^\d+$/) || ($value =~ /^\d+(\.\d{1,2})?$/)) {                                                   
         $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
       } else {
         $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
