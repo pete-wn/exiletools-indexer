@@ -158,7 +158,21 @@ sub formatJSON {
       $property =~ s/\%0/#/g;
       $property =~ s/\%1/#/g;
 
-      if ($property =~ /One Handed/) {
+      # Detection for elemental damage types
+      # see https://github.com/trackpete/exiletools-indexer/issues/62
+      if ($property eq "Elemental Damage") {
+        &CreateElementalDamageTypeHash unless (%elementalDamageType);
+        my $elep = "0";
+        foreach my $eleparr ( @{$data{properties}[$p]{values}} ) {
+          my ($min, $max) = split(/\-/, $$eleparr[0]);
+          $item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{min} += $min;
+          $item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{max} += $max;
+          $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} += $min;
+          $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max} += $max;
+          $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{min} += $min;
+          $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{max} += $max;
+        }
+      } elsif ($property =~ /One Handed/) {
         $item{attributes}{equipType} = "One Handed Melee Weapon";
         $item{properties}{$item{attributes}{baseItemType}}{type}{$property} = $value;
       } elsif ($property =~ /Two Handed/) {
@@ -173,8 +187,16 @@ sub formatJSON {
         $item{properties}{$item{attributes}{baseItemType}}{$property}{x} += $data{properties}[$p]{values}[0][0];
         $item{properties}{$item{attributes}{baseItemType}}{$property}{y} += $data{properties}[$p]{values}[1][0];
       } elsif ($value =~ /(\d+)-(\d+)/) {
-        $item{properties}{$item{attributes}{baseItemType}}{$property}{min} += $1;
-        $item{properties}{$item{attributes}{baseItemType}}{$property}{max} += $2;
+        my $min = $1;
+        my $max = $2;
+        $item{properties}{$item{attributes}{baseItemType}}{$property}{min} += $min;
+        $item{properties}{$item{attributes}{baseItemType}}{$property}{max} += $max;
+
+        if (($property eq "Physical Damage") || ($property eq "Chaos Damage")) {
+          $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{min} += $min;
+          $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{max} += $max;
+        }
+
       } elsif (($item{attributes}{baseItemType} eq "Gem") && (($property =~ /\,/) || ($isboolean))) {
         if ($property =~ /\,/) {
           my @props = split(/\,/, $property);
@@ -229,29 +251,25 @@ sub formatJSON {
   &parseExtendedMods("craftedMods","crafted") if ($data{craftedMods});
   &parseExtendedMods("cosmeticMods","cosmetic") if ($data{cosmeticMods});
 
-  # If the item is a Weapon, calculate DPS information
-  if ($item{attributes}{baseItemType} eq "Weapon") {
+  # Build Pseudo Mods for Jewels
+#  &setJewelPseudoMods if ($item{attributes}{baseItemType} eq "Jewel");
 
-    # Calculate DPS
-    if ($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}) {
-      if (($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
-        $item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Physical Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
+  # If the item is a Weapon, calculate DPS and average flat damage information
+  if ($item{attributes}{baseItemType} eq "Weapon") {
+    foreach my $damage (keys(%{$item{properties}{Weapon}})) {
+      if (($item{properties}{Weapon}{"$damage"}{min} > 0) && ($item{properties}{Weapon}{"$damage"}{max} > 0)) {
+        my ($damageType, $damageChaff) = split(/ /, $damage);
+        $item{properties}{Weapon}{"$damage"}{avg} = int(($item{properties}{Weapon}{"$damage"}{min} + $item{properties}{Weapon}{"$damage"}{max}) / 2);
+
+        $item{properties}{Weapon}{"$damageType DPS"} = int($item{properties}{Weapon}{"$damage"}{avg} * $item{properties}{Weapon}{"Attacks per Second"});
+
+
       }
-    }
-    if ($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}) {
-      if (($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
-        $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
-      }
-    }
-    if ($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}) {
-      if (($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{min} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{max} > 0) && ($item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"} > 0)) {
-        $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"} += int(($item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Chaos Damage"}{max}) / 2 * $item{properties}{$item{attributes}{baseItemType}}{"Attacks per Second"});
-      }
-    }
-    if ($item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} || $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} || $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"}) {
-      $item{properties}{$item{attributes}{baseItemType}}{"Total DPS"} += $item{properties}{$item{attributes}{baseItemType}}{"Physical DPS"} + $item{properties}{$item{attributes}{baseItemType}}{"Elemental DPS"} + $item{properties}{$item{attributes}{baseItemType}}{"Chaos DPS"};
     }
   }
+
+
+
 
   #  if ($item{properties}{Armour}{Quality}) {
   #    if ($item{properties}{Armour}{"Energy Shield"}) {
@@ -402,6 +420,20 @@ sub ItemSockets {
 
 }
 
+sub setJewelPseudoMods {
+  # Iterate through the modsTotal to find known stats.
+  # Just experimenting with attack speed for now
+  # see https://github.com/trackpete/exiletools-indexer/issues/38
+
+  # Sort them to make sure attack speed goes first
+  foreach my $mod (sort keys(%{$item{modsTotal}})) {
+    if ($mod =~ /#% increased Attack Speed (.*?)$/) {
+      my $desc = $1;
+      $item{modsPseudo}{"#% increased Attack Speed $desc"} = $item{modsTotal}{"#% increased Attack Speed"} + $item{modsTotal}{"$mod"};
+    }
+  }
+}
+
 sub setPseudoMods {
   my $modifier = $_[0];
   my $modname = $_[1];
@@ -540,8 +572,11 @@ sub parseExtendedMods {
         $item{info}{tokenized}{DivinationReward} = lc("$1: $2");
       }
     } else {
+      # Ignore known bad mods for threshold jewels, see https://github.com/trackpete/exiletools-indexer/issues/23
+      if (($modLine eq "Rarity of Items dropped by Enemies Shattered by Glacial Hammer") || ($modLine eq "has a 20% increased angle") || ($modLine eq "has a 25% chance to grant a Power Charge on Kill") || ($modLine eq "10% chance to deal Double Damage") || ($modLine eq "also Fortifies Nearby Allies for 3 seconds")) {
+        return;
       # Process the line if it starts with a +/- flat number (i.e. "+1 to Magical Unicorns" becomes (+)(1) (to Magical Unicorns)
-      if ($modLine =~ /^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/) {
+      } elsif ($modLine =~ /^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/) {
         my $modname = $5;
         my $value = $2;
         $modname =~ s/\s+$//g;
@@ -551,12 +586,35 @@ sub parseExtendedMods {
         unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
           $item{modsTotal}{"$1#$4 $modname"} += $value;
         }
+
+      # Detect threshold jewel modifers and set them as boolean
+      } elsif ($modLine =~ /^(With at least .*?)$/) {
+        my $thresholdMod = $1;
+
+        # Custom detection for broken multi-line threshold mods
+        # See https://github.com/trackpete/exiletools-indexer/issues/23
+
+        if ($thresholdMod eq "With at least 50 Strength Allocated in radius, Vigilant Strike") {
+          $thresholdMod = "With at least 50 Strength Allocated in radius, Vigilant Strike also Fortifies Nearby Allies for 3 seconds";
+        } elsif ($thresholdMod eq "With at least 50 Strength Allocated in Radius, Heavy Strike has a ") {
+          $thresholdMod = "With at least 50 Strength Allocated in Radius, Heavy Strike has a 10% chance to deal Double Damage";
+        } elsif ($thresholdMod eq "With at least 50 Intelligence Allocated in radius, Cold Snap") {
+          $thresholdMod = "With at least 50 Intelligence Allocated in radius, Cold Snap has a 25% chance to grant a Power Charge on Kill";
+        } elsif ($thresholdMod eq "With at least 50 Strength Allocated in radius, Ground Slam") {
+          $thresholdMod = "With at least 50 Strength Allocated in radius, Ground Slam has a 20% increased angle";
+        } elsif ($thresholdMod eq "With at least 50 Strength Allocated in Radius, 20% increased") {
+          $thresholdMod = "With at least 50 Strength Allocated in Radius, 20% increased Rarity of Items dropped by Enemies Shattered by Glacial Hammer";
+        }
+
+        $item{mods}{$item{attributes}{itemType}}{$modType}{"$thresholdMod"} = \1;
+
       # Look for lines with numbers elsewhere, such as "Adds 1 additional Magic Unicorn" or "Increased life by 10%"
       } elsif ($modLine =~ /^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/) {
         my $modname;
         my $value = $2;
         my $prefix = $1;
         my $suffix = $6;
+
         if ($value =~ /\%/) {
           $modname = "$prefix #% $suffix";
           $value =~ s/\%//g;
@@ -597,6 +655,16 @@ sub parseExtendedMods {
       }
     }
   }
+}
+
+sub CreateElementalDamageTypeHash {
+  our %elementalDamageType;
+
+  $elementalDamageType{1} = "Physical Damage";
+  $elementalDamageType{4} = "Fire Damage";
+  $elementalDamageType{5} = "Cold Damage";
+  $elementalDamageType{6} = "Lightning Damage";
+  $elementalDamageType{7} = "Chaos Damage";
 }
 
 return true;

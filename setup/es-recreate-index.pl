@@ -79,6 +79,12 @@ $template = '
           "properties" : {
             "Quality" : {
               "type" : "double"
+            },
+            "Attacks per Second" : {
+              "type" : "double"
+            },
+            "Critical Strike Chance" : {
+              "type" : "double"
             }
           }
         },
