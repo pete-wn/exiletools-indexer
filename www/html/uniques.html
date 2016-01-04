@@ -26,6 +26,7 @@
   <script src="js/thirdparty/select.min.js"></script>
   <script src="js/es-uniques.js"></script>
   <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.6/ngStorage.min.js"></script>
 
 <style>
 body {
@@ -34,10 +35,6 @@ body {
 @font-face {
     font-family: "fontin";
     src: url("css/fontin-regular-webfont.woff") format('woff');
-}
-
-[ng\: cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x- ng-cloak {
-  display: none !important;
 }
 
 </style>
@@ -105,7 +102,7 @@ body {
   </div><br><br>
   <hr width=100% size=1>
   <div id="loader"></div>
-  <div class="ng-view" style="min-width:1000px" ng-cloak></div>
+  <div class="ng-view" style="min-width:1000px"></div>
 
   <script type="text/ng-template" id="uniqueChooser.html">
     <div ng-if="Uniques">
@@ -141,14 +138,22 @@ body {
         <div class="btn btn-danger" style="font-size:200%;float:left;margin-right:25px" ng-if="verified.GONE"><i class="fa fa-external-link fa-lg"></i> Gone: {{verified.GONE}}</div>
         <div class="btn btn-warning" style="font-size:200%;float:left;margin-right:25px" ng-if="verified.OLD"><i class="fa fa-meh-o fa-lg"></i> Stale: {{verified.OLD}}</div>
       </div>
+      <br>
+
+{{unique}} is the <font size=+2><b>{{commonRank}}</b></font>{{commonRankOrd}} most common unique for sale in {{league}} (out of {{totalCount}})
+<br>
+{{corruptedTotal}} corrupted ({{corruptedPercent | number : 1}}%)
 
 <br><br>
 
-Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-</p>
+
+
+
+
     </div>
   </script>
 
+<div id="GraphAdded" style="height: 400px; min-width: 310px"></div>
 
 
 </div>
