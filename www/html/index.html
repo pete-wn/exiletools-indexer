@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" ng-app="EsConnector">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>ExileTools Shop Indexer Information</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.css" rel="stylesheet">
+  <link href="css/ui-layout.css" rel="stylesheet">
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
+  <script src="js/thirdparty/ui-bootstrap-0.14.3.min.js"></script>
+  <script src="js/thirdparty/highstock/js/highstock.js"></script>
+  <script src="js/thirdparty/highstock/js/modules/exporting.js"></script>
+  <script src="js/es.js"></script>
+  <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
+
+
+</head>
+<body>
+
+    <nav class="navbar navbar-default" role="navigation">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+
+        <button type="button" class="navbar-toggle" ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">ExileTools Shop Indexer Information</a>
+      </div>
+    
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" ng-class="!navCollapsed && 'in'" ng-click="navCollapsed = true">
+      
+        <ul class="nav navbar-nav">
+<!--          
+          <li class="active"><a href="#">How do I make this do something?</a></li>
+          <li><a href="#">What about this?</a></li>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Static Dropdown <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">Action</a></li>
+              <li><a href="#">Another action</a></li>
+              <li><a href="#">Something else here</a></li>
+              <li><a href="#">Separated link</a></li>
+            </ul>
+          </li>
+
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" ng-controller="LeagueList">Dynamic Dropdown?<b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">Action</a></li>
+              <li><a href="#">Another action</a></li>
+              <li><a href="#">Something else here</a></li>
+              <li><a href="#">Separated link</a></li>
+              <li><a href="#">One more separated link</a></li>
+            </ul>
+          </li>
+-->
+          
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="http://exiletools.com">ExileTools.com</a></li>
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </nav>
+
+<div id="main" style="width:100%;padding-left:50px;padding-right:50px">
+  
+  <div style="width:100%;background-color:#ffebcc;padding:10px;text-align:top">
+    <p><b>This page contains statistics and information about the ElasticSearch Index at ExileTools that powers the free and public <a href="http://api.exiletools.com/info/indexer.html">Shop Indexer API</a> service.</b></p>
+    <p>All of this information is rendered live in your browser via ElasticSearch queries to the Item and Stats indexes, and can be used as examples to generate far more complex queries and statistics about the Path of Exile economy. This dashboard itself is fully open sourced and <a href="https://github.com/trackpete/exiletools-reporting">available on GitHub</a>. You can find the queries used in the <code>js/es.js</code>, and can submit issues or pull requests for suggested improvements.</p>
+    <p><i>Why is the current index so young when ExileTools has been indexing for over a year?</i> The current index was completely rebuilt in late November to bring far more data into ElasticSearch and fix a bunch of bugs (upgrading the indexer to <a href="https://github.com/trackpete/exiletools-indexer/">an opensource v2 release</a>). I also tend to recreate the index after major patches because of changes to mod names/etc. that affect the mappings.</p>
+  </div>
+
+  <p/><hr width=100% size=1 />
+
+  <div ng-controller="ThreadHeadlineStats">
+
+<p align=center><i>Note: The data below does not include statistics from the initial historical import of data - the index created on Nov 19 included an import of data from a few months prior.</i></p>
+
+<!-- Oh tables, how happy they make everyone -->
+
+<table cellspacing=0 cellpadding=15 border=0 width=100%>
+<tr bgcolor=#e5fff9>
+<td valign=top align=center width=33%>
+<b>Current Index Created:</b><br>
+<font size=5>{{FirstThread}}</font>
+</td><td valign=top align=center>
+<b>Total Shops Tracked:</b><br>
+<font size=7>{{UniqueShopCount | number}}</font>
+</td><td valign=top align=center width=33%>
+<b>Unique Seller Accounts:</b><br>
+<font size=7>{{UniqueSellerCount | number}}</font>
+</td></tr></table>
+<br>
+<table cellspacing=0 cellpadding=15 border=0 width=100%>
+<tr bgcolor=#ccfff2>
+<td valign=top align=center>
+<b>Total Shop Updates Processed:</b><br>
+<font size=7>{{TotalThreadsProcessed | number}}</font>
+</td><td valign=top align=center>
+<b>Updates via Procurement:</b><br>
+<font size=7>{{generatedWith.Procurement | number}}</font>
+</td><td valign=top align=center>
+<b>Updates via Acquisition Plus:</b><br>
+<font size=7>{{generatedWith['Acquisition Plus'] | number}}</font>
+</td><tr></table>
+<br>
+<table cellspacing=0 cellpadding=15 border=0 width=100%>
+<tr bgcolor=#b3ffec>
+<td valign=top align=center width=25%>
+<b>Total Items Added:</b><br>
+<font size=7>{{TotalItemsAdded | number}}</font>
+</td><td valign=top align=center width=25%>
+<b>Total Items Removed:</b><br>
+<font size=7>{{TotalItemsRemoved | number}}</font>
+</td><td valign=top align=center width=25%>
+<b>Total Items Modified:</b><br>
+<font size=7>{{TotalItemsModified | number}}</font>
+</td><td valign=top align=center width=25%>
+<b>Total Items Processed In All Updates:</b><br>
+<font size=7>{{TotalItemsProcessed | number}}</font>
+</td></tr></table>
+
+
+  </div>
+
+  <p/><hr width=100% size=1 />
+  <!-- This query now also has all the above information and we should put it into one table. How? lol. -->
+  <div ng-controller="GeneralLeagueStats">
+    <h3>Index Statistics for Items Updated Recently (Last 3 Days):</h2>
+    <div id="GridRecentItemsInLeague" ui-grid="{ data: RecentGeneralStats, enableHorizontalScrollbar:0 }" style="width:100%;height:152px"></div>
+    <p/>
+    <h3>Overall Current Index Statistics:</h2>
+    <div id="GridItemsInLeague" ui-grid="{ data: GeneralStats, enableHorizontalScrollbar:0 }" style="width:100%;height:212px"></div>
+  </div>
+
+<p/><hr width=100% size=1 />
+
+<div ng-controller="RunStatsHisto1">
+  <!-- I can probably do this with div aligns but I'm too lazy to look it up right now -->
+  <table width=100% cellspacing=0 cellpadding=0>
+  <tr><td width=70% valign=top>
+  <div id="GraphShopPagesFetched" style="height: 400px; min-width: 310px"></div>
+  </td><td width=30% valign=top>
+  <div style="padding:20px">
+    <h3>A Note on Threads:</h3>
+<p>
+Once the index is populated with known threads (typically, any thread updated in the last few months in Standard or all threads in short term leagues), every single known thread will be refreshed at least once a day whether the thread is bumped or not.
+</p>
+<p>
+This <i>refreshing</i> of threads is where the bulk of the analysis and processing time is spent. Each hour, up to a maximum of 5,000 threads are refreshed.
+</p>
+
+
+</div>
+  </td></tr></table>
+
+  </p><hr width=100% size=1 />
+
+  <table width=100% cellspacing=0 cellpadding=0>
+  <tr><td width=70% valign=top>
+    <div id="GraphTotalTransferMB" style="height: 400px; min-width: 310px"></div>
+  </td><td width=30% valign=top>
+    <div style="padding:20px">
+    <p><b><font size=5>{{TotalMB | number : 0}}MB</font></b> of compressed data has been transferred from pathofexile.com since this index was created at {{FirstDay}}.</p>
+    <p>Uncompressed data used for analysis is typically 4-5x the size of the compressed data.</p>
+    </div>
+  </td></tr></table>
+</div>
+
+
+
+</div>
+</body>
+</html>

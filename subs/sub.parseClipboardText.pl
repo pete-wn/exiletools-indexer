@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 sub parseClipboardText {
-  my $text = $_[0];
+  local $text = $_[0];
 
   # Create a local item information hash
   local %i;
@@ -16,7 +16,12 @@ sub parseClipboardText {
 
   # Begin by extracting some basic item information
 
-  $i{attributes}{identified} = \0 if ($text =~ /^Unidentified$/m);
+  if ($text =~ /^Unidentified$/m) {
+    $i{attributes}{identified} = \0;
+  } else {
+    $i{attributes}{identified} = \1;
+  }
+
   $i{attributes}{corrupted} = \1 if ($text =~ /^Corrupted$/m);
 
   # Split the text into chunks for additional processing
@@ -30,8 +35,51 @@ sub parseClipboardText {
 
   $i{info}{fullName} = join(" ", @chunk);
 
-  # Attempt to identify the base item type
+  # Some of these are broken out into other subroutines for legibility
+  # Set the item type, equip type, base item type for the item
+  &clipboardTextSetType;
 
+  # If the item has sockets, parse 'em
+  &clipboardTextSetSockets("$1") if ($text =~ /^Sockets: (.*?)$/m);
+
+  # If the item is armour, pull known armour properties
+  &clipboardTextSetPropertiesArmour if ($i{attributes}{baseItemType} eq "Armour");
+
+
+
+
+
+  my $debugItemHash = Dumper(%i);
+  &d("Item Hash:\n<--\n$debugItemHash\n-->\n");
+}
+
+sub clipboardTextSetPropertiesArmour {
+
+
+
+
+}
+
+sub clipboardTextSetSockets {
+  my @sockets = split(/ /, $_[0]);
+  my $largestLinkGroup;
+  my $socketCount;
+  foreach $linkGroup (@sockets) {
+    $linkGroup =~ s/-//g;
+    $largestLinkGroup = length($linkGroup) if (length($linkGroup) > $largestLinkGroup); 
+    $socketCount = $socketCount + length($linkGroup);
+  }
+  $i{sockets}{largestLinkGroup} += $largestLinkGroup;
+  $i{sockets}{socketCount} += $socketCount;
+
+
+
+
+}
+
+
+
+sub clipboardTextSetType {
   if ($text =~ /^Map Tier:/m) {
     $i{attributes}{baseItemType} = "Map";
     $i{attributes}{itemType} = "Map";
@@ -75,33 +123,28 @@ sub parseClipboardText {
         $localItemType = "Amulet";
         $localBaseItemType = "Jewelry";
         $localEquipType = "Talisman";
+      } elsif (($text =~ /^Stack Size/m) && ($i{attributes}{rarity} eq "Normal")) {
+        $localItemType = "Card";
+        $localBaseItemType = "Card";
+        $localEquipType = "Card";
       } else {
         $localItemType = "Unknown";
       }
     }
 
     if (($text =~ /^One Handed/m) || ($text =~ /^(Claw|Dagger)$/m)) {
-      $localEquipType = "One Handed Melee Weapon"; 
+      $localEquipType = "One Handed Melee Weapon";
     } elsif (($text =~ /^Two Handed/m) || ($text =~ /^Staff$/m)) {
-      $localEquipType = "Two Handed Melee Weapon"; 
+      $localEquipType = "Two Handed Melee Weapon";
     } elsif ($text =~ /^Wand$/m) {
-      $localEquipType = "One Handed Projectile Weapon"; 
+      $localEquipType = "One Handed Projectile Weapon";
     }
-
     $i{attributes}{baseItemType} = $localBaseItemType;
     $i{attributes}{itemType} = $localItemType;
     $localEquipType = $localItemType unless ($localEquipType);
     $i{attributes}{equipType} = $localEquipType;
-
-    # Determine the equipType for weapons and talisman
-
   }
-
-  my $debugItemHash = Dumper(%i);
-  &d("Item Hash:\n<--\n$debugItemHash\n-->\n");
 }
-
-
 
 
 return true;
