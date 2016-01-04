@@ -12,7 +12,8 @@ $config = '
       "index" : {
         "refresh_interval" : "60s",
         "number_of_shards" : "5",
-        "number_of_replicas" : "1"
+        "number_of_replicas" : "1",
+        "requests.cache.enable" : true
       }
     },
     "warmers" : { }

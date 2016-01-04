@@ -327,59 +327,62 @@ sub formatJSON {
 }
 
 sub IdentifyType {
-  my $localBaseItemType;
+  my $localItemType;
   if ($data{frameType} == 4) {
-    $localBaseItemType = "Gem";
+    $localItemType = "Gem";
   } elsif ($data{frameType} == 6) {
     # frameType has been changed to 6 for Divination Cards and 7 for Quest Items
     # (See https://github.com/trackpete/exiletools-indexer/issues/30)
     # However I'm leaving this code in just in case any weird legacy issues get
     # through
     if ($data{icon} =~ /Divination\/InventoryIcon.png/) {
-      $localBaseItemType = "Card";
+      $localItemType = "Card";
     } else {
-      $localBaseItemType = "Quest Item";
+      $localItemType = "Quest Item";
     }
   } elsif ($data{frameType} == 5) {
-    $localBaseItemType = "Currency";
+    $localItemType = "Currency";
   } elsif ($data{frameType} == 7) {
-    $localBaseItemType = "Quest Item";
+    $localItemType = "Quest Item";
   } elsif ($data{descrText} =~ /Travel to this Map by using it in the Eternal Laboratory/) {
-    $localBaseItemType = "Map";
+    $localItemType = "Map";
   } elsif ($data{descrText} =~ /Place into an allocated Jewel Socket/) {
-    $localBaseItemType = "Jewel";
+    $localItemType = "Jewel";
   } elsif ($data{descrText} =~ /Right click to drink/) {
-    $localBaseItemType = "Flask";
+    $localItemType = "Flask";
   } elsif ($gearBaseType{"$data{typeLine}"}) {
-    $localBaseItemType = $gearBaseType{"$data{typeLine}"};
+    $localItemType = $gearBaseType{"$data{typeLine}"};
   } else {
     foreach my $gearbase (keys(%gearBaseType)) {
       if ($data{typeLine} =~ /\b$gearbase\b/) {
         &sv("Matched $data{typeLine} to $gearbase\n");
-        $localBaseItemType = $gearBaseType{"$gearbase"};
+        $localItemType = $gearBaseType{"$gearbase"};
         last;
       }
     }
   }
-  unless ($localBaseItemType) {
+
+  my $localBaseItemType;
+
+  unless ($localItemType) {
     if ($data{typeLine} =~ /\bTalisman\b/) {
-      $localBaseItemType = "Talisman";
+      $localBaseItemType = "Jewelry";
+      $localItemType = "Amulet";
     } else {
-      $localBaseItemType = "Unknown";
+      $localItemType = "Unknown";
     }
   }
 
-  my $localItemType;
-  if ($localBaseItemType =~ /^(Bow|Axe|Sword|Dagger|Mace|Staff|Claw|Sceptre|Wand|Fishing Rod)$/) {
-    $localItemType = "Weapon";
-  } elsif ($localBaseItemType =~ /^(Helmet|Gloves|Boots|Body|Shield|Quiver)$/) {
-    $localItemType = "Armour";
-  } elsif ($localBaseItemType =~ /^(Amulet|Belt|Ring)$/) {
-    $localItemType = "Jewelry";
+  if ($localItemType =~ /^(Bow|Axe|Sword|Dagger|Mace|Staff|Claw|Sceptre|Wand|Fishing Rod)$/) {
+    $localBaseItemType = "Weapon";
+  } elsif ($localItemType =~ /^(Helmet|Gloves|Boots|Body|Shield|Quiver)$/) {
+    $localBaseItemType = "Armour";
+  } elsif ($localItemType =~ /^(Amulet|Belt|Ring)$/) {
+    $localBaseItemType = "Jewelry";
   } else {
-    $localItemType = $localBaseItemType;
+    $localBaseItemType = $localItemType;
   }
-  return($localBaseItemType, $localItemType);
+  return($localItemType, $localBaseItemType);
 }
 
 sub ItemSockets {
