@@ -386,9 +386,39 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
         "field": "shop.verified",
         "size": 10
       }
+    },    
+    "uniqueSellers" : {
+      "cardinality": {
+        "field": "shop.sellerAccount"
+      }
+    },
+    "percentilePrices" : {
+      "percentiles": {
+        "field": "shop.chaosEquiv",
+        "percents": [
+          1,
+          5,
+          15,
+          30,
+          50,
+          75,
+          95
+        ]
+      }
+    },
+    "statsPrices" : {
+      "extended_stats": {
+        "field": "shop.chaosEquiv"
+      }
+    },
+    "currencyType": {
+      "terms": {
+        "field": "shop.currency"
+      }
     }
-  }
-  }
+  },
+  size:0
+    }
   }).then(function (response) {
     var searchEnd = new Date();
     console.log("Generating Report: Query 2 executed in " + (searchEnd - searchStart) + "ms");
@@ -401,7 +431,18 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       $scope.verifiedPrice[item.key] = item.doc_count;
     });
 
+   $scope.value = new Object();
+   $scope.value.allTime5 = response.aggregations.percentilePrices.values["5.0"];
+   $scope.value.allTime5Type = "Chaos";
+   $scope.value.allTime15 = response.aggregations.percentilePrices.values["15.0"];
+   $scope.value.allTime15Type = "Chaos";
+   $scope.value.allTime50 = response.aggregations.percentilePrices.values["50.0"];
+   $scope.value.allTime50Type = "Chaos";
 
+   // Modify chaos to ex for display
+   if ($scope.value.allTime5 > 80) { $scope.value.allTime5 = $scope.value.allTime5 / 80; $scope.value.allTime5Type = "Exalts"; };
+   if ($scope.value.allTime15 > 80) { $scope.value.allTime15 = $scope.value.allTime15 / 80; $scope.value.allTime15Type = "Exalts"; };
+   if ($scope.value.allTime50 > 80) { $scope.value.allTime50 = $scope.value.allTime50 / 80; $scope.value.allTime50Type = "Exalts"; };
 
 
 
