@@ -147,7 +147,7 @@ EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $loca
       }
     }).then(function (response) {
       var searchEnd = new Date();
-      console.log("Search executed in " + (searchEnd - searchStart) + "ms");
+      console.log("Unique Item List Search executed in " + (searchEnd - searchStart) + "ms");
   
   
       // Define the Uniques array
@@ -209,7 +209,14 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.commonRankOrd = (ord[(ordv-20)%10]||ord[ordv]||ord[0]);
   $scope.totalCount = count;
 
-  // Initial large query
+  // Start a timer for searches
+  var searchStart = new Date();
+  // Prepare some promise variables 
+  // yeah I have no idea how to use promises so I wrote my o wn
+  var search1Promise = 'pending';
+  var search2Promise = 'pending';
+
+  // Query 1: General Statistics
   es.search({
     index: 'index',
     body: {
@@ -258,22 +265,36 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
         "field": "attributes.corrupted"
       }
     },    
+    "identified": {
+      "terms": {
+        "field": "attributes.identified"
+      }
+    },
     "histoAdded": {
       "date_histogram": {
         "field": "shop.added",
         "interval": "day"
       }
     },
-    "histoUpdated": {
-      "date_histogram": {
-        "field": "shop.updated",
-        "interval": "day"
+    "currencyType": {
+      "terms": {
+        "field": "shop.currency"
+      }
+    },
+    "uniqueSellers" : {
+      "cardinality": {
+        "field": "shop.sellerAccount"
       }
     }
   },
   size:0
     }
   }).then(function (response) {
+    var searchEnd = new Date();
+    console.log("Generating Report: Query 1 executed in " + (searchEnd - searchStart) + "ms");
+    // Append loading data
+    $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Gathered general statistics in ' + (searchEnd - searchStart) + 'ms</div>');
+
     // stuff
     var Icons = new Array();
     response.aggregations.icons.buckets.forEach(function (item, index, array) {
@@ -282,91 +303,140 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     $scope.Icons = Icons;
 
     // Set some other variables from the data
-    $scope.baseItemType = response.aggregations.baseItemType.buckets[0].key
-    $scope.itemType = response.aggregations.itemType.buckets[0].key
-    $scope.equipType = response.aggregations.equipType.buckets[0].key
+    $scope.baseItemType = response.aggregations.baseItemType.buckets[0].key;
+    $scope.itemType = response.aggregations.itemType.buckets[0].key;
+    $scope.equipType = response.aggregations.equipType.buckets[0].key;
+    $scope.uniqueSellers = response.aggregations.uniqueSellers.value;
+
+    // Count of corrupted items
     if (response.aggregations.corrupted.buckets[0].key == 1) {
       $scope.corruptedTotal = response.aggregations.corrupted.buckets[0].doc_count
       $scope.corruptedPercent = (response.aggregations.corrupted.buckets[0].doc_count / response.hits.total) * 100;
-    } else if (response.aggregations.corrupted.buckets[1].key == 1) {
+    } else if (response.aggregations.corrupted.buckets[1] && response.aggregations.corrupted.buckets[1].key == 1) {
       $scope.corruptedTotal = response.aggregations.corrupted.buckets[1].doc_count
       $scope.corruptedPercent = (response.aggregations.corrupted.buckets[1].doc_count / response.hits.total) * 100;
     }
+
+    // Identified vs unidentified
+    if (response.aggregations.identified.buckets[0].key == 1) {
+      $scope.identifiedTotal = response.aggregations.identified.buckets[0].doc_count
+      $scope.identifiedPercent = (response.aggregations.identified.buckets[0].doc_count / response.hits.total) * 100;
+    } else if (response.aggregations.identified.buckets[1] && response.aggregations.identified.buckets[1].key == 1) {
+      $scope.identifiedTotal = response.aggregations.identified.buckets[1].doc_count
+      $scope.identifiedPercent = (response.aggregations.identified.buckets[1].doc_count / response.hits.total) * 100;
+    } 
+    $scope.unidentifiedTotal = response.hits.total - $scope.identifiedTotal;
+    $scope.unidentifiedPercent = ($scope.unidentifiedTotal / response.hits.total) * 100;
 
     // Iterate through verified to separate out YES, NO, GONE, OLD
     $scope.verified = new Object();
     response.aggregations.verified.buckets.forEach(function (item, index, array) {
       $scope.verified[item.key] = item.doc_count;
-
     });
 
-
-    var HistoData = new Array();
+    // Iterate through currency to build an object of currency types
+    $scope.currencyTypes = new Array();
+    response.aggregations.currencyType.buckets.forEach(function (item, index, array) {
+      tmp = new Object();
+      tmp.currencyTypeRequested = item.key;
+      tmp.itemsListedForCurrency = item.doc_count;
+      $scope.currencyTypes.push(tmp);
+    });
+  
+// We should do this via angular modules for highcharts instead
+//    var HistoData = new Array();
     // Loop through histo data to populate graph objects
-    response.aggregations.histoAdded.buckets.forEach(function (time, index, array) {
-      var MyRow = new Array();
-      MyRow[0] = time.key;
-      MyRow[1] = time.doc_count;
-      HistoData.push(MyRow);
-    }); 
+//    response.aggregations.histoAdded.buckets.forEach(function (time, index, array) {
+//      var MyRow = new Array();
+//      MyRow[0] = time.key;
+//      MyRow[1] = time.doc_count;
+//      HistoData.push(MyRow);
+//    }); 
+//
+//    $scope.HistoData = HistoData;
 
-$scope.HistoData = HistoData;
-
-    // Force use of the comma separator for numbers, highcharts seems to default to spaces, bleh
-    Highcharts.setOptions({
-      lang: {
-        thousandsSep: ','
-      }
-    });
-
-    // Draw Graphs
-    $('#GraphAdded').highcharts('StockChart', {
-      rangeSelector : {
-        allButtonsEnabled: true,
-        buttons: [{
-          type: 'day',
-          count: 1,
-          text: '1d'
-        },{
-          type: 'week',
-          count: 1,
-          text: '1w'
-        },{
-          type: 'month',
-          count: 1,
-          text: '1m'
-        }],
-        selected : 1
-      },
-      title : {
-        text : 'Added to Shops Per Day'
-      },
-      colors: ['#cc0000'],
-      series : [{
-        name : 'Added',
-        data : HistoData,
-        type : 'area',
-        fillColor : {
-          linearGradient : {
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 1
-          },
-          stops : [
-            [0, '#cc0000'],
-            [1, Highcharts.Color('#cc0000').setOpacity(0).get('rgba')]
-          ]
-        }
-      }]
-    });
-
-    $scope.readyReport = true;
-    // Clear loader
-    $("#loader").html('');
+  
+    search1Promise = 'resolved'; 
+    resolve(search1Promise, search2Promise);
   }, function (err) {
     console.trace(err.message);
   });
+
+  // Query 2: Statistics for items with prices
+  es.search({
+    index: 'index',
+    body: {
+  "query": {
+    "filtered": {
+      "filter": {
+        "bool": {
+          "must" : [
+            { "term" : { "attributes.rarity" : "Unique" } },
+            { "term" : { "attributes.league" : $scope.league } },
+            { "term" : { "info.fullName" : $scope.unique } },
+            { "range" : { "shop.chaosEquiv" : { "gt" : 0 } } }
+          ]
+        }
+      }
+    }
+  },
+  "aggs": {
+    "verified": {
+      "terms": {
+        "field": "shop.verified",
+        "size": 10
+      }
+    }
+  }
+  }
+  }).then(function (response) {
+    var searchEnd = new Date();
+    console.log("Generating Report: Query 2 executed in " + (searchEnd - searchStart) + "ms");
+    // Append loading data
+    $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Gathered pricing statistics in ' + (searchEnd - searchStart) + 'ms</div>');
+
+    // Iterate through verified to separate out YES, NO, GONE, OLD
+    $scope.verifiedPrice = new Object();
+    response.aggregations.verified.buckets.forEach(function (item, index, array) {
+      $scope.verifiedPrice[item.key] = item.doc_count;
+    });
+
+
+
+
+
+
+
+
+
+
+    search2Promise = 'resolved';
+    resolve(search1Promise, search2Promise);
+  }, function (err) {
+    console.trace(err.message);
+  });
+
+
+
+
+  // This is my own function that is called after each search and only triggers
+  // if all searches are set to resolved
+  function resolve(search1Promise, search2Promise) {
+    if (search1Promise == 'resolved' && search2Promise == 'resolved') {
+      // Clear loader
+      $("#loader").empty();
+
+      var searchEnd = new Date();
+      console.log("Generating Report: All processing finished in " + (searchEnd - searchStart) + "ms");
+      // Briefly show report generation statistics in the loader div
+      $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Created full report in ' + (searchEnd - searchStart) + 'ms</div>');
+      setTimeout(function(){ $("#loader").empty(); }, 2000);
+
+
+      // Set readyReport to true to show data in Angular
+      $scope.readyReport = true;
+    }
+  }
 
   return true;
 });
