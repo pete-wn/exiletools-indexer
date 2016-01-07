@@ -19,14 +19,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular-route.min.js"></script>
   <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
   <script src="js/thirdparty/ui-bootstrap-0.14.3.min.js"></script>
+<!--
   <script src="js/thirdparty/highstock/js/highstock.js"></script>
   <script src="js/thirdparty/highstock/js/modules/exporting.js"></script>
+-->
   <script src="js/thirdparty/angular-promise-buttons.min.js"></script>
   <script src="js/thirdparty/angular-cache.min.js"></script>
   <script src="js/thirdparty/select.min.js"></script>
-  <script src="js/es-uniques.js"></script>
+  <script src="js/thirdparty/highcharts-ng.min.js"></script>
   <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.6/ngStorage.min.js"></script>
+  <script src="http://code.highcharts.com/stock/highstock.src.js"></script>
+  <script src="js/es-uniques.js"></script>
 
 <style>
 body {
@@ -145,6 +149,9 @@ body {
 <br><br>
 
 <p ng-if="commonRank">{{unique}} is the <font size=+2><b>{{commonRank}}</b></font>{{commonRankOrd}} most common unique for sale in {{league}} (out of {{totalCount}})</p>
+<p><b>Gone Ratio:</b> {{verifiedPrice.GONE / (verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD) * 100 | number : 0}}%</p>
+
+
 <p ng-if="corruptedTotal">{{corruptedTotal}} corrupted ({{corruptedPercent | number : 1}}%)</p>
 <p ng-if="identifiedTotal">{{identifiedTotal}} identified ({{identifiedPercent | number : 1}}%)</p>
 <p ng-if="unidentifiedTotal">{{unidentifiedTotal}} unidentified ({{unidentifiedPercent | number : 1}}%)</p>
@@ -157,6 +164,8 @@ body {
 <br><br>
 <div id="CurrencyTypes" ui-grid="{ data: currencyTypes, enableHorizontalScrollbar:0 }" style="width:30%;height:150px"></div>
 <br><br>
+
+<highchart id="chart1" config="chartConfig" series="testSeries" class="span10"></highchart>
 
 
 

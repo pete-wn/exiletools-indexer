@@ -1,5 +1,5 @@
 // We define an EsConnector module that depends on the elasticsearch module.     
-var EsConnector = angular.module('EsConnector', ['elasticsearch','ui.bootstrap','ui.grid','ui.grid.autoResize','angularPromiseButtons','angular-cache','ngRoute','ui.select','ngStorage']).config( ['$routeProvider', function($routeProvider) {
+var EsConnector = angular.module('EsConnector', ['elasticsearch','ui.bootstrap','ui.grid','ui.grid.autoResize','angularPromiseButtons','angular-cache','ngRoute','ui.select','ngStorage','highcharts-ng']).config( ['$routeProvider', function($routeProvider) {
 $routeProvider
   .when('/:league/:unique', {
     templateUrl: 'uniqueReport.html',
@@ -14,6 +14,7 @@ $routeProvider
     redirectTo: '/'
   });
 }]);
+
 
 
 // Create the es service from the esFactory
@@ -342,18 +343,39 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       tmp.itemsListedForCurrency = item.doc_count;
       $scope.currencyTypes.push(tmp);
     });
+
+  // Set the Highcharts configuration
+    $scope.chartConfig = {
+        options: { 
+            chart: {
+                zoomType: 'x'
+            },
+            rangeSelector: {
+                enabled: true
+            },
+            navigator: { 
+                enabled: true
+            }
+        },
+        series: [],
+        title: {
+            text: 'Hello'
+        },
+        useHighStocks: true
+    }
   
-// We should do this via angular modules for highcharts instead
-//    var HistoData = new Array();
+    var MyData = new Array();
     // Loop through histo data to populate graph objects
-//    response.aggregations.histoAdded.buckets.forEach(function (time, index, array) {
-//      var MyRow = new Array();
-//      MyRow[0] = time.key;
-//      MyRow[1] = time.doc_count;
-//      HistoData.push(MyRow);
-//    }); 
-//
-//    $scope.HistoData = HistoData;
+    response.aggregations.histoAdded.buckets.forEach(function (time, index, array) {
+      var MyLine = [time.key,time.doc_count];
+      MyData.push(MyLine);
+    }); 
+    console.log(MyData);
+    $scope.chartConfig.series.push({
+        type: 'column',
+        data:  MyData 
+    });
+
 
   
     search1Promise = 'resolved'; 
