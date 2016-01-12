@@ -152,7 +152,7 @@ sub ProcessUpdate {
     local $spoilerTitle = $spoiler->look_down('_tag' => 'div', 'class' => 'spoilerTitle');
     $spoilerTitle = $spoilerTitle->as_text;
     # Remove unnecessary characters
-    $spoilerTitle =~ tr/\~\/a-zA-Z0-9\,\& //dc;
+    $spoilerTitle =~ tr/\~\/a-zA-Z0-9\,\.\& //dc;
 #    print "Spoiler Title: \"$spoilerTitle\"\n";
 
     # Look down for the spoilerContent div(s)

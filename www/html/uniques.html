@@ -155,17 +155,24 @@ body {
 <p ng-if="corruptedTotal">{{corruptedTotal}} corrupted ({{corruptedPercent | number : 1}}%)</p>
 <p ng-if="identifiedTotal">{{identifiedTotal}} identified ({{identifiedPercent | number : 1}}%)</p>
 <p ng-if="unidentifiedTotal">{{unidentifiedTotal}} unidentified ({{unidentifiedPercent | number : 1}}%)</p>
-<p ng-if="uniqueSellers">{{uniqueSellers}} unique seller accounts</p>
-<p ng-if="value.allTime5">{{value.allTime5}} {{value.allTime5Type}} is the  5% percentile price</p>
-<p ng-if="value.allTime15">{{value.allTime15}} {{value.allTime15Type}} is the  15% percentile price</p>
-<p ng-if="value.allTime50">{{value.allTime50}} {{value.allTime50Type}} is the  50% percentile price</p>
+<p ng-if="uniqueSellers">{{uniqueSellers}} unique seller accounts ({{uniqueSellersWithPrice}} with B/O)</p>
+<p ng-if="value.allTime5">{{value.allTime5}} {{value.allTime5Type}} is the  5% percentile listed price (full history)</p>
+<p ng-if="value.allTime15">{{value.allTime15}} {{value.allTime15Type}} is the  15% percentile listed price (full history)</p>
+<p ng-if="value.allTime50">{{value.allTime50}} {{value.allTime50Type}} is the  50% percentile listed price (full history)</p>
+<p ng-if="valueGONE.allTime5">{{valueGONE.allTime5}} {{valueGONE.allTime5Type}} is the  5% percentile GONE price (full history)</p>
+<p ng-if="valueGONE.allTime15">{{valueGONE.allTime15}} {{valueGONE.allTime15Type}} is the  15% percentile GONE price (full history)</p>
+<p ng-if="valueGONE.allTime50">{{valueGONE.allTime50}} {{valueGONE.allTime50Type}} is the  50% percentile GONE price (full history)</p>
 
 
 <br><br>
-<div id="CurrencyTypes" ui-grid="{ data: currencyTypes, enableHorizontalScrollbar:0 }" style="width:30%;height:150px"></div>
+<div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="width:30%;height:150px"></div>
+<br><br>
+<br><br>
+<div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="width:30%;height:300px"></div>
 <br><br>
 
-<highchart id="chart1" config="chartConfig" series="testSeries" class="span10"></highchart>
+<highchart id="chart1" config="chart1Config" class="span10"></highchart>
+<highchart id="chart2" config="chart2Config" class="span10"></highchart>
 
 
 
