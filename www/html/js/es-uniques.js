@@ -347,10 +347,10 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     // Count of corrupted items
     if (response.aggregations.corrupted.buckets[0].key == 1) {
       $scope.corruptedTotal = response.aggregations.corrupted.buckets[0].doc_count
-      $scope.corruptedPercent = (response.aggregations.corrupted.buckets[0].doc_count / response.hits.total) * 100;
+      $scope.corruptedPercent = ((response.aggregations.corrupted.buckets[0].doc_count / response.hits.total) * 100).toFixed(1);
     } else if (response.aggregations.corrupted.buckets[1] && response.aggregations.corrupted.buckets[1].key == 1) {
       $scope.corruptedTotal = response.aggregations.corrupted.buckets[1].doc_count
-      $scope.corruptedPercent = (response.aggregations.corrupted.buckets[1].doc_count / response.hits.total) * 100;
+      $scope.corruptedPercent = ((response.aggregations.corrupted.buckets[1].doc_count / response.hits.total) * 100).toFixed(1);
     }
 
     // Identified vs unidentified
@@ -362,7 +362,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       $scope.identifiedPercent = (response.aggregations.identified.buckets[1].doc_count / response.hits.total) * 100;
     } 
     $scope.unidentifiedTotal = response.hits.total - $scope.identifiedTotal;
-    $scope.unidentifiedPercent = ($scope.unidentifiedTotal / response.hits.total) * 100;
+    $scope.unidentifiedPercent = (($scope.unidentifiedTotal / response.hits.total) * 100).toFixed(1);
 
     // Iterate through verified to separate out YES, NO, GONE, OLD
     $scope.verified = new Object();
@@ -672,30 +672,197 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       // Clear loader
       $("#loader").empty();
 
+      // UI-Grid Tables
+      $scope.CurrencyTypesGridOptions = {
+        data : $scope.currencyTypes,
+        enableHorizontalScrollbar : 0,
+        columnDefs: [
+          { name: '', field: 'icon', cellTemplate:"<img height=\"27\" ng-src=\"{{grid.getCellValue(row, col)}}\" lazy-src>", enableColumnResizing: false, width: 40, enableSorting: false, enableColumnMenu: false},
+          { name: 'Currency Type Requested', field: 'currencyTypeRequested' },
+          { name: '# Listed for Currency Type', field: 'itemsListedForCurrency', type: 'number' },
+          ]
+      };
+      
+      $scope.commonPricesGoneGridOptions = {
+        data : $scope.commonGonePrice,
+        enableHorizontalScrollbar : 0,
+        columnDefs: [
+          { name: '', field: 'icon', cellTemplate:"<img height=\"27\" ng-src=\"{{grid.getCellValue(row, col)}}\" lazy-src>", enableColumnResizing: false, width: 40, enableSorting: false, enableColumnMenu: false},
+          { name: 'Most Common Prices', field: 'CommonPrices' },
+          { name: '# Gone At This Price', field: 'numberGoneAtPrice', type: 'number' },
+          ]
+      };
 
-$scope.CurrencyTypesGridOptions = {
-  data : $scope.currencyTypes,
-  enableHorizontalScrollbar : 0,
-  columnDefs: [
-    { name: '', field: 'icon', cellTemplate:"<img height=\"27\" ng-src=\"{{grid.getCellValue(row, col)}}\" lazy-src>", enableColumnResizing: false, width: 40, enableSorting: false, enableColumnMenu: false},
-    { name: 'Currency Type Requested', field: 'currencyTypeRequested' },
-    { name: '# Listed for Currency Type', field: 'itemsListedForCurrency', type: 'number' },
-    ]
-};
+      $scope.itemsTotal = $scope.identifiedTotal + $scope.unidentifiedTotal;
 
-$scope.commonPricesGoneGridOptions = {
-  data : $scope.commonGonePrice,
-  enableHorizontalScrollbar : 0,
-  columnDefs: [
-    { name: '', field: 'icon', cellTemplate:"<img height=\"27\" ng-src=\"{{grid.getCellValue(row, col)}}\" lazy-src>", enableColumnResizing: false, width: 40, enableSorting: false, enableColumnMenu: false},
-    { name: 'Most Common Prices', field: 'CommonPrices' },
-    { name: '# Gone At This Price', field: 'numberGoneAtPrice', type: 'number' },
-    ]
-};
+      // A simple gauge for Unidentified 
+      $scope.gauge1UnidConfig = {
+        options : {
+          chart: {
+            type: 'solidgauge'
+          },
+          pane: {
+            center: ['50%', '35%'],
+            size: '100%',
+            startAngle: -90,
+            endAngle: 90,
+            background: {
+              backgroundColor: '#EEE',
+              innerRadius: '60%',
+              outerRadius: '100%',
+              shape: 'arc'
+            }
+          },
+          credits: {
+            enabled: false
+          },
+          tooltip: {
+            enabled: false
+          },
+          plotOptions: {
+            solidgauge: {
+              dataLabels: {
+                y: -80,
+                borderWidth: 0,
+                useHTML: true
+              }
+            }
+          },
+          title: null,
+        },
+        yAxis: {
+          currentMin: 0,
+          currentMax: $scope.itemsTotal,
+          title: null,
+          stops: [
+            [0.05, '#55BF3B'], // green
+            [0.1, '#DDDF0D'], // yellow
+            [0.2, '#DF5353'] // red
+          ]
+        },
+        series: [{
+          name: 'Unidentified',
+          data: [$scope.unidentifiedTotal],
+          dataLabels : {
+            format: '<div style="text-align:center"><span style="font-size:25px;color:black">{y}</span><br/><span style="font-size:16px;color:#808080">' + $scope.unidentifiedPercent + '%<br/>Unidentified</span></div>'
+          },
+        }],
+        useHighStocks: false
+      }
 
+      // A simple guage for Corrupted
+      $scope.gauge2CorruptedConfig = {
+        options : {
+          chart: {
+            type: 'solidgauge'
+          },
+          pane: {
+            center: ['50%', '35%'],
+            size: '100%',
+            startAngle: -90,
+            endAngle: 90,
+            background: {
+              backgroundColor: '#EEE',
+              innerRadius: '60%',
+              outerRadius: '100%',
+              shape: 'arc'
+            }
+          },
+          credits: {
+            enabled: false
+          },
+          tooltip: {
+            enabled: false
+          },
+          plotOptions: {
+            solidgauge: {
+              dataLabels: {
+                y: -70,
+                borderWidth: 0,
+                useHTML: true
+              }
+            }
+          },
+          title: null,
+        },
+        yAxis: {
+          currentMin: 0,
+          currentMax: $scope.itemsTotal,
+          title: null,
+          stops: [
+            [0.1, '#55BF3B'], // green
+            [0.5, '#DDDF0D'], // yellow
+            [0.9, '#DF5353'] // red
+          ]
+        },
+        series: [{
+          name: 'Corrupted',
+          data: [$scope.corruptedTotal],
+          dataLabels : {
+            format: '<div style="text-align:center"><span style="font-size:35px;color:black">{y}</span><br/><span style="font-size:16px;color:#ff8080">' + $scope.corruptedPercent + '% Corrupted</span></div>'
+          },
+        }],
+        useHighStocks: false
+      }
 
-      // Set the Highcharts configuration for chart1
-      $scope.chart1Config = {
+      // A simple guage for Gone Percentage
+      $scope.goneRatioPercent = ($scope.verified.GONE / ($scope.verified.GONE + $scope.verified.YES) * 100).toFixed(1);
+      $scope.gauge3GoneRatioConfig = {
+        options : {
+          chart: {
+            type: 'solidgauge'
+          },
+          pane: {
+            center: ['50%', '35%'],
+            size: '100%',
+            startAngle: -90,
+            endAngle: 90,
+            background: {
+              backgroundColor: '#EEE',
+              innerRadius: '60%',
+              outerRadius: '100%',
+              shape: 'arc'
+            }
+          },
+          credits: {
+            enabled: false
+          },
+          tooltip: {
+            enabled: false
+          },
+          plotOptions: {
+            solidgauge: {
+              dataLabels: {
+                y: -70,
+                borderWidth: 0,
+                useHTML: true
+              }
+            }
+          },
+          title: null,
+        },
+        yAxis: {
+          currentMin: 0,
+          currentMax: $scope.itemsTotal,
+          title: null,
+          stops: [
+            [0.45, '#DF5353'], // red
+            [0.6, '#DDDF0D'], // yellow
+            [0.8, '#55BF3B'] // green
+          ]
+        },
+        series: [{
+          name: 'GoneAmount',
+          data: [$scope.verified.GONE],
+          dataLabels : {
+            format: '<div style="text-align:center"><span style="font-size:35px;color:black">' + $scope.goneRatioPercent + '%</span><br/><span style="font-size:16px;color:darkblue">Gone</span></div>'
+          },
+        }],
+        useHighStocks: false
+      }
+
+      //Use Chart1 data to show Added / Removed Counts in Highstock
+      $scope.chart1AddedRemovedConfig = {
         options: {
           chart: {
             zoomType: 'x'
@@ -707,27 +874,25 @@ $scope.commonPricesGoneGridOptions = {
             enabled: true
           }
         },
-        series: [],
+        series: [{
+          id: 'Added',
+          name: 'Added',
+          type: 'column',
+          data:  Chart1x1
+        }, {
+          id: 'Modified',
+          name: 'Removed',
+          type: 'line',
+          data:  Chart1x2
+        }],
         title: {
           text: "Total Added and Removed (GONE) per Day"
         },
         useHighStocks: true
       }
-      // Populate Chart1 with data
-      $scope.chart1Config.series.push({
-        id: 'Added',
-        name: 'Added',
-        type: 'column',
-        data:  Chart1x1
-      }, {
-        id: 'Modified',
-        name: 'Removed',
-        type: 'line',
-        data:  Chart1x2
-      });
 
-      // Set the Highcharts configuration for chart2
-      $scope.chart2Config = {
+      //Use Chart2 data to show Prices in Highstock
+      $scope.chart2PricesConfig = {
         options: {
           chart: {
             zoomType: 'x'
@@ -739,29 +904,27 @@ $scope.commonPricesGoneGridOptions = {
             enabled: true
           }
         },
-        series: [],
+        series: [{
+          id: 'GONE5',
+          name: 'GONE 5th %',
+          type: 'line',
+          data:  Chart2x1
+        }, {
+          id: 'GONE15',
+          name: 'GONE 15th %',
+          type: 'line',
+          data:  Chart2x2
+        }, {
+          id: 'GONE50',
+          name: 'GONE 50th %',
+          type: 'line',
+          data:  Chart2x3
+        }],
         title: {
           text: "Historical GONE Percentile Prices in Chaos Equivalent"
         },
         useHighStocks: true
       }
-      // Populate Chart2 with data
-      $scope.chart2Config.series.push({
-        id: 'GONE5', 
-        name: 'GONE 5th %',
-        type: 'line',
-        data:  Chart2x1
-      }, {
-        id: 'GONE15',
-        name: 'GONE 15th %',
-        type: 'line',
-        data:  Chart2x2
-      }, {
-        id: 'GONE50',
-        name: 'GONE 50th %',
-        type: 'line',
-        data:  Chart2x3
-      });
 
       // Stats on report generation
       var searchEnd = new Date();
