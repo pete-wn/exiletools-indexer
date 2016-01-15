@@ -120,7 +120,7 @@ EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $loca
     var searchStart = new Date();
 
     // Start loading icon
-    $("#loader").html('<div style="width:600px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Populating unique item list for ' + $scope.league + '...</div>');
+    $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Populating unique item list for ' + $scope.league + '...</div>');
   
     // Get a list of uniques available in this league
     es.search({
@@ -197,7 +197,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   console.log("Unique report for " + $scope.unique + " in " + $scope.league);
 
   // Start loading icon
-  $("#loader").html('<div style="width:600px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Creating report for ' + $scope.unique + " in " + $scope.league + '...</div>');
+  $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Creating report for ' + $scope.unique + " in " + $scope.league + '...</div>');
 
   // Set the currency icon object
   $scope.CurrencyIcons = new Object();
@@ -329,7 +329,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     var searchEnd = new Date();
     console.log("Generating Report: Query 1 executed in " + (searchEnd - searchStart) + "ms");
     // Append loading data
-    $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Gathered general statistics in ' + (searchEnd - searchStart) + 'ms</div>');
+    $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered general statistics in ' + (searchEnd - searchStart) + 'ms</div>');
 
     // stuff
     var Icons = new Array();
@@ -363,6 +363,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     } 
     $scope.unidentifiedTotal = response.hits.total - $scope.identifiedTotal;
     $scope.unidentifiedPercent = (($scope.unidentifiedTotal / response.hits.total) * 100).toFixed(1);
+    $scope.itemsTotal = $scope.identifiedTotal + $scope.unidentifiedTotal;
 
     // Iterate through verified to separate out YES, NO, GONE, OLD
     $scope.verified = new Object();
@@ -450,7 +451,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     var searchEnd = new Date();
     console.log("Generating Report: Query 2 executed in " + (searchEnd - searchStart) + "ms");
     // Append loading data
-    $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Gathered pricing statistics in ' + (searchEnd - searchStart) + 'ms</div>');
+    $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered pricing statistics in ' + (searchEnd - searchStart) + 'ms</div>');
 
     // Set various scope variables
     $scope.uniqueSellersWithPrice = response.aggregations.uniqueSellers.value;
@@ -558,7 +559,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     var searchEnd = new Date();
     console.log("Generating Report: Query 3 executed in " + (searchEnd - searchStart) + "ms");
     // Append loading data
-    $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Gathered general statistics on GONE items in ' + (searchEnd - searchStart) + 'ms</div>');
+    $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered general statistics on GONE items in ' + (searchEnd - searchStart) + 'ms</div>');
 
     // Percentile price data 
     $scope.valueGONE = new Object();
@@ -650,7 +651,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     var searchEnd = new Date();
     console.log("Generating Report: Query 4 executed in " + (searchEnd - searchStart) + "ms");
     // Append loading data
-    $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Gathered histogram data on GONE items in ' + (searchEnd - searchStart) + 'ms</div>');
+    $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered histogram data on GONE items in ' + (searchEnd - searchStart) + 'ms</div>');
 
 
     // Loop through histo data to populate graph objects
@@ -693,22 +694,22 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           ]
       };
 
-      $scope.itemsTotal = $scope.identifiedTotal + $scope.unidentifiedTotal;
 
       // A simple gauge for Unidentified 
       $scope.gauge1UnidConfig = {
         options : {
           chart: {
-            type: 'solidgauge'
+            type: 'solidgauge',
+            backgroundColor: 'transparent'
           },
           pane: {
-            center: ['50%', '35%'],
+            center: ['50%', '50%'],
             size: '100%',
-            startAngle: -90,
-            endAngle: 90,
+            startAngle: -120,
+            endAngle: 120,
             background: {
               backgroundColor: '#EEE',
-              innerRadius: '60%',
+              innerRadius: '70%',
               outerRadius: '100%',
               shape: 'arc'
             }
@@ -721,10 +722,12 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           },
           plotOptions: {
             solidgauge: {
+              innerRadius: '70%',
               dataLabels: {
                 y: -80,
                 borderWidth: 0,
-                useHTML: true
+                useHTML: true,
+                zIndex: 1
               }
             }
           },
@@ -744,7 +747,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           name: 'Unidentified',
           data: [$scope.unidentifiedTotal],
           dataLabels : {
-            format: '<div style="text-align:center"><span style="font-size:25px;color:black">{y}</span><br/><span style="font-size:16px;color:#808080">' + $scope.unidentifiedPercent + '%<br/>Unidentified</span></div>'
+            format: '<div style="text-align:center"><span style="font-size:45px;color:#808080">' + $scope.unidentifiedPercent + '%</span><br/><span style="font-size:12px;color:#808080">{y}<br/></span><span style="font-size:30px;color:#808080">Unidentified</span></div>'
           },
         }],
         useHighStocks: false
@@ -757,13 +760,13 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
             type: 'solidgauge'
           },
           pane: {
-            center: ['50%', '35%'],
+            center: ['50%', '50%'],
             size: '100%',
-            startAngle: -90,
-            endAngle: 90,
+            startAngle: -120,
+            endAngle: 120,
             background: {
               backgroundColor: '#EEE',
-              innerRadius: '60%',
+              innerRadius: '70%',
               outerRadius: '100%',
               shape: 'arc'
             }
@@ -776,8 +779,9 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           },
           plotOptions: {
             solidgauge: {
+              innerRadius: '70%',
               dataLabels: {
-                y: -70,
+                y: -80,
                 borderWidth: 0,
                 useHTML: true
               }
@@ -799,7 +803,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           name: 'Corrupted',
           data: [$scope.corruptedTotal],
           dataLabels : {
-            format: '<div style="text-align:center"><span style="font-size:35px;color:black">{y}</span><br/><span style="font-size:16px;color:#ff8080">' + $scope.corruptedPercent + '% Corrupted</span></div>'
+            format: '<div style="text-align:center"><span style="font-size:45px;color:darkred">' + $scope.corruptedPercent + '%</span><br/><span style="font-size:12px;color:darkred">{y}<br/></span><span style="font-size:30px;color:darkred">Corrupted</span></div>'
           },
         }],
         useHighStocks: false
@@ -813,13 +817,13 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
             type: 'solidgauge'
           },
           pane: {
-            center: ['50%', '35%'],
+            center: ['50%', '50%'],
             size: '100%',
-            startAngle: -90,
-            endAngle: 90,
+            startAngle: -120,
+            endAngle: 120,
             background: {
               backgroundColor: '#EEE',
-              innerRadius: '60%',
+              innerRadius: '70%',
               outerRadius: '100%',
               shape: 'arc'
             }
@@ -832,8 +836,9 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           },
           plotOptions: {
             solidgauge: {
+              innerRadius: '70%',
               dataLabels: {
-                y: -70,
+                y: -80,
                 borderWidth: 0,
                 useHTML: true
               }
@@ -855,7 +860,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
           name: 'GoneAmount',
           data: [$scope.verified.GONE],
           dataLabels : {
-            format: '<div style="text-align:center"><span style="font-size:35px;color:black">' + $scope.goneRatioPercent + '%</span><br/><span style="font-size:16px;color:darkblue">Gone</span></div>'
+            format: '<div style="text-align:center"><span style="font-size:45px;color:darkorange">' + $scope.goneRatioPercent + '%</span><br/><span style="font-size:12px;color:darkorange">' + $scope.verified.GONE + '<br/></span><span style="font-size:30px;color:darkorange">Gone</span></div>'
           },
         }],
         useHighStocks: false
@@ -931,12 +936,13 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       console.log("Generating Report: All processing finished in " + (searchEnd - searchStart) + "ms");
 
       // Briefly show report generation statistics in the loader div
-      $("#loader").append('<div style="width:600px" class="alert alert-success" role="alert">Created full report in ' + (searchEnd - searchStart) + 'ms</div>');
+      $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Created full report in ' + (searchEnd - searchStart) + 'ms</div>');
       setTimeout(function(){ $("#loader").empty(); }, 2000);
 
 
       // Set readyReport to true to show data in Angular
       $scope.readyReport = true;
+     
     }
   }
 

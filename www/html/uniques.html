@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>ExileTools Unique Item Price Reports</title>
+  <title>Path of Exile Unique Item Price Reports</title>
 
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
@@ -48,147 +48,171 @@ body {
 </head>
 <body>
 
-    <nav class="navbar navbar-default" role="navigation">
-      <!-- Brand and toggle get grouped for better mobile display -->
-      <div class="navbar-header">
+<!-- Note: Indenting for the body starts at base for simplicity -->
+<!-- Simple header -->
+<div style="width:100%;min-width:550px;padding:10px;padding-left:25px;background-color:#F6E3CE">
 
-        <button type="button" class="navbar-toggle" ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="#">ExileTools Unique Item Price Reports</a>
-      </div>
-    
-      <!-- Collect the nav links, forms, and other content for toggling -->
-      <div class="collapse navbar-collapse" ng-class="!navCollapsed && 'in'" ng-click="navCollapsed = true">
-      
-        <ul class="nav navbar-nav">
-<!--          
-          <li class="active"><a href="#">How do I make this do something?</a></li>
-          <li><a href="#">What about this?</a></li>
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Static Dropdown <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="#">Action</a></li>
-              <li><a href="#">Another action</a></li>
-              <li><a href="#">Something else here</a></li>
-              <li><a href="#">Separated link</a></li>
-            </ul>
-          </li>
+  <div class="row">
+    <div class="col-md-4">
+      <font style="font-size:150%;font-weight:bold">
+        Path of Exile Unique Item Price Reports
+      </font>
+    </div>
+    <div class="col-md-7">
+      <font style="font-size:150%">
+        dynamically generated using the <a href="http://api.exiletools.com/info/indexer">free public ExileTools Index</a>
+      </font>
+    </div>
+    <!-- Fix this in production release! -->
+    <div class="col-md-1">
+      <font style="font-size:80%;color:red;font-weight:bold">
+        DEVELOPMENT VERSION
+      </font>
+    </div>
+  </div>
 
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" ng-controller="LeagueList">Dynamic Dropdown?<b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="#">Action</a></li>
-              <li><a href="#">Another action</a></li>
-              <li><a href="#">Something else here</a></li>
-              <li><a href="#">Separated link</a></li>
-              <li><a href="#">One more separated link</a></li>
-            </ul>
-          </li>
--->
-          
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li><a href="http://exiletools.com">ExileTools.com</a></li>
-        </ul>
-      </div><!-- /.navbar-collapse -->
-    </nav>
+</div>
 
-<div id="main" style="width:100%;padding-left:50px;padding-right:50px">
+<!-- Main Body DIV -->
+<div id="main" style="width:100%;padding-left:25px;padding-right:25px;min-width:550px">
 
- 
+  <!-- table seems to work better for this than anything else -->
+  <!-- NOTE: Needs a spinner, it's slow on mobile -->
   <div ng-controller="leagueChooser">
     <h4>Choose a League:</h4>
-    <div ng-repeat="(key, val) in LeagueStats" style="float:left;margin-right:5px">
-      <button class="btn" ng-click="selectLeague(key)" promise-btn>{{key}}</button>
-    </div>
-  </div><br><br>
-  <hr width=100% size=1>
-  <div id="loader"></div>
-  <div class="ng-view" style="min-width:1000px"></div>
+    <table cellspacing=0 cellpadding=0 border=0>
+      <tr>
+        <td ng-repeat="(key, val) in LeagueStats">
+          <button class="btn" ng-click="selectLeague(key)" promise-btn style="margin:3px">{{key}}</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <!-- End league Chooser -->
 
+  <hr width=100% size=1>
+  <!-- Empty Div for Loader -->
+  <div id="loader"></div>
+  <!-- Empty Div to display content -->
+  <div class="ng-view" style="width:100%"></div>
+
+  <!-- START Template for Unique Chooser -->
   <script type="text/ng-template" id="uniqueChooser.html">
     <div ng-if="Uniques">
-      <ui-select ng-model="unique.selected" theme="selectize" ng-disabled="disabled" style="width:600px" on-select="selectUnique(unique.selected)">
+      <ui-select ng-model="unique.selected" theme="selectize" ng-disabled="disabled" style="min-width:250px;max-width:550px" on-select="selectUnique(unique.selected)">
         <ui-select-match placeholder="Choose a unique item...">{{$select.selected}}</ui-select-match>
         <ui-select-choices repeat="unique in Uniques | filter: $select.search">{{unique}}</ui-select-choices>
       </ui-select>
     </div>
   </script>
+  <!-- END Template for Unique Chooser -->
 
+  <!-- START Template for the Unique Report -->
   <script type="text/ng-template" id="uniqueReport.html">
 
-    <div class="clearfix" style="height:170px;margin-bottom:25px" ng-if="readyReport">
-      <div style="padding:15px;background-color:#ffe5b3;height:120px;width:100%;float:left;z-index:-1;position:relative" ng-if="readyReport">
-        <div style="float:left;margin-right:5px" ng-if="readyReport">
-          <img ng-repeat="url in Icons" ng-src="{{url}}" height=150>
-        </div>
-        <div ng-if="readyReport">
-          <p><font size=7 face="fontin"><b>{{unique}}</b></font></p>
-          <p><font size=2>
-            <b><i class="fa fa-database">&nbsp;</i> {{league}}</b> League<br><br>
-            <b><i class="fa fa-cog">&nbsp;</i> {{baseItemType}}</b> Base &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
-            <b><i class="fa fa-cogs">&nbsp;</i> {{itemType}}</b> Type &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
-            <b><i class="fa fa-child">&nbsp;</i> {{equipType}}</b> Equip Slot
-          </font></p>
-        </div>
-      </div>
-    </div>
-
-
+    <!-- Master DIV - only displays data if readyReport is set -->
     <div style="width:100%" ng-if="readyReport">
 
-      <div class="clearfix" style="width:100%">
-        <div class="btn btn-info" style="float:left;margin-right:25px"><p style="font-size:200%"><i class="fa fa-check-square-o fa-lg"></i> {{verified.YES + verified.GONE + verified.OLD}} Total Seen</p><p style="font-size:130%">{{verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD}} ({{(verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD) / (verified.YES + verified.GONE + verified.OLD) * 100 | number : 0}}%) with B/O</p></div>
-        <div class="btn btn-success" style="float:left;margin-right:25px" ng-if="verified.YES"><p style="font-size:200%"><i class="fa fa-shopping-cart fa-lg"></i> {{verified.YES}} Available Now</p><p style="font-size:130%">{{verifiedPrice.YES}} ({{verifiedPrice.YES / verified.YES * 100 | number : 0}}%) with B/O</div>
-        <div class="btn btn-danger" style="float:left;margin-right:25px" ng-if="verified.GONE"><p style="font-size:200%"><i class="fa fa-external-link fa-lg"></i> {{verified.GONE}} Gone</p><p style="font-size:130%">{{verifiedPrice.GONE}} ({{verifiedPrice.GONE / verified.GONE * 100 | number : 0}}%) with B/O</div>
-        <div class="btn btn-warning" style="float:left;margin-right:25px" ng-if="verified.OLD"><p style="font-size:200%"><i class="fa fa-meh-o fa-lg"></i> Stale: {{verified.OLD}}</p><p style="font-size:130%">&nbsp;</p></div>
+      <!-- Basic Item Information - NEEDS MOBILE SUPPORT -->
+      <table width=100% border=0 style="background:linear-gradient(to bottom, #cf7025 0%,  #FFFFFF 90%)">
+        <tr>
+          <td valign=top>
+            <img ng-repeat="url in Icons" ng-src="{{url}}" style="max-height:150px">
+          </td>
+          <td valign=top>
+            <p style="font-size:5vw"><font face="fontin"><b>{{unique}}</b></font></p>
+            <p style="font-size:.8em">
+              <b><i class="fa fa-database">&nbsp;</i> {{league}}</b> League &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
+              <b><i class="fa fa-cog">&nbsp;</i> {{baseItemType}}</b> Base &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
+              <b><i class="fa fa-cogs">&nbsp;</i> {{itemType}}</b> Type &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
+              <b><i class="fa fa-child">&nbsp;</i> {{equipType}}</b> Equip Slot
+            </p>
+          </td>
+        </tr>
+      </table>
+      <br><br>
+
+      <!-- Shows counts in columns -->
+      <!-- FIX: The alerts should all be the same height when resized due to overflow -->
+      <div class="row clearfix" style="padding-left:15px;padding-right:15px">
+        <div class="alert alert-info col-md-3" ng-if="itemsTotal" style="text-align:center;margin-right:10px">
+          <p style="font-size:200%">
+            <i class="fa fa-check-square-o fa-lg"></i> 
+            {{itemsTotal}} Total Seen
+          </p>
+          <p style="font-size:130%">
+            {{verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD}} ({{(verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD) / (verified.YES + verified.GONE + verified.OLD) * 100 | number : 0}}%) with B/O
+          </p>
+        </div>
+        <div class="alert alert-success col-md-3" ng-if="verified.YES" style="text-align:center;margin-right:10px">
+          <p style="font-size:200%">
+            <i class="fa fa-shopping-cart fa-lg"></i> {{verified.YES}} Verified Now
+          </p>
+          <p style="font-size:130%">
+            {{verifiedPrice.YES}} ({{verifiedPrice.YES / verified.YES * 100 | number : 0}}%) with B/O
+          </p>
+        </div>
+        <div class="alert alert-danger col-md-3" ng-if="verified.GONE" style="text-align:center;margin-right:10px">
+          <p style="font-size:200%">
+            <i class="fa fa-external-link fa-lg"></i> {{verified.GONE}} Gone
+          </p>
+          <p style="font-size:130%">
+            {{verifiedPrice.GONE}} ({{verifiedPrice.GONE / verified.GONE * 100 | number : 0}}%) with B/O
+          </p>
+        </div>
+        <div class="alert alert-warning col-md-2" ng-if="verified.OLD" style="text-align:center;margin-right:10px">
+          <p style="font-size:200%">
+            <i class="fa fa-meh-o fa-lg"></i> Stale: {{verified.OLD}}
+          </p>
+          <p style="font-size:130%"a
+            >&nbsp;
+          </p>
+        </div>
       </div>
 
-<br><br>
-
-<!-- change this to a horizontal bar graph aka bullet graph -->
-<p ng-if="commonRank">{{unique}} is the <font size=+2><b>{{commonRank}}</b></font>{{commonRankOrd}} most common unique for sale in {{league}} (out of {{totalCount}})</p>
-
-<div class="clearfix" style="width:100%">
-<!-- add gone w/o price vs gone w/ price -->
-<div style="width:300px;height:175px;float:left"><highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig"></highchart></div>
-<div style="width:300px;height:175px;float:left"><highchart id="gauge1Unid" config="gauge1UnidConfig"></highchart></div>
-<div style="width:300px;height:175px;float:left"><highchart id="gauge2Corrupted" config="gauge2CorruptedConfig"></highchart></div>
-</div>
-<!-- add a note on unid detection -->
+      <!-- Text -->
+      <div style="width:100%" class="clearfix">
+        <!-- change this to a horizontal bar graph aka bullet graph -->
+        <p ng-if="commonRank">{{unique}} is the <font size=+2><b>{{commonRank}}</b></font>{{commonRankOrd}} most common unique for sale in {{league}} (out of {{totalCount}})</p>
+      </div>
 
 
-<!-- where did this text go?!?! -->
-<p ng-if="uniqueSellers">{{uniqueSellers}} unique seller accounts ({{uniqueSellersWithPrice}} with B/O)</p>
-<p ng-if="value.allTime5">{{value.allTime5}} {{value.allTime5Type}} is the  5% percentile listed price (full history)</p>
-<p ng-if="value.allTime15">{{value.allTime15}} {{value.allTime15Type}} is the  15% percentile listed price (full history)</p>
-<p ng-if="value.allTime50">{{value.allTime50}} {{value.allTime50Type}} is the  50% percentile listed price (full history)</p>
-<p ng-if="valueGONE.allTime5">{{valueGONE.allTime5}} {{valueGONE.allTime5Type}} is the  5% percentile GONE price (full history)</p>
-<p ng-if="valueGONE.allTime15">{{valueGONE.allTime15}} {{valueGONE.allTime15Type}} is the  15% percentile GONE price (full history)</p>
-<p ng-if="valueGONE.allTime50">{{valueGONE.allTime50}} {{valueGONE.allTime50Type}} is the  50% percentile GONE price (full history)</p>
+      <!-- Text -->
+      <div style="width:100%" class="clearfix">
+        <p ng-if="uniqueSellers">{{uniqueSellers}} unique seller accounts ({{uniqueSellersWithPrice}} with B/O)</p>
+        <p ng-if="value.allTime5">{{value.allTime5}} {{value.allTime5Type}} is the  5% percentile listed price (full history)</p>
+        <p ng-if="value.allTime15">{{value.allTime15}} {{value.allTime15Type}} is the  15% percentile listed price (full history)</p>
+        <p ng-if="value.allTime50">{{value.allTime50}} {{value.allTime50Type}} is the  50% percentile listed price (full history)</p>
+        <p ng-if="valueGONE.allTime5">{{valueGONE.allTime5}} {{valueGONE.allTime5Type}} is the  5% percentile GONE price (full history)</p>
+        <p ng-if="valueGONE.allTime15">{{valueGONE.allTime15}} {{valueGONE.allTime15Type}} is the  15% percentile GONE price (full history)</p>
+        <p ng-if="valueGONE.allTime50">{{valueGONE.allTime50}} {{valueGONE.allTime50Type}} is the  50% percentile GONE price (full history)</p>
+      </div>
+
+      <!-- Gauges for various item stats, specific layout is in es-uniques.js -->
+      <div class="row" style="width:100%">
+        <!-- add gone w/o price vs gone w/ price -->
+        <div class="col-md-4"><highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig"></highchart></div>
+        <div class="col-md-4"><highchart id="gauge1Unid" config="gauge1UnidConfig"></highchart></div>
+        <div class="col-md-4"><highchart id="gauge2Corrupted" config="gauge2CorruptedConfig"></highchart></div>
+        <!-- add a note on unid detection -->
+      </div>
 
 
+      <!-- Tables for information, NEEDS FORMATTING -->
+      <div style="width:100%" class="clearfix">
+        <div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="width:30%;height:150px"></div>
+        <div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="width:30%;height:300px"></div>
+      </div>
 
-<br><br>
-<div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="width:30%;height:150px"></div>
-<br><br>
-<br><br>
-<div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="width:30%;height:300px"></div>
-<br><br>
-
-<highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
-<highchart id="chart2Prices" config="chart2PricesConfig" class="span10"></highchart>
-
-
-
-
-
+      <!-- Charts, specific layout is in es-uniques.js -->
+      <div style="width:100%" class="clearfix">
+        <highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
+        <highchart id="chart2Prices" config="chart2PricesConfig" class="span10"></highchart>
+      </div>
     </div>
   </script>
+  <!-- END Template for the Unique Report -->
+
 
 
 </div>
