@@ -79,14 +79,17 @@ body {
   <!-- table seems to work better for this than anything else -->
   <!-- NOTE: Needs a spinner, it's slow on mobile -->
   <div ng-controller="leagueChooser">
-    <h4>Choose a League:</h4>
-    <table cellspacing=0 cellpadding=0 border=0>
-      <tr>
-        <td ng-repeat="(key, val) in LeagueStats">
-          <button class="btn" ng-click="selectLeague(key)" promise-btn style="margin:3px">{{key}}</button>
-        </td>
-      </tr>
-    </table>
+    <!-- Control div for loading -->
+    <div ng-if="LeagueStats">
+      <h4>Choose a League:</h4>
+      <table cellspacing=0 cellpadding=0 border=0>
+        <tr>
+          <td ng-repeat="(key, val) in LeagueStats">
+            <button class="btn" ng-click="selectLeague(key)" promise-btn style="margin:3px">{{key}}</button>
+          </td>
+        </tr>
+      </table>
+    </div>
   </div>
   <!-- End league Chooser -->
 

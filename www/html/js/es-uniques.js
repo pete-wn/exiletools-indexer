@@ -31,6 +31,8 @@ EsConnector.service('es', function (esFactory) {
 EsConnector.controller('ServerHealthController', function($scope, es) {
     es.cluster.health(function (err, resp) {
         if (err) {
+          // Push an error into the loader div
+          $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong checking the ES Index health / connection!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
             $scope.data = err.message;
         } else {
             $scope.data = resp;
@@ -38,17 +40,18 @@ EsConnector.controller('ServerHealthController', function($scope, es) {
     });
 });
 
-// We define an Angular controller that returns query results,
-// Inputs: $scope and the 'es' service
 
-EsConnector.controller('leagueChooser', function($scope, es, $location, $localStorage, $sessionStorage ) {
-
+// init function for the Chooser so it can be loaded in multiple controllers
+var initChooser = function($scope, es, $location, $localStorage, $sessionStorage) {
   // Check to see if we have the LeagueStats in localStorage already and if it's not too old (10min)
   if ($localStorage.LeagueStats && (new Date() - $localStorage.AgeLeagueStats) < 600000) {
-    console.log("LeagueStats are in local storage as of " + $localStorage.AgeLeagueStats + ", using cached data");
+    console.log("initChooser: LeagueStats are in local storage as of " + $localStorage.AgeLeagueStats + ", using cached data");
     $scope.LeagueStats = $localStorage.LeagueStats;
   } else {
-    console.log("LeagueStats aren't in local storage or are out of date, performing new search.");
+    console.log("initChooser: LeagueStats aren't in local storage or are out of date, performing new search.");
+    // Start loading icon
+    $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i>Loading league list...</div>');
+
     var searchStart = new Date();
     // Get a list of leagues with uniques in them
     es.search({
@@ -71,16 +74,30 @@ EsConnector.controller('leagueChooser', function($scope, es, $location, $localSt
         size:0 
       }
     }).then(function (response) {
-      var searchEnd = new Date();
-      console.log("League Chooser Search executed in " + (searchEnd - searchStart) + "ms");
       // Create an information Array
       LeagueStats = new Object();
-    
+   
+      // Keep track of the number of leagues returned
+      var LeaguesFound = 0; 
+
       // Loop through all the ItemsInLeagues buckets
       response.aggregations.leagues.uniquesInLeagues.buckets.forEach(function (item, index, array) {
         // Add the total count information and league name
         LeagueStats[item.key] = item.doc_count;
+        LeaguesFound++;
       });
+
+      var searchEnd = new Date();
+      console.log("initChooser: League Chooser Search executed in " + (searchEnd - searchStart) + "ms, found " + LeaguesFound + " leagues with uniques");
+
+      // Throw an error if no leagues are in the list
+      if (LeaguesFound < 1) {
+      // Push an error into the loader div
+        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the league list!<br/><br/><br/>ERROR: No leagues found with unique items!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+        console.log('initChooser: ERROR: No leagues found with unique items! Something wrong with index?');
+        return false;
+      }
+
       // Return the array as LeagueStats to Angular
       $scope.LeagueStats = LeagueStats;
   
@@ -89,34 +106,34 @@ EsConnector.controller('leagueChooser', function($scope, es, $location, $localSt
   
       // Set the time in local storage
       $localStorage.AgeLeagueStats = new Date().valueOf();
+
+      // Clear loader
+      $("#loader").html('');
   
     }, function (err) {
+      // Push an error into the loader div
+      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the league list!<br/><br/><br/>ERROR: ' + err.message + '<br/><br/>Please try reloading this page or contact pete@pwx.me if the error continues.</div>');
       console.trace(err.message);
     });
   }
+  console.log('initChooser: leagueChooser initialized');
+}
 
-  $scope.selectLeague = function (league) {
-    $location.path(league);
-    console.log(league + " league selected");
-    return;
-  }
-
-});
-
-EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage) {
-  $scope.league = $routeParams.league;
-  
+// init function for the unique list so it can be loaded in multiple controllers
+var initUniqueList = function($scope, es, $location, $localStorage, $sessionStorage) {
   // Check to see if we have list of unique items for this league in local storage
   if ($localStorage[$scope.league] && $localStorage[$scope.league].Uniques && (new Date() - $localStorage[$scope.league].AgeUniques) < 600000) {
-    console.log("Uniques for " + $scope.league + " are in Local Storage as of " + $localStorage[$scope.league].AgeUniques + ", using cached data");
+    console.log("initUniqueList: Uniques for " + $scope.league + " are in Local Storage as of " + $localStorage[$scope.league].AgeUniques + ", using cached data");
 
     // Sort it
     UniquesSorted = $localStorage[$scope.league].Uniques.slice().sort();
 
     // Give it to scope
     $scope.Uniques = UniquesSorted;
+
+
   } else {
-    console.log("uniqueChooser: Generating list of items in " + $scope.league);
+    console.log("initUniqueList: Generating list of items in " + $scope.league);
     var searchStart = new Date();
 
     // Start loading icon
@@ -150,18 +167,30 @@ EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $loca
         size:0
       }
     }).then(function (response) {
-      var searchEnd = new Date();
-      console.log("Unique Item List Search executed in " + (searchEnd - searchStart) + "ms");
-  
-  
       // Define the Uniques array
       var Uniques = new Array();
+
+      // Define a counter for uniques - since we're already looping through the array, this is fastest I think
+      var UniquesCount = 0;
   
       // Loop through all the unique names buckets
       response.aggregations.leagues.uniqueNames.buckets.forEach(function (item, index, array) {
       //      Uniques.push(item.key + " (" + item.doc_count + ")");
         Uniques.push(item.key);
+        UniquesCount++;
       });
+
+      var searchEnd = new Date();
+      console.log("initUniqueList: Unique Item List Search executed in " + (searchEnd - searchStart) + "ms (found " + UniquesCount + " different uniques)");
+
+      // Check to make sure there are some uniques in this list
+      if (UniquesCount < 1) {
+        // Push an error into the loader div
+        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the list of unique items!<br/><br/><br/>ERROR: No unique items found in ' + $scope.league + '!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+        console.log("initUniqueList: ERROR: Didn't find any uniques in " + $scope.league + "!");
+        return false;
+      }
+
       // Give it to localStorage
       $localStorage[$scope.league] = new Object();
       $localStorage[$scope.league].Uniques = Uniques;
@@ -178,10 +207,29 @@ EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $loca
       $("#loader").html('');
 
     }, function (err) {
+      // Push an error into the loader div
+      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the Unique list!<br/><br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
       console.trace(err.message);
     });
   }
+  console.log('initUniqueList: uniqueChooser initialized');
+}
 
+EsConnector.controller('leagueChooser', function($scope, es, $location, $localStorage, $sessionStorage ) {
+  initChooser($scope, es, $location, $localStorage, $sessionStorage);
+
+  $scope.selectLeague = function (league) {
+    $location.path(league);
+    console.log(league + " league selected");
+    return;
+  }
+
+});
+
+EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage) {
+  $scope.league = $routeParams.league;
+  
+  initUniqueList($scope, es, $location, $localStorage, $sessionStorage);
   $scope.selectUnique = function (unique) {
     $location.path($scope.league + "/" + unique);
     console.log(unique + " selected");
@@ -195,6 +243,8 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.league = $routeParams.league;
   $scope.unique = $routeParams.unique;
   console.log("Unique report for " + $scope.unique + " in " + $scope.league);
+  // Make sure the unique list is loaded
+  initUniqueList($scope, es, $localStorage, $sessionStorage);
 
   // Start loading icon
   $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Creating report for ' + $scope.unique + " in " + $scope.league + '...</div>');
@@ -230,7 +280,6 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       $scope.commonRank = count;
     }
   });
-
   var ord=["th","st","nd","rd"],
   ordv=$scope.commonRank%100;
   $scope.commonRankOrd = (ord[(ordv-20)%10]||ord[ordv]||ord[0]);
@@ -327,7 +376,16 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     }
   }).then(function (response) {
     var searchEnd = new Date();
-    console.log("Generating Report: Query 1 executed in " + (searchEnd - searchStart) + "ms");
+    console.log("Generating Report: Query 1 executed in " + (searchEnd - searchStart) + "ms (" + response.hits.total + " hits)");
+
+    // Throw an error if there weren't any hits
+    if (response.hits.total < 1) {
+      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading general statistics!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found! Something wrong with index?');
+      search1Promise = 'failed';
+      return false;
+    }
+
     // Append loading data
     $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered general statistics in ' + (searchEnd - searchStart) + 'ms</div>');
 
@@ -392,6 +450,8 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     search1Promise = 'resolved'; 
     resolve(search1Promise, search2Promise, search3Promise, search4Promise);
   }, function (err) {
+    // Push an error into the loader div
+    $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 1 (General Statistics)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
     console.trace(err.message);
   });
 
@@ -450,6 +510,15 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   }).then(function (response) {
     var searchEnd = new Date();
     console.log("Generating Report: Query 2 executed in " + (searchEnd - searchStart) + "ms");
+
+    // Throw an error if there weren't any hits
+    if (response.hits.total < 1) {
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading pricing statistics!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found! Something wrong with index?');
+      search2Promise = 'failed';
+      return false;
+    }
+
     // Append loading data
     $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered pricing statistics in ' + (searchEnd - searchStart) + 'ms</div>');
 
@@ -479,6 +548,8 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     search2Promise = 'resolved';
     resolve(search1Promise, search2Promise, search3Promise, search4Promise);
   }, function (err) {
+    // Push an error into the loader div
+    $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 2 (Price Statistics)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
     console.trace(err.message);
   });
 
@@ -558,6 +629,15 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   }).then(function (response) {
     var searchEnd = new Date();
     console.log("Generating Report: Query 3 executed in " + (searchEnd - searchStart) + "ms");
+
+    // Throw an error if there weren't any hits
+    if (response.hits.total < 1) {
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading GONE statistics!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found! Something wrong with index?');
+      search3Promise = 'failed';
+      return false;
+    }
+
     // Append loading data
     $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered general statistics on GONE items in ' + (searchEnd - searchStart) + 'ms</div>');
 
@@ -616,6 +696,8 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     search3Promise = 'resolved';
     resolve(search1Promise, search2Promise, search3Promise, search4Promise);
   }, function (err) {
+    // Push an error into the loader div
+    $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 3 (GONE Price Statistics)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
     console.trace(err.message);
   });
 
@@ -650,6 +732,15 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   }).then(function (response) {
     var searchEnd = new Date();
     console.log("Generating Report: Query 4 executed in " + (searchEnd - searchStart) + "ms");
+
+    // Throw an error if there weren't any hits
+    if (response.hits.total < 1) {
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading GONE histograms!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found! Something wrong with index?');
+      search4Promise = 'failed';
+      return false;
+    }
+
     // Append loading data
     $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered histogram data on GONE items in ' + (searchEnd - searchStart) + 'ms</div>');
 
@@ -663,6 +754,8 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
     search4Promise = 'resolved';
     resolve(search1Promise, search2Promise, search3Promise, search4Promise);
   }, function (err) {
+    // Push an error into the loader div
+    $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 4 (GONE Histograms)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
     console.trace(err.message);
   });
 
@@ -937,7 +1030,7 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
 
       // Briefly show report generation statistics in the loader div
       $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Created full report in ' + (searchEnd - searchStart) + 'ms</div>');
-      setTimeout(function(){ $("#loader").empty(); }, 2000);
+      setTimeout(function(){ $("#loader").empty(); }, 4000);
 
 
       // Set readyReport to true to show data in Angular
