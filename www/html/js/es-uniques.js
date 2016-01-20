@@ -1,9 +1,12 @@
 // We define an EsConnector module that depends on the elasticsearch module.     
 var EsConnector = angular.module('EsConnector', ['elasticsearch','ui.bootstrap','ui.grid','ui.grid.autoResize','angularPromiseButtons','angular-cache','ngRoute','ui.select','ngStorage','highcharts-ng']).config( ['$routeProvider', function($routeProvider) {
 $routeProvider
-  .when('/:league/:unique', {
+  .when('/:league/:unique/:options', {
     templateUrl: 'uniqueReport.html',
     controller: 'uniqueReport',
+  })
+  .when('/:league/:unique', {
+    redirectTo: '/:league/:unique/PastWeek'
   })
   .when('/:league', {
     templateUrl: 'uniqueChooser.html',
@@ -13,16 +16,15 @@ $routeProvider
   .otherwise({
     redirectTo: '/'
   });
-
-
-
 }]);
 
 
 
 // Create the es service from the esFactory
+// NOTE: Please do not use this API key if you re-host this page or fork this. Sign up for your own.
+// This key may be expired at any time and I need a way to notify people of changes in the API
 EsConnector.service('es', function (esFactory) {
-  return esFactory({ host: 'http://apikey:DEVELOPMENT-Indexer@api.exiletools.com' });
+  return esFactory({ host: 'http://apikey:3fcfca58ada145a27b5de1f824111cd5@api.exiletools.com' });
 });
 
 // We define an Angular controller that returns the server health
@@ -120,7 +122,7 @@ var initChooser = function($scope, es, $location, $localStorage, $sessionStorage
 }
 
 // init function for the unique list so it can be loaded in multiple controllers
-var initUniqueList = function($scope, es, $location, $localStorage, $sessionStorage) {
+var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
   // Check to see if we have list of unique items for this league in local storage
   if ($localStorage[$scope.league] && $localStorage[$scope.league].Uniques && (new Date() - $localStorage[$scope.league].AgeUniques) < 600000) {
     console.log("initUniqueList: Uniques for " + $scope.league + " are in Local Storage as of " + $localStorage[$scope.league].AgeUniques + ", using cached data");
@@ -131,7 +133,24 @@ var initUniqueList = function($scope, es, $location, $localStorage, $sessionStor
     // Give it to scope
     $scope.Uniques = UniquesSorted;
 
-
+    // If a unique item is selected, calculate the rank
+    // Note we do this here so that if a user goes directly to a page without hitting the unique list
+    // first, they will load this in the background and it will display on ng-if
+    // This way we don't have to worry about promises/etc. due to asynch requests
+    if ($scope.unique) {
+      var count = 0;
+      // Get the item rank
+      $localStorage[$scope.league].Uniques.forEach(function (item, index, array) {
+        count++;
+        if ($scope.unique == item) {
+          $scope.commonRank = count;
+        }
+      });
+      var ord=["th","st","nd","rd"],
+      ordv=$scope.commonRank%100;
+      $scope.commonRankOrd = (ord[(ordv-20)%10]||ord[ordv]||ord[0]);
+      $scope.totalCount = count;
+    }
   } else {
     console.log("initUniqueList: Generating list of items in " + $scope.league);
     var searchStart = new Date();
@@ -203,6 +222,25 @@ var initUniqueList = function($scope, es, $location, $localStorage, $sessionStor
       // Give it to scope
       $scope.Uniques = UniquesSorted;
 
+      // If a unique item is selected, calculate the rank
+      // Note we do this here so that if a user goes directly to a page without hitting the unique list
+      // first, they will load this in the background and it will display on ng-if
+      // This way we don't have to worry about promises/etc. due to asynch requests
+      if ($scope.unique) {
+        var count = 0;
+        // Get the item rank
+        $localStorage[$scope.league].Uniques.forEach(function (item, index, array) {
+          count++;
+          if ($scope.unique == item) {
+            $scope.commonRank = count;
+          }
+        });
+        var ord=["th","st","nd","rd"],
+        ordv=$scope.commonRank%100;
+        $scope.commonRankOrd = (ord[(ordv-20)%10]||ord[ordv]||ord[0]);
+        $scope.totalCount = count;
+      }
+
       // Clear loader
       $("#loader").html('');
 
@@ -212,40 +250,13 @@ var initUniqueList = function($scope, es, $location, $localStorage, $sessionStor
       console.trace(err.message);
     });
   }
+
+
   console.log('initUniqueList: uniqueChooser initialized');
 }
 
-EsConnector.controller('leagueChooser', function($scope, es, $location, $localStorage, $sessionStorage ) {
-  initChooser($scope, es, $location, $localStorage, $sessionStorage);
-
-  $scope.selectLeague = function (league) {
-    $location.path(league);
-    console.log(league + " league selected");
-    return;
-  }
-
-});
-
-EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage) {
-  $scope.league = $routeParams.league;
-  
-  initUniqueList($scope, es, $location, $localStorage, $sessionStorage);
-  $scope.selectUnique = function (unique) {
-    $location.path($scope.league + "/" + unique);
-    console.log(unique + " selected");
-    return;
-  }
-
-  return true;
-});
-
-EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $localStorage, $sessionStorage) {
-  $scope.league = $routeParams.league;
-  $scope.unique = $routeParams.unique;
-  console.log("Unique report for " + $scope.unique + " in " + $scope.league);
-  // Make sure the unique list is loaded
-  initUniqueList($scope, es, $localStorage, $sessionStorage);
-
+// Function to perform the ready report - this is outside the controller because it is called on different templates
+var readyReportFunction = function($scope, $routeParams, es, $localStorage, $sessionStorage, $searchFilters) {
   // Start loading icon
   $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Creating report for ' + $scope.unique + " in " + $scope.league + '...</div>');
 
@@ -271,19 +282,6 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.CurrencyIcons["Regal Orb"] = "http://webcdn.pathofexile.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png";
   $scope.CurrencyIcons["Scroll of Wisdom"] = "http://webcdn.pathofexile.com/image/Art/2DItems/Currency/CurrencyIdentification.png";
   $scope.CurrencyIcons["Vaal Orb"] = "http://webcdn.pathofexile.com/image/Art/2DItems/Currency/CurrencyVaal.png";
-
-  // Get the item rank
-  var count = 0;
-  $localStorage[$scope.league].Uniques.forEach(function (item, index, array) {
-    count++;
-    if ($scope.unique == item) {
-      $scope.commonRank = count;
-    }
-  });
-  var ord=["th","st","nd","rd"],
-  ordv=$scope.commonRank%100;
-  $scope.commonRankOrd = (ord[(ordv-20)%10]||ord[ordv]||ord[0]);
-  $scope.totalCount = count;
 
   // Start a timer for searches
   var searchStart = new Date();
@@ -788,6 +786,61 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
       };
 
 
+      // A single column graphic for the commonRank
+      $scope.graphCommonRankConfig = {
+        options : {
+          chart: {
+            type: 'bar',
+            backgroundColor: 'transparent',
+          },
+          tooltip: {
+            enabled: false
+          },
+          legend: {
+            enabled: false
+          },
+          title: null,
+          plotOptions: {
+            scatter: {
+              marker: {
+                symbol: 'circle',
+                radius:12,
+              }
+            },
+          },
+        },
+        yAxis: {
+          currentMin: 1,
+          currentMax: $scope.totalCount,
+          title: {
+            enabled: false
+          },
+          endOnTick: false,
+        },
+        series: [{
+          data: [$scope.totalCount],
+          title: null,
+                color: {
+                    linearGradient: { x1: 0, x2: 0, y1: 0, y2: 1 },
+                    stops: [
+                        [0, '#00FF00'],
+                        [0.5, '#FFFF00'],
+                        [1, '#FF0000']
+                    ]
+                }
+        },{
+          type: 'scatter',
+          data: [$scope.commonRank],
+          title: null,
+          color: '#5c4005'
+        }],
+        size : {
+          height: 75
+        },
+        useHighStocks: false
+      }
+
+
       // A simple gauge for Unidentified 
       $scope.gauge1UnidConfig = {
         options : {
@@ -1024,6 +1077,103 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
         useHighStocks: true
       }
 
+      // Chart to go into 5th percentile widget
+      $scope.chartPrices5thGONEConfig = {
+        options: {
+          chart: {
+            type: 'line',
+            backgroundColor : 'transparent',
+          },
+          rangeSelector: {
+            enabled: false
+          },
+          navigator: {
+            enabled: false
+          },
+          credits : {
+            enabled: false
+          },
+          scrollbar : {
+            enabled: false
+          },
+        },
+        series: [{
+          id: 'GONE5',
+          name: 'GONE 5th %',
+          type: 'line',
+          color: '#BB0000',
+          data:  Chart2x1
+        }],
+        title: {
+          text: null,
+        },
+        useHighStocks: true
+      }
+      // Chart to go into 15th percentile widget
+      $scope.chartPrices15thGONEConfig = {
+        options: {
+          chart: {
+            type: 'line',
+            backgroundColor : 'transparent',
+          },
+          rangeSelector: {
+            enabled: false
+          },
+          navigator: {
+            enabled: false
+          },
+          credits : {
+            enabled: false
+          },
+          scrollbar : {
+            enabled: false
+          },
+        },
+        series: [{
+          id: 'GONE5',
+          name: 'GONE 15th %',
+          type: 'line',
+          color: '#BB0000',
+          data:  Chart2x2
+        }],
+        title: {
+          text: null,
+        },
+        useHighStocks: true
+      }
+      // Chart to go into 50th percentile widget
+      $scope.chartPrices50thGONEConfig = {
+        options: {
+          chart: {
+            type: 'line',
+            backgroundColor : 'transparent',
+          },
+          rangeSelector: {
+            enabled: false
+          },
+          navigator: {
+            enabled: false
+          },
+          credits : {
+            enabled: false
+          },
+          scrollbar : {
+            enabled: false
+          },
+        },
+        series: [{
+          id: 'GONE5',
+          name: 'GONE 50th %',
+          type: 'line',
+          color: '#BB0000',
+          data:  Chart2x3
+        }],
+        title: {
+          text: null,
+        },
+        useHighStocks: true
+      }
+
       // Stats on report generation
       var searchEnd = new Date();
       console.log("Generating Report: All processing finished in " + (searchEnd - searchStart) + "ms");
@@ -1040,5 +1190,79 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   }
 
   return true;
+
+
+
+
+}
+
+EsConnector.controller('leagueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage ) {
+  // Make sure the League Chooser is fully loaded
+  initChooser($scope, es, $location, $localStorage, $sessionStorage);
+
+  // If a league is clicked, load the report for that league
+  $scope.selectLeague = function (league) {
+    $location.path(league);
+    console.log(league + " league selected");
+    return;
+  }
+
+});
+
+EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage) {
+  // Pull the league from the URL
+  $scope.league = $routeParams.league;
+
+  // Load the uniques list for the league
+  initUniqueList($scope, es, $localStorage, $sessionStorage);
+
+  // When a unique is selected from the dropdown, redirect to a URL for that item and run the report
+  $scope.selectUnique = function (unique) {
+    $location.path($scope.league + "/" + unique);
+    console.log(unique + " selected");
+    return;
+  }
+
+  return true;
+});
+
+EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $localStorage, $sessionStorage) {
+  // Pull the League, Unique Item, and Report Options from the URL
+  $scope.league = $routeParams.league;
+  $scope.unique = $routeParams.unique;
+  $scope.options = $routeParams.options;
+  console.log("Unique report for " + $scope.unique + " in " + $scope.league + " with option " + $scope.options);
+
+  // Make sure the unique list is loaded
+  initUniqueList($scope, es, $localStorage, $sessionStorage);
+
+  // Build a list of possible report types and define in an object
+  // This allows these to be added easily as needed
+  // Start by just defining the basics
+  $scope.tabs = new Object;
+  $scope.tabs.AllLeague = new Object;
+  $scope.tabs.AllLeague.title = "All League";
+  $scope.tabs.AllLeague.URL = "AllLeague";
+  $scope.tabs.AllLeague.class = "";
+  $scope.tabs.Past3Days = new Object;
+  $scope.tabs.Past3Days.title = "Past Three Days";
+  $scope.tabs.Past3Days.URL = "Past3Days";
+  $scope.tabs.Past3Days.class = "";
+  $scope.tabs.PastWeek = new Object;
+  $scope.tabs.PastWeek.title = "Past Week";
+  $scope.tabs.PastWeek.URL = "PastWeek";
+  $scope.tabs.PastWeek.class = "";
+
+  // Configure the active class if scope.options is set
+  if ($scope.options) {
+    $scope.tabs[$scope.options].class = "active";
+  }
+
+  // Set the search filters for this subroutine
+  $searchFilters = "";
+
+  // Run the report function
+  readyReportFunction($scope, $routeParams, es, $localStorage, $sessionStorage, $searchFilters);
+
 });
 
