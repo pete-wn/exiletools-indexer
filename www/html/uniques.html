@@ -117,9 +117,13 @@ body {
     <div style="width:100%" ng-if="readyReport">
       <!-- Tabs to select different reports, data pulled from javascript for easy updating -->
       <ul class="nav nav-tabs">
-        <li ng-repeat="tab in tabs" role="presentation" class="{{tab.class}}"><a href="#/{{league}}/{{unique}}/{{tab.URL}}">{{tab.title}}</a></li>
+        <li ng-repeat="tab in tabs" role="presentation" class="{{tab.class}}"><a href="#/{{league}}/{{unique}}/{{tab.URL}}{{addToTabURL}}">{{tab.title}}</a></li>
       </ul>
-      <br><br>
+      <br>
+      <ul class="nav nav-tabs" ng-if="hasUpTo6Sockets">
+        <li ng-repeat="tab in tabs6S" role="presentation" class="{{tab.class}}"><a href="#/{{league}}/{{unique}}/{{options}}/{{tab.URL}}">{{tab.title}}</a></li>
+      </ul>
+      <br>
 
       <!-- Basic Item Information - NEEDS MOBILE SUPPORT -->
       <table width=100% border=0 style="background:linear-gradient(to bottom, #cf7025 0%,  #FFFFFF 90%)">

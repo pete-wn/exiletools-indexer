@@ -1,6 +1,10 @@
 // We define an EsConnector module that depends on the elasticsearch module.     
 var EsConnector = angular.module('EsConnector', ['elasticsearch','ui.bootstrap','ui.grid','ui.grid.autoResize','angularPromiseButtons','angular-cache','ngRoute','ui.select','ngStorage','highcharts-ng']).config( ['$routeProvider', function($routeProvider) {
 $routeProvider
+  .when('/:league/:unique/:options/:links', {
+    templateUrl: 'uniqueReport.html',
+    controller: 'uniqueReport',
+  })
   .when('/:league/:unique/:options', {
     templateUrl: 'uniqueReport.html',
     controller: 'uniqueReport',
@@ -308,7 +312,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
           "filter": {
             "bool": {
               "must" : [
-                { "term" : { "attributes.rarity" : "Unique" } },
+                $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
                 { "term" : { "info.fullName" : $scope.unique } }
               ]
@@ -400,6 +404,11 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     $scope.equipType = response.aggregations.equipType.buckets[0].key;
     $scope.uniqueSellers = response.aggregations.uniqueSellers.value;
 
+    if ($scope.equipType == "Body" || $scope.equipType == "Two Handed Melee Weapon" || $scope.equipType == "Bow") {
+      $scope.hasUpTo6Sockets = true;
+//      console.log("has up to 6 sockets");
+    }
+
     // Count of corrupted items
     if (response.aggregations.corrupted.buckets[0].key == 1) {
       $scope.corruptedTotal = response.aggregations.corrupted.buckets[0].doc_count
@@ -462,7 +471,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
           "filter": {
             "bool": {
               "must" : [
-                { "term" : { "attributes.rarity" : "Unique" } },
+                $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
                 { "term" : { "info.fullName" : $scope.unique } },
                 { "range" : { "shop.chaosEquiv" : { "gt" : 0 } } }
@@ -560,7 +569,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
           "filter": {
             "bool": {
               "must" : [
-                { "term" : { "attributes.rarity" : "Unique" } },
+                $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
                 { "term" : { "info.fullName" : $scope.unique } },
                 { "term" : { "shop.verified" : "GONE" } },
@@ -708,7 +717,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
           "filter": {
             "bool": {
               "must" : [
-                { "term" : { "attributes.rarity" : "Unique" } },
+                $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
                 { "term" : { "info.fullName" : $scope.unique } },
                 { "term" : { "shop.verified" : "GONE" } }
@@ -1231,7 +1240,12 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.league = $routeParams.league;
   $scope.unique = $routeParams.unique;
   $scope.options = $routeParams.options;
+  $scope.links = $routeParams.links;
   console.log("Unique report for " + $scope.unique + " in " + $scope.league + " with option " + $scope.options);
+  if ($scope.links) {
+    console.log("  Specifically showing only " + $scope.links + " items"); 
+    $scope.addToTabURL = "/" + $scope.links;
+  }
 
   // Make sure the unique list is loaded
   initUniqueList($scope, es, $localStorage, $sessionStorage);
@@ -1245,21 +1259,72 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.tabs.AllLeague.URL = "AllLeague";
   $scope.tabs.AllLeague.class = "";
   $scope.tabs.Past3Days = new Object;
-  $scope.tabs.Past3Days.title = "Past Three Days";
+  $scope.tabs.Past3Days.title = "Modified in the Past Three Days";
   $scope.tabs.Past3Days.URL = "Past3Days";
   $scope.tabs.Past3Days.class = "";
   $scope.tabs.PastWeek = new Object;
-  $scope.tabs.PastWeek.title = "Past Week";
+  $scope.tabs.PastWeek.title = "Modified in the  Past Week";
   $scope.tabs.PastWeek.URL = "PastWeek";
   $scope.tabs.PastWeek.class = "";
+
+  // Configure the search filters for the tabs
+  // Note, they all need the attributes.rarity set to Unique to ensure the comma in the search
+  // doesn't mess up elasticsearch
+  $scope.tabs.AllLeague.SearchFilters = [
+    { "term" : { "attributes.rarity" : "Unique" } }
+  ];
+  $scope.tabs.PastWeek.SearchFilters = [
+    { "term" : { "attributes.rarity" : "Unique" } }, 
+    { "range" : { "shop.modified" : { gte : "now-1w" } } }
+  ];
+  $scope.tabs.Past3Days.SearchFilters = [
+    { "term" : { "attributes.rarity" : "Unique" } }, 
+    { "range" : { "shop.modified" : { gte : "now-3d" } } }
+  ];
 
   // Configure the active class if scope.options is set
   if ($scope.options) {
     $scope.tabs[$scope.options].class = "active";
   }
 
+  // Build a list of additional link type tab options
+  $scope.tabs6S = new Object;
+  $scope.tabs6S.Any = new Object;
+  $scope.tabs6S.Any.title = "Any Links";
+  $scope.tabs6S.Any.URL = "Any";
+  $scope.tabs6S.Any.class = "";
+  $scope.tabs6S.UpTo4L = new Object;
+  $scope.tabs6S.UpTo4L.title = "0-4 Linked Sockets";
+  $scope.tabs6S.UpTo4L.URL = "UpTo4L";
+  $scope.tabs6S.UpTo4L.class = "";
+  $scope.tabs6S.FiveLinked = new Object;
+  $scope.tabs6S.FiveLinked.title = "5L Only";
+  $scope.tabs6S.FiveLinked.URL = "FiveLinked";
+  $scope.tabs6S.FiveLinked.class = "";
+  $scope.tabs6S.SixLinked = new Object;
+  $scope.tabs6S.SixLinked.title = "6L Only";
+  $scope.tabs6S.SixLinked.URL = "SixLinked";
+  $scope.tabs6S.SixLinked.class = "";
+  // Search Filters for the link tabs
+  $scope.tabs6S.UpTo4L.SearchFilters = { "range" : { "sockets.largestLinkGroup" : { lte : 4 } } };
+  $scope.tabs6S.FiveLinked.SearchFilters = { "term" : { "sockets.largestLinkGroup" : 5 } };
+  $scope.tabs6S.SixLinked.SearchFilters = { "term" : { "sockets.largestLinkGroup" : 6 } };
+
   // Set the search filters for this subroutine
-  $searchFilters = "";
+  $searchFilters = new Array;
+  $searchFilters = $scope.tabs[$scope.options].SearchFilters;
+
+  // Configure the active class if scope.options is set
+  if ($scope.links) {
+    console.log("Setting " + $scope.links + " to active");
+    $scope.tabs6S[$scope.links].class = "active";
+
+    // Add this to searchFilters unless it's set to Any
+    if ($scope.links != "Any") {
+      $searchFilters.push($scope.tabs6S[$scope.links].SearchFilters);
+    }
+  }
+
 
   // Run the report function
   readyReportFunction($scope, $routeParams, es, $localStorage, $sessionStorage, $searchFilters);
