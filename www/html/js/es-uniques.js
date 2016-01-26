@@ -290,11 +290,12 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
   // Start a timer for searches
   var searchStart = new Date();
   // Prepare some promise variables 
-  // yeah I have no idea how to use promises so I wrote my o wn
-  var search1Promise = 'pending';
-  var search2Promise = 'pending';
-  var search3Promise = 'pending';
-  var search4Promise = 'pending';
+  // yeah I have no idea how to use promises so I wrote my own
+  var searchPromise = new Object;
+  searchPromise['1'] = 'pending';
+  searchPromise['2'] = 'pending';
+  searchPromise['3'] = 'pending';
+  searchPromise['4'] = 'pending';
 
   // Various Graph Data Arrays
   var Chart1x1 = new Array();
@@ -382,9 +383,11 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
-      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading general statistics!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found! Something wrong with index?');
-      search1Promise = 'failed';
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for general item statistics query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found!');
+      $scope.errors.push("Query 1 (General Item Statistics): No results returned!");
+      searchPromise['1'] = 'failed';
+      resolve(searchPromise);
       return false;
     }
 
@@ -454,8 +457,8 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
 
   
-    search1Promise = 'resolved'; 
-    resolve(search1Promise, search2Promise, search3Promise, search4Promise);
+    searchPromise['1'] = 'resolved'; 
+    resolve(searchPromise);
   }, function (err) {
     // Push an error into the loader div
     $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 1 (General Statistics)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
@@ -520,9 +523,11 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
-      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading pricing statistics!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found! Something wrong with index?');
-      search2Promise = 'failed';
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for pricing statistics query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found!');
+      $scope.errors.push("Query 2 (Pricing Statistics): No results returned!");
+      searchPromise['2'] = 'failed';
+      resolve(searchPromise);
       return false;
     }
 
@@ -552,8 +557,8 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
    if ($scope.value.allTime15 >= 80) { $scope.value.allTime15 = $scope.value.allTime15 / 80; $scope.value.allTime15Type = "Exalt"; };
    if ($scope.value.allTime50 >= 80) { $scope.value.allTime50 = $scope.value.allTime50 / 80; $scope.value.allTime50Type = "Exalt"; };
 
-    search2Promise = 'resolved';
-    resolve(search1Promise, search2Promise, search3Promise, search4Promise);
+    searchPromise['2'] = 'resolved';
+    resolve(searchPromise);
   }, function (err) {
     // Push an error into the loader div
     $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 2 (Price Statistics)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
@@ -639,9 +644,11 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
-      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading GONE statistics!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found! Something wrong with index?');
-      search3Promise = 'failed';
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for GONE statistics query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found!');
+      $scope.errors.push("Query 3 (GONE Statistics): No results returned!");
+      searchPromise['3'] = 'failed';
+      resolve(searchPromise);
       return false;
     }
 
@@ -700,8 +707,8 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
 
 
-    search3Promise = 'resolved';
-    resolve(search1Promise, search2Promise, search3Promise, search4Promise);
+    searchPromise['3'] = 'resolved';
+    resolve(searchPromise);
   }, function (err) {
     // Push an error into the loader div
     $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 3 (GONE Price Statistics)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
@@ -742,9 +749,11 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
-      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading GONE histograms!<br/><br/><br/>ERROR: No data returned for ' + $scope.unique + ' in ' + $scope.league + '<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found! Something wrong with index?');
-      search4Promise = 'failed';
+      $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for GONE histogram query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
+      console.log('ERROR: No matching unique items found!');
+      $scope.errors.push("Query 4 (GONE Histogram): No results returned!");
+      searchPromise['4'] = 'failed';
+      resolve(searchPromise);
       return false;
     }
 
@@ -758,8 +767,8 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
       Chart1x2.push(MyLine);
     });
 
-    search4Promise = 'resolved';
-    resolve(search1Promise, search2Promise, search3Promise, search4Promise);
+    searchPromise['4'] = 'resolved';
+    resolve(searchPromise);
   }, function (err) {
     // Push an error into the loader div
     $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading Query 4 (GONE Histograms)!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
@@ -768,8 +777,22 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
   // This is my own function that is called after each search and only triggers
   // if all searches are set to resolved
-  function resolve(search1Promise, search2Promise, search3Promise, search4Promise) {
-    if (search1Promise == 'resolved' && search2Promise == 'resolved' && search3Promise == 'resolved' && search4Promise == 'resolved') {
+  function resolve(searchPromise) {
+    // Create an object for stats of the promises
+    $promiseCount = new Object();
+    $promiseCount.total = 0;
+    $promiseCount.resolved = 0;
+    $promiseCount.failed = 0;
+    $promiseCount.pending = 0;
+    for (var promise in searchPromise) {
+      $promiseCount.total++;
+      $promiseCount[searchPromise[promise]]++;
+    }
+    console.log("Generating Report: Search Promises - " + $promiseCount.pending + " Pending | " + $promiseCount.resolved + " Resolved | " + $promiseCount.failed + " FAILED | " + $promiseCount.total + " Total");
+
+    // If all promises are resolved
+    if ($promiseCount.total == $promiseCount.resolved) {
+      console.log("Generating Report: " + $promiseCount.resolved + " of " + $promiseCount.total + " search promises have been met!");
       // Clear loader
       $("#loader").empty();
 
@@ -1051,41 +1074,6 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
         useHighStocks: true
       }
 
-      //Use Chart2 data to show Prices in Highstock
-      $scope.chart2PricesConfig = {
-        options: {
-          chart: {
-            zoomType: 'x'
-          },
-          rangeSelector: {
-            enabled: true
-          },
-          navigator: {
-            enabled: true
-          }
-        },
-        series: [{
-          id: 'GONE5',
-          name: 'GONE 5th %',
-          type: 'line',
-          data:  Chart2x1
-        }, {
-          id: 'GONE15',
-          name: 'GONE 15th %',
-          type: 'line',
-          data:  Chart2x2
-        }, {
-          id: 'GONE50',
-          name: 'GONE 50th %',
-          type: 'line',
-          data:  Chart2x3
-        }],
-        title: {
-          text: "Historical GONE Percentile Prices in Chaos Equivalent"
-        },
-        useHighStocks: true
-      }
-
       // Chart to go into 5th percentile widget
       $scope.chartPrices5thGONEConfig = {
         options: {
@@ -1195,14 +1183,16 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
       // Set readyReport to true to show data in Angular
       $scope.readyReport = true;
      
+    } else if (($promiseCount.resolved + $promiseCount.failed) == $promiseCount.total) {
+      console.log("Generating Report: ERROR: This report seems to have FAILED!");
+      $scope.readyReport = false;
+      $scope.failedReport = true;
+  
+      // Clear loader
+      $("#loader").html('');
     }
   }
-
   return true;
-
-
-
-
 }
 
 EsConnector.controller('leagueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage ) {
@@ -1241,6 +1231,12 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.unique = $routeParams.unique;
   $scope.options = $routeParams.options;
   $scope.links = $routeParams.links;
+  // Default readyReport to false
+  $scope.readyReport = false;
+
+  // Create a scope array for errors, if any
+  $scope.errors = new Array;
+
   console.log("Unique report for " + $scope.unique + " in " + $scope.league + " with option " + $scope.options);
   if ($scope.links) {
     console.log("  Specifically showing only " + $scope.links + " items"); 

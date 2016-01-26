@@ -112,6 +112,29 @@ body {
 
   <!-- START Template for the Unique Report -->
   <script type="text/ng-template" id="uniqueReport.html">
+  <!-- Empty Div for failedReport -->
+  <div ng-if="failedReport">
+    <div class="alert alert-warning" role="alert" style="min-width:200px;max-width:800px">
+     <p style="font-size:200%"><i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;&nbsp;There was a problem generating this report!</p>
+     <hr width=100% size=1>
+     <p>The most likely reason for this error is that you attempted a highly filtered search for a rare item and thus received no
+        results for one or more queries. For example, if you search for "6L Ashrend Buckskin Tunics in the Past 3 Days" it's likely
+        there are no matching results and thus you will see this page. Please <a href="javascript:history.back()">go back and try a less restrictive search</a>.
+      </p>
+     <hr width=100% size=1>
+     <p>You attempted to generate a report for:</p><br>
+     <ul>
+       <li> League: <b>{{league}}</b>
+       <li> Unique Item: <b>{{unique}}</b>
+       <li> Report Option: <b>{{options}}</b>
+       <li ng-if="links"> Links Filter: <b>{{links}}</b>
+     </ul><br>
+     <p>The backend returned the following error(s):</p><br>
+     <ul>
+       <li ng-repeat="error in errors"> {{error}}
+     </ul>
+    </div>
+  </div>
 
     <!-- Master DIV - only displays data if readyReport is set -->
     <div style="width:100%" ng-if="readyReport">
@@ -255,15 +278,14 @@ body {
 
 
       <!-- Tables for information, NEEDS FORMATTING -->
-      <div style="width:100%" class="clearfix">
-        <div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="width:30%;height:150px"></div>
-        <div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="width:30%;height:300px"></div>
+      <div class="row" style="width:100%">
+        <div class="col-md-6"><div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="height:300px"></div></div>
+        <div class="col-md-6"><div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="height:300px"></div></div>
       </div>
 
       <!-- Charts, specific layout is in es-uniques.js -->
       <div style="width:100%" class="clearfix">
         <highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
-        <highchart id="chart2Prices" config="chart2PricesConfig" class="span10"></highchart>
       </div>
     </div>
   </script>
