@@ -165,8 +165,9 @@ body {
           </td>
         </tr>
       </table>
-      <br><br>
 
+      <hr width=100% size=1>
+      <h1>General Shop Forum Information:</h1><br>
 
       <!-- Shows counts in columns -->
       <!-- FIX: The alerts should all be the same height when resized due to overflow -->
@@ -203,11 +204,12 @@ body {
           </div>
         </div>
           <div class="col-md-3" style="">
-          <div class="alert alert-warning" ng-if="verified.OLD" style="text-align:center">
+          <div class="alert alert-warning" ng-if="uniqueSellers" style="text-align:center">
             <p style="font-size:200%">
-              <i class="fa fa-meh-o fa-lg"></i> Stale: {{verified.OLD}}
+              <i class="fa fa-users fa-lg"></i> Sellers: {{uniqueSellers}}
             </p>
-              <p style="font-size:130%">&nbsp;
+            <p style="font-size:130%">
+              {{uniqueSellersWithPrice}} ({{uniqueSellersWithPrice / uniqueSellers * 100 | number : 0}}%) used a B/O
             </p>
           </div>
         </div>
@@ -216,7 +218,7 @@ body {
       <!-- Text -->
       <div style="width:100%;padding-left:3%;padding-right:3%;padding-top:15px;padding-bottom:15px;background-color:#EEEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
         <!-- change this to a horizontal bar graph aka bullet graph -->
-        <p ng-if="commonRank" style="font-size:1.2em;padding-left:2%">{{unique}} is the <font size=+2><b>{{commonRank}}{{commonRankOrd}}</b></font> most common unique for sale in {{league}} out of {{totalCount}} different unique items</p>
+        <p ng-if="commonRank" style="font-size:1.1.5em;padding-left:2%">{{unique}} is the <font size=+2><b>{{commonRank}}{{commonRankOrd}}</b></font> most common unique for sale in {{league}} out of {{totalCount}} different unique items</p>
         <div style="width:100%"><highchart id="graphCommonRank" config="graphCommonRankConfig" ng-if="commonRank"></highchart></div>
         <!-- Once again tables seem the best way to format this -->
         <center>
@@ -227,63 +229,78 @@ body {
       </div>
 
       <br>
+      <hr width=100% size=1>
+      <h1>Pricing Data:</h1><br>
 
       <div class="row" style="">
         <div class="col-md-4">
           <div style="text-align:center;background-color:#EEFFEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
-            <p style="font-size:3.5em;font-weight:bold">Lowest 5% Price</p>
+            <p style="font-size:2.5em;font-weight:bold">Lowest 5% Price</p>
             <div class="row">
-              <div class="col-xs-6" style="font-size:2em"><b><font color=#00BB00>Verified Now:</b><br/>{{value.allTime5 | number : 1}} {{value.allTime5Type}}</font></div>
-              <div class="col-xs-6" style="font-size:2em"><b><font color=#BB0000>GONE:</b><br/>{{valueGONE.allTime5 | number : 1}} {{valueGONE.allTime5Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><b><font color=#00BB00>Verified Now:</b><br/>{{value.allTime5 | number : 1}} {{value.allTime5Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><b><font color=#BB0000>GONE:</b><br/>{{valueGONE.allTime5 | number : 1}} {{valueGONE.allTime5Type}}</font></div>
             </div>
             <highchart id="chartPrices5thGONE" config="chartPrices5thGONEConfig" style="height:200px"></highchart>
+            <p><b>5%</b> of this item were listed at or below this price.</p>
           </div>
         </div>
         <div class="col-md-4">
           <div style="text-align:center;background-color:#FFFFEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
-            <p style="font-size:3.5em;font-weight:bold">Lowest 15% Price</p>
+            <p style="font-size:2.5em;font-weight:bold">Lowest 15% Price</p>
             <div class="row">
-              <div class="col-xs-6" style="font-size:2em"><font color=#00BB00><b>Verified Now:</b><br/>{{value.allTime15 | number : 1}} {{value.allTime15Type}}</font></div>
-              <div class="col-xs-6" style="font-size:2em"><font color=#BB0000><b>GONE:</b><br/>{{valueGONE.allTime15 | number : 1}} {{valueGONE.allTime15Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#00BB00><b>Verified Now:</b><br/>{{value.allTime15 | number : 1}} {{value.allTime15Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#BB0000><b>GONE:</b><br/>{{valueGONE.allTime15 | number : 1}} {{valueGONE.allTime15Type}}</font></div>
             </div>
             <highchart id="chartPrices15thGONE" config="chartPrices15thGONEConfig" style="height:200px"></highchart>
+            <p><b>15%</b> of this item were listed at or below this price.</p>
           </div>
         </div>
         <div class="col-md-4">
           <div style="text-align:center;background-color:#FFEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
-            <p style="font-size:3.5em;font-weight:bold">Lowest 50% Price</p>
+            <p style="font-size:2.5em;font-weight:bold">Lowest 50% Price</p>
             <div class="row">
-              <div class="col-xs-6" style="font-size:2em"><font color=#00BB00><b>Verified Now:</b><br/>{{value.allTime50 | number : 1}} {{value.allTime50Type}}</font></div>
-              <div class="col-xs-6" style="font-size:2em"><font color=#BB0000><b>GONE:</b><br/>{{valueGONE.allTime50 | number : 1}} {{valueGONE.allTime50Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#00BB00><b>Verified Now:</b><br/>{{value.allTime50 | number : 1}} {{value.allTime50Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#BB0000><b>GONE:</b><br/>{{valueGONE.allTime50 | number : 1}} {{valueGONE.allTime50Type}}</font></div>
             </div>
             <highchart id="chartPrices50thGONE" config="chartPrices50thGONEConfig" style="height:200px"></highchart>
+            <p><b>50%</b> of this item were listed at or below this price.</p>
           </div>
         </div>
       </div>
       <br>
-
-      <!-- Text -->
-      <div style="width:100%" class="clearfix">
-        <p ng-if="uniqueSellers">{{uniqueSellers}} unique seller accounts ({{uniqueSellersWithPrice}} with B/O)</p>
-      </div>
+      <hr width=100% size=1>
+      <h1>Miscellaneous Statistics:</h1><br>
 
       <!-- Gauges for various item stats, specific layout is in es-uniques.js -->
       <div class="row" style="width:100%">
         <!-- add gone w/o price vs gone w/ price -->
-        <div class="col-md-4"><highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig" ng-if="verified.GONE > 1"></highchart></div>
-        <div class="col-md-4"><highchart id="gauge1Unid" config="gauge1UnidConfig" ng-if="unidentifiedTotal > 1"></highchart></div>
-        <div class="col-md-4"><highchart id="gauge2Corrupted" config="gauge2CorruptedConfig" ng-if="corruptedTotal > 1"></highchart></div>
+        <div class="col-md-4" style="text-align:center">
+          <highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig" ng-if="verified.GONE > 0"></highchart>
+          <div ng-if="!verified.GONE"><b>No <font color=darkorange><b>GONE</b></font> items found matching this search.</b></div>
+        </div>
+        <div class="col-md-4" style="text-align:center">
+          <highchart id="gauge1Unid" config="gauge1UnidConfig" ng-if="unidentifiedTotal > 0"></highchart>
+          <div ng-if="!unidentifiedTotal"><b>No <font color=darkgray><b>Unidentified</b></font> items found matching this search.</b></div>
+        </div>
+        <div class="col-md-4" style="text-align:center">
+          <highchart id="gauge2Corrupted" config="gauge2CorruptedConfig" ng-if="corruptedTotal > 0"></highchart>
+          <div ng-if="!corruptedTotal"><b>No <font color=red><b>Corrupted</b></font> items found matching this search.</b></div>
+        </div>
         <!-- add a note on unid detection -->
       </div>
 
+      <br>
+      <hr width=100% size=1>
+      <h1>Specific Currency Type Statistics:</h1><br>
 
-      <!-- Tables for information, NEEDS FORMATTING -->
       <div class="row" style="width:100%">
         <div class="col-md-6"><div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="height:300px"></div></div>
         <div class="col-md-6"><div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="height:300px"></div></div>
       </div>
 
-      <!-- Charts, specific layout is in es-uniques.js -->
+      <br>
+      <hr width=100% size=1>
+      <h1>Total Added and Removed per Day Histogram:</h1><br>
       <div style="width:100%" class="clearfix">
         <highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
       </div>

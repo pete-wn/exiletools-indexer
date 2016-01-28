@@ -1069,9 +1069,17 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
           data:  Chart1x2
         }],
         title: {
-          text: "Total Added and Removed (GONE) per Day"
+          text: null
         },
         useHighStocks: true
+      }
+
+      $ExaltRatio = 80;
+      // Convert the currency values in this chart from chaosEquiv back to Exalts if relevant
+      if ($scope.value.allTime5Type == "Exalt") {
+        Chart2x1.forEach(function(time, index, array) {
+          time[1] = time[1] / $ExaltRatio;
+        });
       }
 
       // Chart to go into 5th percentile widget
@@ -1106,6 +1114,12 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
         },
         useHighStocks: true
       }
+      // Convert the currency values in this chart from chaosEquiv back to Exalts if relevant
+      if ($scope.value.allTime15Type == "Exalt") {
+        Chart2x2.forEach(function(time, index, array) {
+          time[1] = time[1] / $ExaltRatio;
+        });
+      }
       // Chart to go into 15th percentile widget
       $scope.chartPrices15thGONEConfig = {
         options: {
@@ -1137,6 +1151,12 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
           text: null,
         },
         useHighStocks: true
+      }
+      // Convert the currency values in this chart from chaosEquiv back to Exalts if relevant
+      if ($scope.value.allTime50Type == "Exalt") {
+        Chart2x3.forEach(function(time, index, array) {
+          time[1] = time[1] / $ExaltRatio;
+        });
       }
       // Chart to go into 50th percentile widget
       $scope.chartPrices50thGONEConfig = {
