@@ -77,10 +77,8 @@ body {
 <div id="main" style="width:100%;padding-left:25px;padding-right:25px;min-width:550px">
 
   <!-- table seems to work better for this than anything else -->
-  <!-- NOTE: Needs a spinner, it's slow on mobile -->
-  <div ng-controller="leagueChooser">
-    <!-- Control div for loading -->
-    <div ng-if="LeagueStats">
+  <div ng-controller="leagueChooser" class="clearfix">
+    <div ng-if="LeagueStats" style="float:left;width:80%">
       <h4>To View a New Report, Choose a League:</h4>
       <table cellspacing=0 cellpadding=0 border=0>
         <tr>
@@ -90,11 +88,23 @@ body {
         </tr>
       </table>
     </div>
+    <div style="text-align:right;padding-top:5px">
+      <!-- This is hard coded right now, should probably change it sometime -->
+      <p style="font-size:.8em">
+        <b><a href="http://exiletools.com/dashboard/">Current Item Index Status:</a></b><br>
+        Tracking all threads bumped since<br>
+        <b>December 11, 2015</b>
+      </p>
+      <p style="font-size:.7em">
+        <a href="https://github.com/trackpete/exiletools-indexer/issues">Follow this project on GitHub!</a>
+      </p>
+    </div>
   </div>
   <!-- End league Chooser -->
 
   <hr width=100% size=1>
   <!-- Empty Div for Loader -->
+  <div id="loaderProgress"></div>
   <div id="loader"></div>
   <!-- Empty Div to display content -->
   <div class="ng-view" style="width:100%"></div>
@@ -117,10 +127,14 @@ body {
     <div class="alert alert-warning" role="alert" style="min-width:200px;max-width:800px">
      <p style="font-size:200%"><i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;&nbsp;There was a problem generating this report!</p>
      <hr width=100% size=1>
-     <p>The most likely reason for this error is that you attempted a highly filtered search for a rare item and thus received no
+     <p>
+        The most likely reason for this error is that you attempted a highly filtered search for a rare item and thus received no
         results for one or more queries. For example, if you search for "6L Ashrend Buckskin Tunics in the Past 3 Days" it's likely
         there are no matching results and thus you will see this page. Please <a href="javascript:history.back()">go back and try a less restrictive search</a>.
-      </p>
+     </p>
+     <p>
+       You can also <a href="#/{{league}}/{{unique}}/AllLeague">click here to reset to a simple All League search for this item.</a>
+     </p>
      <hr width=100% size=1>
      <p>You attempted to generate a report for:</p><br>
      <ul>
@@ -194,7 +208,7 @@ body {
           </div>
         </div>
         <div class="col-md-3" style="">
-          <div class="alert alert-danger" ng-if="verified.GONE" style="text-align:center">
+          <div class="alert alert-danger" ng-if="verified.GONE" style="text-align:center" uib-popover="Gone items changed from verified to unverified or were removed from a shop. It usually indicates either the seller gave up on selling the item or successfully traded it to another player." popover-trigger="mouseenter">
             <p style="font-size:200%">
               <i class="fa fa-external-link fa-lg"></i> {{verified.GONE}} Gone
             </p>
@@ -204,7 +218,7 @@ body {
           </div>
         </div>
           <div class="col-md-3" style="">
-          <div class="alert alert-warning" ng-if="uniqueSellers" style="text-align:center">
+          <div class="alert alert-warning" ng-if="uniqueSellers" style="text-align:center" uib-popover="This data shows the number of unique seller account names (not shop forum threads) that have listed this item for sale" popover-trigger="mouseenter">
             <p style="font-size:200%">
               <i class="fa fa-users fa-lg"></i> Sellers: {{uniqueSellers}}
             </p>
@@ -216,10 +230,9 @@ body {
       </div>
 
       <!-- Text -->
-      <div style="width:100%;padding-left:3%;padding-right:3%;padding-top:15px;padding-bottom:15px;background-color:#EEEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
-        <!-- change this to a horizontal bar graph aka bullet graph -->
-        <p ng-if="commonRank" style="font-size:1.1.5em;padding-left:2%">{{unique}} is the <font size=+2><b>{{commonRank}}{{commonRankOrd}}</b></font> most common unique for sale in {{league}} out of {{totalCount}} different unique items</p>
-        <div style="width:100%"><highchart id="graphCommonRank" config="graphCommonRankConfig" ng-if="commonRank"></highchart></div>
+      <div style="width:100%;padding-left:3%;padding-right:3%;padding-top:15px;padding-bottom:15px;background-color:#EEEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;" ng-if="graphCommonRankConfig">
+        <p ng-if="graphCommonRankConfig" style="font-size:1.1.5em;padding-left:2%">{{unique}} is the <font size=+2><b>{{commonRank}}{{commonRankOrd}}</b></font> most common unique for sale in {{league}} out of {{totalCount}} different unique items</p>
+        <div style="width:100%"><highchart id="graphCommonRank" config="graphCommonRankConfig" ng-if="graphCommonRankConfig"></highchart></div>
         <!-- Once again tables seem the best way to format this -->
         <center>
           <table style="width:90%;font-size:80%;font-weight:bold">
@@ -230,7 +243,7 @@ body {
 
       <br>
       <hr width=100% size=1>
-      <h1>Pricing Data:</h1><br>
+      <h1>Pricing Data: <small>(for items with prices only)</small></h1><br>
 
       <div class="row" style="">
         <div class="col-md-4">
@@ -274,11 +287,11 @@ body {
       <!-- Gauges for various item stats, specific layout is in es-uniques.js -->
       <div class="row" style="width:100%">
         <!-- add gone w/o price vs gone w/ price -->
-        <div class="col-md-4" style="text-align:center">
+        <div class="col-md-4" style="text-align:center" uib-popover="In general, a Gone rate higher than 70% indicates the item is in demand and is likely to sell if priced appropriately. Rates lower than 50% indicate the item is not very popular and a seller should undercut the market to have a chance of selling it." popover-trigger="mouseenter">
           <highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig" ng-if="verified.GONE > 0"></highchart>
           <div ng-if="!verified.GONE"><b>No <font color=darkorange><b>GONE</b></font> items found matching this search.</b></div>
         </div>
-        <div class="col-md-4" style="text-align:center">
+        <div class="col-md-4" style="text-align:center" uib-popover="Unidentified uniques are determined by comparing the item icon with known identified uniques, however this is not always completely accurate. In general, an Unidentified rate of more than 5% is unusual." popover-trigger="mouseenter">
           <highchart id="gauge1Unid" config="gauge1UnidConfig" ng-if="unidentifiedTotal > 0"></highchart>
           <div ng-if="!unidentifiedTotal"><b>No <font color=darkgray><b>Unidentified</b></font> items found matching this search.</b></div>
         </div>
@@ -301,6 +314,7 @@ body {
       <br>
       <hr width=100% size=1>
       <h1>Total Added and Removed per Day Histogram:</h1><br>
+      <p><i>Note: The index tracks when an item was added separately from when the item was last modified.</i></p>
       <div style="width:100%" class="clearfix">
         <highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
       </div>

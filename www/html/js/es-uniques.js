@@ -115,6 +115,7 @@ var initChooser = function($scope, es, $location, $localStorage, $sessionStorage
 
       // Clear loader
       $("#loader").html('');
+      $("#loaderProgress").html('');
   
     }, function (err) {
       // Push an error into the loader div
@@ -247,6 +248,7 @@ var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
 
       // Clear loader
       $("#loader").html('');
+      $("#loaderProgress").html('');
 
     }, function (err) {
       // Push an error into the loader div
@@ -671,10 +673,20 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
 
     // Loop through histo data to populate graph objects
     response.aggregations.histoModified.buckets.forEach(function (time, index, array) {
+      // Make sure any NaN result is set to null so highcharts can render it
+      if (isNaN(time.percentilePrice.values["5.0"])) {
+        time.percentilePrice.values["5.0"] = null;
+      }
       var MyLine = [time.key,time.percentilePrice.values["5.0"]];
       Chart2x1.push(MyLine);
+      if (isNaN(time.percentilePrice.values["15.0"])) {
+        time.percentilePrice.values["15.0"] = null;
+      }
       var MyLine = [time.key,time.percentilePrice.values["15.0"]];
       Chart2x2.push(MyLine);
+      if (isNaN(time.percentilePrice.values["50.0"])) {
+        time.percentilePrice.values["50.0"] = null;
+      }
       var MyLine = [time.key,time.percentilePrice.values["50.0"]];
       Chart2x3.push(MyLine);
     });
@@ -1051,7 +1063,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
             zoomType: 'x'
           },
           rangeSelector: {
-            enabled: true
+            enabled: false,
           },
           navigator: {
             enabled: true
@@ -1089,18 +1101,21 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
             type: 'line',
             backgroundColor : 'transparent',
           },
-          rangeSelector: {
-            enabled: false
-          },
-          navigator: {
-            enabled: false
-          },
           credits : {
             enabled: false
           },
           scrollbar : {
             enabled: false
           },
+          legend: {
+            enabled: false
+          },
+        },
+        xAxis: {
+          type: 'datetime',
+        },
+        yAxis: {
+          title: null
         },
         series: [{
           id: 'GONE5',
@@ -1112,7 +1127,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
         title: {
           text: null,
         },
-        useHighStocks: true
+        useHighStocks: false
       }
       // Convert the currency values in this chart from chaosEquiv back to Exalts if relevant
       if ($scope.value.allTime15Type == "Exalt") {
@@ -1127,21 +1142,24 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
             type: 'line',
             backgroundColor : 'transparent',
           },
-          rangeSelector: {
-            enabled: false
-          },
-          navigator: {
-            enabled: false
-          },
           credits : {
             enabled: false
           },
           scrollbar : {
             enabled: false
           },
+          legend: {
+            enabled: false
+          },
+        },
+        xAxis: {
+          type: 'datetime',
+        },
+        yAxis: {
+          title: null
         },
         series: [{
-          id: 'GONE5',
+          id: 'GONE15',
           name: 'GONE 15th %',
           type: 'line',
           color: '#BB0000',
@@ -1150,7 +1168,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
         title: {
           text: null,
         },
-        useHighStocks: true
+        useHighStocks: false
       }
       // Convert the currency values in this chart from chaosEquiv back to Exalts if relevant
       if ($scope.value.allTime50Type == "Exalt") {
@@ -1165,21 +1183,24 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
             type: 'line',
             backgroundColor : 'transparent',
           },
-          rangeSelector: {
-            enabled: false
-          },
-          navigator: {
-            enabled: false
-          },
           credits : {
             enabled: false
           },
           scrollbar : {
             enabled: false
           },
+          legend: {
+            enabled: false
+          },
+        },
+        xAxis: {
+          type: 'datetime',
+        },
+        yAxis: {
+          title: null
         },
         series: [{
-          id: 'GONE5',
+          id: 'GONE50',
           name: 'GONE 50th %',
           type: 'line',
           color: '#BB0000',
@@ -1188,7 +1209,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
         title: {
           text: null,
         },
-        useHighStocks: true
+        useHighStocks: false
       }
 
       // Stats on report generation
@@ -1199,6 +1220,8 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
       $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Created full report in ' + (searchEnd - searchStart) + 'ms</div>');
       setTimeout(function(){ $("#loader").empty(); }, 4000);
 
+      // Clear the loader progress bar
+      $("#loaderProgress").html('');
 
       // Set readyReport to true to show data in Angular
       $scope.readyReport = true;
@@ -1210,6 +1233,14 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
   
       // Clear loader
       $("#loader").html('');
+      $("#loaderProgress").html('');
+    } else {
+//      $promiseCount.total $promiseCount.resolved $promiseCount.pending $promiseCount.failed
+      // Update the loader div based on the count
+      $percentComplete = ($promiseCount.resolved / $promiseCount.total * 100).toFixed(0);
+      $("#loaderProgress").html('<div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="' + $percentComplete + '" aria-valuemin="0" aria-valuemax="100" style="width:' + $percentComplete + '%">' + $promiseCount.resolved + ' out of ' + $promiseCount.total + ' Searches Complete</div></div>');
+      console.log('progress bar at ' + $promiseCount.resolved + ' out of ' + $promiseCount.total);
+
     }
   }
   return true;
