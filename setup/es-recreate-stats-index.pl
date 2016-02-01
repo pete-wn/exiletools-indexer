@@ -6,7 +6,6 @@ my $indexName = "indexing-stats";
 
 $config = '
 {
-  "indexing-stats" : {
     "aliases" : { },
     "settings" : {
       "index" : {
@@ -16,7 +15,6 @@ $config = '
       }
     },
     "warmers" : { }
-  }
 }
 ';
 

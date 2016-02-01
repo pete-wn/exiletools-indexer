@@ -20,6 +20,9 @@ sub formatJSON {
   # Remove the Superior and/or any leading white space from typeLine
   $data{typeLine} =~ s/^(Superior |\s+)//o;
 
+  # If the item has talismanTier data over 1, add that
+  $item{attributes}{talismanTier} = $data{talismanTier} if ($data{talismanTier} > 0);
+
   $item{attributes}{frameType} = $data{frameType};
   # Set the item rarity based on frameType digit
   if ($data{frameType} == 0) {

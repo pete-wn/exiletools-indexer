@@ -19,10 +19,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular-route.min.js"></script>
   <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
   <script src="js/thirdparty/ui-bootstrap-tpls-0.14.3.min.js"></script>
-<!--
-  <script src="js/thirdparty/highstock/js/highstock.js"></script>
-  <script src="js/thirdparty/highstock/js/modules/exporting.js"></script>
--->
   <script src="js/thirdparty/angular-promise-buttons.min.js"></script>
   <script src="js/thirdparty/angular-cache.min.js"></script>
   <script src="js/thirdparty/select.min.js"></script>
@@ -51,6 +47,7 @@ body {
 <!-- Note: Indenting for the body starts at base for simplicity -->
 <!-- Simple header -->
 <div style="width:100%;min-width:550px;padding:10px;padding-left:25px;background-color:#F6E3CE">
+  <noscript>Uh, it appears your browser doesn't support JavaScript! This page requires JavaScript and a host of other modern web plugins to work, sorry. :(</noscript>
 
   <div class="row">
     <div class="col-md-4">
@@ -63,11 +60,8 @@ body {
         dynamically generated using the <a href="http://api.exiletools.com/info/indexer">free public ExileTools Index</a>
       </font>
     </div>
-    <!-- Fix this in production release! -->
     <div class="col-md-1">
-      <font style="font-size:80%;color:red;font-weight:bold">
-        DEVELOPMENT VERSION
-      </font>
+      <font style="font-size:80%;color:red;font-weight:bold">DEVELOPMENT VERSION</font>
     </div>
   </div>
 
@@ -162,7 +156,6 @@ body {
       </ul>
       <br>
 
-      <!-- Basic Item Information - NEEDS MOBILE SUPPORT -->
       <table width=100% border=0 style="background:linear-gradient(to bottom, #cf7025 0%,  #FFFFFF 90%)">
         <tr>
           <td valign=top style="padding-left:15px;padding-top:15px;padding-bottom:15px;padding-right:2px">
@@ -183,8 +176,6 @@ body {
       <hr width=100% size=1>
       <h1>General Shop Forum Information:</h1><br>
 
-      <!-- Shows counts in columns -->
-      <!-- FIX: The alerts should all be the same height when resized due to overflow -->
       <div class="row" style="">
         <div class="col-md-3" style="">
           <div class="alert alert-info" ng-if="itemsTotal" style="text-align:center">
@@ -229,8 +220,7 @@ body {
         </div>
       </div>
 
-      <!-- Text -->
-      <div style="width:100%;padding-left:3%;padding-right:3%;padding-top:15px;padding-bottom:15px;background-color:#EEEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;" ng-if="graphCommonRankConfig">
+      <div style="width:100%;padding-left:3%;padding-right:3%;padding-top:15px;padding-bottom:15px;background-color:#EEEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;" ng-if="graphCommonRankConfig" uib-popover="If this graph doesn't appear properly, try hitting reload - I'm still tracking down this occasional bug, sorry!" popover-trigger="mouseenter">
         <p ng-if="graphCommonRankConfig" style="font-size:1.1.5em;padding-left:2%">{{unique}} is the <font size=+2><b>{{commonRank}}{{commonRankOrd}}</b></font> most common unique for sale in {{league}} out of {{totalCount}} different unique items</p>
         <div style="width:100%"><highchart id="graphCommonRank" config="graphCommonRankConfig" ng-if="graphCommonRankConfig"></highchart></div>
         <!-- Once again tables seem the best way to format this -->
@@ -286,7 +276,6 @@ body {
 
       <!-- Gauges for various item stats, specific layout is in es-uniques.js -->
       <div class="row" style="width:100%">
-        <!-- add gone w/o price vs gone w/ price -->
         <div class="col-md-4" style="text-align:center" uib-popover="In general, a Gone rate higher than 70% indicates the item is in demand and is likely to sell if priced appropriately. Rates lower than 50% indicate the item is not very popular and a seller should undercut the market to have a chance of selling it." popover-trigger="mouseenter">
           <highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig" ng-if="verified.GONE > 0"></highchart>
           <div ng-if="!verified.GONE"><b>No <font color=darkorange><b>GONE</b></font> items found matching this search.</b></div>
@@ -299,7 +288,6 @@ body {
           <highchart id="gauge2Corrupted" config="gauge2CorruptedConfig" ng-if="corruptedTotal > 0"></highchart>
           <div ng-if="!corruptedTotal"><b>No <font color=red><b>Corrupted</b></font> items found matching this search.</b></div>
         </div>
-        <!-- add a note on unid detection -->
       </div>
 
       <br>
@@ -313,8 +301,8 @@ body {
 
       <br>
       <hr width=100% size=1>
-      <h1>Total Added and Removed per Day Histogram:</h1><br>
-      <p><i>Note: The index tracks when an item was added separately from when the item was last modified.</i></p>
+      <h1>Total Added and Removed per Day:</h1><br>
+      <p><i>Note: The index tracks when an item was added separately from when the item was last modified. Items can be added three weeks ago but modified yesterday, for example (modified means the price was changed).</i></p>
       <div style="width:100%" class="clearfix">
         <highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
       </div>

@@ -6,18 +6,16 @@ my $indexName = "poedev";
 
 $config = '
 {
-  "poedev" : {
     "aliases" : { },
     "settings" : {
       "index" : {
         "refresh_interval" : "60s",
-        "number_of_shards" : "5",
+        "number_of_shards" : "3",
         "number_of_replicas" : "1",
         "requests.cache.enable" : true
       }
     },
     "warmers" : { }
-  }
 }
 ';
 
@@ -28,7 +26,7 @@ $template = '
   "settings" : {
     "index" : {
       "refresh_interval" : "60s",
-      "number_of_shards" : "5",
+      "number_of_shards" : "3",
       "number_of_replicas" : "1"
     },
     "analysis" : {
