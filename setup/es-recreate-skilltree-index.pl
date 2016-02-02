@@ -93,6 +93,31 @@ $template = '
             },
             "chosen" : {
               "type" : "boolean"
+            },
+            "nodename" : {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "icon" : {
+              "type" : "string",
+              "index" : "not_analyzed"
+            },
+            "isKeystone" : {
+              "type" : "boolean"
+            },
+            "isNoteable" : {
+              "type" : "boolean"
+            }
+          }
+        },
+        "jewels" : {
+          "type" : "nested",
+          "properties" : {
+            "explicitMods" : {
+              "type" : "nested"
+            },
+            "implicitMods" : {
+              "type" : "nested"
             }
           }
         }

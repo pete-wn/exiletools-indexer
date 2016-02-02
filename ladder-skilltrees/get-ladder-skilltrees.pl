@@ -30,6 +30,9 @@ $skilltreeURL = 'https://www.pathofexile.com/character-window/get-passive-skills
 # == Initial Startup
 &StartProcess;
 
+# Create the %nodeHash lookup table for node information
+&createNodeHash;
+
 # Set global rundate variable
 ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 our $runDate = ($year + 1900).sprintf("%02d", ($mon + 1)).sprintf("%02d", $mday);
@@ -46,6 +49,9 @@ if ($args{league}) {
 
 sub fetchSkilltrees {
   local $league = $_[0];
+
+  local $publicCount = 0;
+  local $totalCount = 0;
 
   &d("Fetching list of characters on ladder in $league\n");
 
@@ -78,7 +84,7 @@ sub fetchSkilltrees {
   our $can_accept = HTTP::Message::decodable;
 
   # Fetch data from the ladder
-  my $response = $ua->get("$ladderApiURL&league",'Accept-Encoding' => $can_accept);
+  my $response = $ua->get("$ladderApiURL&league=$league",'Accept-Encoding' => $can_accept);
 
   # Decode the returned data as a perl hash
   my %ladderData = %{eval $response->decoded_content};
@@ -89,19 +95,27 @@ sub fetchSkilltrees {
   foreach $char (%ladderData) {
     if ($ladderData{$char}{rank} && $ladderData{$char}{accountName} && $ladderData{$char}{charName}) {
       $count++;
-      last if ($count > 2000);
+#      last if ($count > 2000);
+      if ($count % 500 == 0) {
+        &d("$count characters processed\n");
+      }
       &fetchTreeForChar("$ladderData{$char}{accountName}","$ladderData{$char}{charName}","$ladderData{$char}{rank}");
-      usleep(400000);
+      usleep(20000);
     }
   }
   &sv("Bulk flushing data\n");
   $bulk->flush;
+
+  &d("Total Characters Checked: $totalCount\n");
+  &d("Total Characters Public: $publicCount\n");
 }
 
 sub fetchTreeForChar {
   my $accountName = $_[0];
   my $character = $_[1];
   my $rank = $_[2];
+
+  $totalCount++;
 
   # Create a hash for the parsed tree data to be stored in
   my %treeData;
@@ -110,6 +124,7 @@ sub fetchTreeForChar {
   $treeData{info}{characterTokenized} = $character;
   $treeData{info}{character} = $character;
   $treeData{info}{rank} += $rank;
+  $treeData{info}{league} = $league;
   $treeData{info}{runDate} = $runDate;
 
   # Fetch skilltree from pathofexile.com
@@ -122,11 +137,19 @@ sub fetchTreeForChar {
     # If the content is false then this character is private or deleted, ignore it
     &d("$accountName $character $rank is private!\n");
     $treeData{info}{private} = \1;
+    # convert treeData to JSON
+    my $jsonOut = JSON::XS->new->utf8->encode(\%treeData);
+    # Prepare for bulk adding to ES
+    $bulk->index({ id => "$runDate-$league-$rank", source => "$jsonOut"});
+
   } elsif ($content =~ /DOCTYPE html/) {
+
     # WTF this is HTML?
     &d("Got some weird HTML for $character on $accountName rank $rank?\n--\n$content\n--\n");
+
   } else {
     &d("Got data for $accountName $character $rank\n");
+    $publicCount++;
     $treeData{info}{private} = \0;
 
     # encode the JSON data into something perl can reference 
@@ -142,15 +165,20 @@ sub fetchTreeForChar {
     # Parse the hash array to see what nodes have been selected
     my $skillPointCount = 0;
     my $jewelPointCount = 0;
-    foreach $point (@{$data->{hashes}}) {
+    foreach $id (@{$data->{hashes}}) {
       $skillPointCount++;
-      my %nodeHash;
-      $nodeHash{node} += $point ;
-      $nodeHash{chosen} = \1;
-      push @{$treeData{skillNodes}}, \%nodeHash;
+      my %nHash;
+      $nHash{node} += $id ;
+      $nHash{chosen} = \1;
+      $nHash{nodename} = $nodeHash{$id}{name};
+      $nHash{isNoteable} = $nodeHash{$id}{isNoteable};
+      $nHash{isKeystone} = $nodeHash{$id}{isKeystone};
+      $nHash{icon} = $nodeHash{$id}{icon};
+
+      push @{$treeData{skillNodes}}, \%nHash;
 
       # If this is a jewel node, increment the jewel count
-      $jewelPointCount++ if ($jewelNodes{$point});
+      $jewelPointCount++ if ($jewelNodes{$id});
     }
     $treeData{info}{skillPointsUsed} += $skillPointCount;
     $treeData{info}{jewelSlots} += $jewelPointCount;
@@ -222,6 +250,39 @@ sub fetchTreeForChar {
 #    print "--\n$jsonOut\n--\n";
 
     # Prepare for bulk adding to ES
-    $bulk->index({ id => "$runDate-$rank", source => "$jsonOut"});
+    $bulk->index({ id => "$runDate-$league-$rank", source => "$jsonOut"});
+  }
+}
+
+sub createNodeHash {
+  # This URL should point to the official pathofexile.com skilltree
+  my $fullSkilltreeURL = 'https://www.pathofexile.com/passive-skill-tree';
+  
+  # Fetch skilltree from pathofexile.com
+  my $ua = LWP::UserAgent->new;
+  my $response = $ua->get("$fullSkilltreeURL",'Accept-Encoding' => $can_accept);
+  
+  # Decode response
+  my $content = join("", split(/\n/, $response->decoded_content));
+  
+  # Clean out everything before the skill tree data
+  $content =~ s/^.*var passiveSkillTreeData = //o;
+  # Clean out everything after the skill tree data
+  $content =~ s/,\"imageZoomLevels.*$/\}/o;
+ 
+  # Create the global nodeHash 
+  our %nodeHash;
+  
+  # encode the JSON data into something perl can reference 
+  my $data = decode_json(encode("utf8", $content));
+  
+  foreach $node (@{$data->{nodes}}) {
+    my $id = $node->{id};
+    $nodeHash{$id}{name} = $node->{dn};
+    $nodeHash{$id}{icon} = "https://p7p4m6s5.ssl.hwcdn.net/image".$node->{icon};
+    $nodeHash{$id}{icon} =~ s/\\//g;
+    $nodeHash{$id}{isNoteable} = $node->{not};
+    $nodeHash{$id}{isKeystone} = $node->{ks};
+    $nodeHash{$id}{bonuses} = $node->{sd};
   }
 }
