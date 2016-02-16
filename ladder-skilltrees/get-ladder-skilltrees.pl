@@ -95,12 +95,12 @@ sub fetchSkilltrees {
   foreach $char (%ladderData) {
     if ($ladderData{$char}{rank} && $ladderData{$char}{accountName} && $ladderData{$char}{charName}) {
       $count++;
-#      last if ($count > 2000);
+#      last if ($count > 10000);
       if ($count % 500 == 0) {
         &d("$count characters processed\n");
       }
-      &fetchTreeForChar("$ladderData{$char}{accountName}","$ladderData{$char}{charName}","$ladderData{$char}{rank}");
-      usleep(20000);
+      &fetchTreeForChar("$ladderData{$char}{accountName}","$ladderData{$char}{charName}","$ladderData{$char}{rank}","$ladderData{$char}{dead}","$ladderData{$char}{level}","$ladderData{$char}{class}");
+      usleep(5000);
     }
   }
   &sv("Bulk flushing data\n");
@@ -114,6 +114,9 @@ sub fetchTreeForChar {
   my $accountName = $_[0];
   my $character = $_[1];
   my $rank = $_[2];
+  my $dead = $_[3];
+  my $level = $_[4];
+  my $class = $_[5];
 
   $totalCount++;
 
@@ -126,6 +129,9 @@ sub fetchTreeForChar {
   $treeData{info}{rank} += $rank;
   $treeData{info}{league} = $league;
   $treeData{info}{runDate} = $runDate;
+  $treeData{info}{dead} = $dead;
+  $treeData{info}{level} = $level;
+  $treeData{info}{class} = $class;
 
   # Fetch skilltree from pathofexile.com
   my $response = $ua->get("$skilltreeURL&accountName=$accountName&character=$character",'Accept-Encoding' => $can_accept);
@@ -143,10 +149,7 @@ sub fetchTreeForChar {
     $bulk->index({ id => "$runDate-$league-$rank", source => "$jsonOut"});
 
   } elsif ($content =~ /DOCTYPE html/) {
-
-    # WTF this is HTML?
-    &d("Got some weird HTML for $character on $accountName rank $rank?\n--\n$content\n--\n");
-
+    &d("$accountName $character $rank is probably utf8 or something, got HTML response.\n");
   } else {
     &d("Got data for $accountName $character $rank\n");
     $publicCount++;
@@ -176,6 +179,21 @@ sub fetchTreeForChar {
       $nHash{icon} = $nodeHash{$id}{icon};
 
       push @{$treeData{skillNodes}}, \%nHash;
+
+      # Calculate the stats from the node
+      foreach $bonus (@{$nodeHash{$id}{bonuses}}) {
+        # Rudimentary matching of the bonus
+        if ($bonus =~ /^(.*?)+(\d+(\.\d{1,2})?)(.*?)$/) {
+          $treeData{nodeBonusesTotal}{"$1+#$4"} += $2;
+          $treeData{allBonusesTotal}{"$1+#$4"} += $2;
+        } elsif ($bonus =~ /^(.*?)(\d+(\.\d{1,2})?)\%(.*?)$/) {
+          $treeData{nodeBonusesTotal}{"$1#%$4"} += $2;
+          $treeData{allBonusesTotal}{"$1#%$4"} += $2;
+        } else {
+          $treeData{nodeBonusesTotal}{"$bonus"} = \1;
+          $treeData{allBonusesTotal}{"$bonus"} = \1;
+        }
+      }
 
       # If this is a jewel node, increment the jewel count
       $jewelPointCount++ if ($jewelNodes{$id});
@@ -208,17 +226,30 @@ sub fetchTreeForChar {
 
       # Very rudimentary mod parsings, search for +# or #% otherwise set a boolean true
       foreach $mod (@{$jewel->{explicitMods}}) {
-        if ($mod =~ /^(.*?)+(\d+(\.\d{1,2})?)(.*?)$/) {
+        # deal with that jewel that does #-#
+        if ($mod =~ /^+(\d+-\d+) (.*?)$/) {
+          my %modHash;
+          $modHash{"$2"} = "$1";
+          $treeData{jewelModsTotal}{"$2"} = $1;
+          $treeData{allBonusesTotal}{"$2"} += $1;
+          push @{$jewelHash{explicitMods}}, \%modHash;
+        } elsif ($mod =~ /^(.*?)+(\d+(\.\d{1,2})?)(.*?)$/) {
           my %modHash;
           $modHash{"$1+#$4"} += $2;
+          $treeData{jewelModsTotal}{"$1+#$4"} += $2;
+          $treeData{allBonusesTotal}{"$1+#$4"} += $2;
           push @{$jewelHash{explicitMods}}, \%modHash;
         } elsif ($mod =~ /^(.*?)(\d+(\.\d{1,2})?)\%(.*?)$/) {
           my %modHash;
           $modHash{"$1#%$4"} += $2;
+          $treeData{jewelModsTotal}{"$1#%$4"} += $2;
+          $treeData{allBonusesTotal}{"$1#%$4"} += $2;
           push @{$jewelHash{explicitMods}}, \%modHash;
         } else {
           my %modHash;
           $modHash{"$mod"} = \1;
+          $treeData{jewelModsTotal}{"$mod"} = \1;
+          $treeData{allBonusesTotal}{"$mod"} = \1;
           push @{$jewelHash{explicitMods}}, \%modHash;
         }
       }
@@ -228,10 +259,12 @@ sub fetchTreeForChar {
         if ($mod =~ /^(.*?)+(\d+(\.\d{1,2})?)(.*?)$/) {
           my %modHash;
           $modHash{"$1+#$4"} += $2;
+          $treeData{jewelModsTotal}{"$1+#$4"} += $2;
           push @{$jewelHash{implicitMods}}, \%modHash;
         } elsif ($mod =~ /^(.*?)(\d+(\.\d{1,2})?)\%(.*?)$/) {
           my %modHash;
           $modHash{"$1#%$4"} += $2;
+          $treeData{jewelModsTotal}{"$1#%$4"} += $2;
           push @{$jewelHash{implicitMods}}, \%modHash;
         } else {
           my %modHash;
@@ -247,6 +280,7 @@ sub fetchTreeForChar {
 
     # convert treeData to JSON
     my $jsonOut = JSON::XS->new->utf8->encode(\%treeData);
+#    my $jsonOut = JSON::XS->new->utf8->pretty->encode(\%treeData);
 #    print "--\n$jsonOut\n--\n";
 
     # Prepare for bulk adding to ES
@@ -278,11 +312,29 @@ sub createNodeHash {
   
   foreach $node (@{$data->{nodes}}) {
     my $id = $node->{id};
+    # Create our own modified bonus hashes
+    my @bonuses;
+    foreach $bonus (@{$node->{sd}}) {
+      if ($bonus =~ /(\.)(?!\d)/) {
+        # Fix acrobatics
+        if ($node->{dn} eq "Acrobatics") {
+          push @bonuses, "30% Chance to Dodge Attacks";
+          push @bonuses, "50% less Armour and Energy Shield";
+          push @bonuses, "30% less Chance to Block Spells and Attacks";
+        } else {
+          # Change periods to commas
+          $bonus =~ s/\./\,/g;
+        push @bonuses, $bonus;
+        }
+      } else {
+        push @bonuses, $bonus;
+      }
+    }
     $nodeHash{$id}{name} = $node->{dn};
     $nodeHash{$id}{icon} = "https://p7p4m6s5.ssl.hwcdn.net/image".$node->{icon};
     $nodeHash{$id}{icon} =~ s/\\//g;
     $nodeHash{$id}{isNoteable} = $node->{not};
     $nodeHash{$id}{isKeystone} = $node->{ks};
-    $nodeHash{$id}{bonuses} = $node->{sd};
+    $nodeHash{$id}{bonuses} = \@bonuses;
   }
 }
