@@ -18,7 +18,7 @@ $routeProvider
 // This key may be expired at any time and I need a way to notify people of changes in the API
 EsConnector.service('es', function (esFactory) {
 //  return esFactory({ host: 'http://apikey:3fcfca58ada145a27b5de1f824111cd5@api.exiletools.com' });
-  return esFactory({ host: 'http://pwx.it.prd:9200/poedev/item' });
+  return esFactory({ host: 'http://apikey:3fcfca58ada145a27b5de1f824111cd5@api.exiletools.com' });
 });
 
 // We define an Angular controller that returns the server health
@@ -73,7 +73,7 @@ EsConnector.controller('shopReport', function($scope, $routeParams, es, $locatio
       }
 
       es.search({
-//        index: 'index',
+        index: 'index',
         body: {
           "sort": [
             { "shop.modified" : { "order" : "desc" } }

@@ -427,6 +427,20 @@ sub formatJSON {
   }
   
   if ($data{sockets}[0]{attr}) {
+    # Kinda hacky
+    # https://github.com/trackpete/exiletools-indexer/issues/106
+    foreach my $socket (@{$data{sockets}}) {
+      if ($socket->{attr} eq "G") {
+        $item{sockets}{totalWhite}++;
+      } elsif ($socket->{attr} eq "D") {
+        $item{sockets}{totalGreen}++;
+      } elsif ($socket->{attr} eq "S") {
+        $item{sockets}{totalRed}++;
+      } elsif ($socket->{attr} eq "I") {
+        $item{sockets}{totalBlue}++;
+      }
+    }
+
     my %sortGroup;
     ($item{sockets}{largestLinkGroup}, $item{sockets}{socketCount}, $item{sockets}{allSockets}, $item{sockets}{allSocketsSorted}, $item{sockets}{allSocketsGGG}, %sortGroup) = &ItemSockets();
     foreach $sortGroup (keys(%sortGroup)) {
@@ -510,7 +524,8 @@ sub formatJSON {
   } 
 
   # If there is a properties.Weapon.type set, extract the first one and set attributes.weaponType
-  if (my @types = keys(%{$item{properties}{Weapon}{type}})) {
+  if ($item{properties}{Weapon}) {
+    my @types = keys(%{$item{properties}{Weapon}{type}});
     $item{attributes}{weaponType} = $types[0];
   }
 

@@ -97,3 +97,9 @@ There are also a bunch of new fields available as well as some various other cha
 * There is now a boolean `shop.hasPrice` field which will be set to `true` if the item has a price and `false` if it does not
   * https://github.com/trackpete/exiletools-indexer/issues/104
 
+* Socket counts for different colors are now added under sockets, these include:
+  * `sockets.totalWhite`
+  * `sockets.totalRed`
+  * `sockets.totalBlue`
+  * `sockets.totalGreen`
+  * https://github.com/trackpete/exiletools-indexer/issues/106
