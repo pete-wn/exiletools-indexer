@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>exiletools.com APIs</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/simple-sidebar.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <?php include("menubar.html")?>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Sidebar</a>
+<div style="width:700px">
+                        <h1>Pete's Path of Exile APIs</h1>
+<p>
+I've created and released these API's to help tool builders who want to add value to the community without needing to
+have servers set up to collect and store data.<p>
+
+<b>All of these API's are provided free, with my servers, processing, scripts, and databases as the backend. None of these
+API's make direct calls to any systems other than my own unless specifically stated. No guarantees are provided about
+availability, uptime, etc. - please don't try to monetize a system based on my API's.</b>
+
+
+<h2>News & Status Updates</h2>
+<p>Maintenance notices, updates, known problems, etc. are all available on the <a href="https://twitter.com/exiletools">@exiletools twitter feed</a>.</p>
+
+<a class="twitter-timeline" data-dnt="true" href="https://twitter.com/exiletools" data-widget-id="633001740497907712">Tweets by @exiletools</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+<p></p>
+          
+<p>Live status is also available in JSON format by querying <a href="/status">http://exiletools.com/status</a>. If you have a program that is relying on the ladder or index services, you may wish to have it automatically check the status page. It will return the currently active leagues as well as the index and ladder job status. See <a href="https://github.com/trackpete/exiletools-indexer/issues/47">this issue on GitHub</a> for an explanation of the JSON data.</p>
+
+
+<h1>API Summary</h1>
+
+Please click the appropriate link to the left to see more detail.<p>
+
+<h2>Stash Tab Indexer ElasticSearch API</h2>
+<ul>
+This API provides direct access to my Elastic Search Index for Public Stash Tabs, updated in near-realtime (usually within 10s) as changes are posted through the official API at pathofexile.com. It can be used for everything from creating a poe.trade style search to alerting on specific item availability to price reports to just finding out whether or not you're getting a fair price for an item to even creating advanced reports on items, prices, and availability.<p>
+<br>
+
+<b>Production use of this API requires you to sign up for an API Key:</b> There is a development API key you can use initially, but I'd
+like to keep track of who is using this and have a way to contact you, so please sign up for an API key. More information is available
+on the API page.<p>
+Some tools that use my Shop Indexer ElasticSearch API include:<p>
+<ul>
+<li><a href="http://exiletools.com/pricemacro.html">In-Game Price Comparison Macro</a>
+<li><a href="http://exiletools.com/realtime/uniques">Real Time Unique Item Availability</a>
+<li><a href="http://exiletools.com/realtime/all">Real Time Item Availability of All Items</a>
+<li><a href="http://exiletools.com/realtime/shop-watch">Monitor an Account's Stash Tabs in Real Time</a>
+<li><a href="http://exiletools.com/uniques">Unique Item Availability and Price Reports</a>
+<li><a href="http://log.exiletools.com">Streaming socket access to the indexer Log File</a>
+</ul>
+</ul>
+
+<h2>Ladder API</h2>
+<ul>
+
+GGG provides an <a href="http://www.pathofexile.com/developer/docs/api-resource-ladders">official Ladder API</a>, however it has some
+serious drawbacks for real tools. The API is designed only to allow you to download the entire ladder (the top 15,000 players) and
+requires 75 GET requests to pull down the entire ladder.<p>
+<br>
+My Ladder API does all the work of pulling down the entire ladder from GGG every ten minutes, then makes the data available
+in a more reasonable way. This includes:<p>
+
+<ul>
+<li> Request only specific character or account information
+<li> Show information calculated from deltas between updates (such as XP Gain, Online Time, etc.)
+<li> Search across multiple ladders for character or account information, including archived ladders
+<li> Request multiple accounts or characters in one request (for Guild tools or similar)
+<li> Show general league status, such as players on-line, levels, etc.
+<li> Request dumps of the entire ladder in modified JSON format (avoid doing this too often, it's heavy)
+</ul>
+<br>
+
+Some tools that use my Ladder API include:<p>
+
+<ul>
+<li><a href="http://exiletools.com/laddertrack.html">Ladder Track</a>: A simple AHK GUI overlay showing your current rank status.
+<li><a href="https://github.com/survfate/PoESimpleGuild">POE Simple Guild</a>: A guild tool that uses my API to show last online status of guild members.
+<li><a href="https://github.com/M1nistry/GuildStatus">Guild Status</a>: Another great guild tool that uses my API to show last online status of members.
+<li><a href="https://www.reddit.com/r/pathofexile/comments/32r3kn/ultra_quickrobust_tcp_disconnect_rank_overlay_and/">Lutcikaur's Robust Macro and Overlay</a>: Pulls JSON data to create a text overlay similar to Ladder Track, but with different data and performance.
+
+</ul><p><br>
+
+The Ladder API does not currently require or use API Keys, however I would appreciate it if you let me know that you're using
+it so I can add it to the list of tools!<p>
+
+</ul>
+
+</ul>
+
+</p>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+</body>
+
+</html>

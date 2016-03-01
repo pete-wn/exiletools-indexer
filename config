@@ -12,14 +12,12 @@ dbCreds:.dbcreds
 # NOTE: baseDir is not fully implemented, you must run programs from the root path!
 baseDir:/pwxdata/poe/dev
 
-# Location to store raw HTML thread data
-dataDir:/pwxdata/poe/shops/data/threads
-
 # The primary elasticsearch host
 esHost:elasticsearch
 
 # The secondary elasticsearch host (if any)
 esHost2:elasticsearch2
+esHost3:elasticsearch3
 
 # The main Elastic Search Index (recommended: 'poe')
 esItemIndex:poedev
@@ -28,10 +26,4 @@ esItemIndex:poedev
 esItemType:item
 
 # The Elastic Search stats index for thread/indexing stats
-esStatsIndex:indexing-stats
-
-# The type to use for indexer run statistics (recommended: 'run')
-esRunStatsType:run
-
-# The type to use for thread update statistics (recommended: 'thread')
-esThreadStatsType:thread
+esStatsIndex:dev-indexing-stats

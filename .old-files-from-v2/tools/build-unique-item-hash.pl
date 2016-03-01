@@ -1,14 +1,5 @@
 #!/usr/bin/perl
 
-# This program takes a populated historical index and uses it to build
-# a perl hash of Unique Item Names based on their Icons
-# for populating the names of Unidentified unique items
-#
-# To populate the sub:
-#
-# tools/build-unique-item-hash.pl > subs/sub.uniqueItemInfoHash.pl
-
-
 use Search::Elasticsearch;
 use DBI;
 use JSON;
@@ -20,12 +11,6 @@ use Parallel::ForkManager;
 use utf8;
 use Text::Unidecode;
 require("subs/all.subroutines.pl");
-
-# Override default configuration to pull from
-# a different historical index
-# YOU WILL NEED TO CHANGE THIS IF YOU USE THIS PROGRAM
-$conf{esItemIndex} = "poe";
-$conf{esItemType} = "item";
 
 &BuildUniqueInfoHash;
 

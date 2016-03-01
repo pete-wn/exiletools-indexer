@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ElasticUI Skilltree Test</title>
+
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/rzslider.css"/>
+    <link href="css/select.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
+    <script src="js/thirdparty/elastic.min.js"></script>
+    <script src="js/thirdparty/elasticui.min.js"></script>
+    <script src="js/thirdparty/rzslider.min.js"></script>
+    <script src="js/thirdparty/select.min.js"></script>
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: block;
+            padding: 20px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: #f5f5f5;
+            border-right: 1px solid #eee;
+        }
+
+        .instructions {
+            display: block;
+            margin: 0 auto;
+            width: 450px;
+        }
+    </style>
+    <script>
+        angular
+            .module('skilltreeng', ['elasticui','rzModule','ui.select'])
+            .constant('euiHost', 'http://api.exiletools.com')
+  .controller('BonusSelector', function($scope) {
+
+  $scope.sliders = [{id: '+#% increased maximum Life'}];
+  
+  $scope.addSlider = function(newSlider) {
+    $scope.sliders.push({'id':newSlider});
+  };
+
+  $scope.bonuslist = [
+'+#% additional Block Chance while Dual Wielding',
+'+#% additional Block Chance while Dual Wielding or holding a Shield',
+'+#% additional Block Chance with Staves',
+'+#% additional Chance to Block Spells with Shields',
+'+#% additional Chance to Block with Shields',
+'+#% additional chance to Dodge Attacks',
+'+# additional Curse',
+'+#% additional Physical Damage Reduction',
+'+# additional Remote Mine',
+'+# additional Totem',
+'+# additional Trap',
+'+# additional Traps',
+'+#% chance of Projectiles Piercing',
+'+#% chance to Avoid being Chilled',
+'+#% chance to Avoid being Frozen',
+'+#% chance to Avoid being Stunned',
+'+#% chance to Avoid Elemental Status Ailments',
+'+#% chance to Avoid interruption from Stuns while Casting',
+'+#% Chance to Block',
+'+#% chance to cause Bleeding',
+'+#% Chance to Dodge Attacks',
+'+#% Chance to Dodge Spell Damage',
+'+#% chance to Freeze',
+'+#% chance to Freeze Enemies which are Chilled',
+'+#% chance to Freeze, Shock and Ignite',
+'+#% chance to gain an Endurance Charge on Melee Critical Strike',
+'+#% chance to gain a Power Charge when you Block',
+'+#% chance to gain a Power Charge when your Mine is Detonated targeting an Enemy',
+'+#% chance to gain a Power Charge when your Trap is triggered by an Enemy',
+'+#% chance to gain Onslaught for 3 seconds on Kill',
+'+#% chance to Ignite',
+'+#% chance to Knock Enemies Back on hit',
+'+#% chance to Poison on Hit',
+'+#% chance to Poison on Hit against Bleeding Enemies',
+'+#% chance to Poison the Enemy',
+'+#% chance to Shock',
+'+#% Cold Resistance',
+'+#% Elemental Resistances',
+'+#% Elemental Resistances while holding a Shield',
+'+#% faster start of Energy Shield Recharge',
+'+#% Fire Resistance',
+'+#% increased Accuracy Rating',
+'+#% increased Accuracy Rating while Dual Wielding',
+'+#% increased Accuracy Rating with Axes',
+'+#% increased Accuracy Rating with Bows',
+'+#% increased Accuracy Rating with Claws',
+'+#% increased Accuracy Rating with Daggers',
+'+#% increased Accuracy Rating with Maces',
+'+#% increased Accuracy Rating with One Handed Melee Weapons',
+'+#% increased Accuracy Rating with Staves',
+'+#% increased Accuracy Rating with Swords',
+'+#% increased Accuracy Rating with Two Handed Melee Weapons',
+'+#% increased Accuracy Rating with Wands',
+'+#% increased Area Damage',
+'+#% increased Armour',
+'+#% increased Armour while you have Fortify',
+'+#% increased Arrow Speed',
+'+#% increased Attack and Cast Speed',
+'+#% increased Attack Damage',
+'+#% increased Attack Damage against Bleeding Enemies',
+'+#% increased Attack Damage with Main Hand',
+'+#% increased Attack Speed',
+'+#% increased Attack Speed while Dual Wielding',
+'+#% increased Attack Speed while holding a Shield',
+'+#% increased Attack Speed with Axes',
+'+#% increased Attack Speed with Bows',
+'+#% increased Attack Speed with Claws',
+'+#% increased Attack Speed with Daggers',
+'+#% increased Attack Speed with Maces',
+'+#% increased Attack Speed with Off Hand',
+'+#% increased Attack Speed with One Handed Melee Weapons',
+'+#% increased Attack Speed with Staves',
+'+#% increased Attack Speed with Swords',
+'+#% increased Attack Speed with Two Handed Melee Weapons',
+'+#% increased Attack Speed with Wands',
+'+#% increased Block Recovery',
+'+#% increased Burning Damage',
+'+#% increased Cast Speed',
+'+#% increased Cast Speed for Curses',
+'+#% increased Cast Speed while Dual Wielding',
+'+#% increased Cast Speed with Chaos Skills',
+'+#% increased Chaos Damage',
+'+#% increased Chill Duration on Enemies',
+'+#% increased Cold Damage',
+'+#% increased Cold Damage with Weapons',
+'+#% increased Cooldown Recovery Speed for throwing Traps',
+'+#% increased Critical Strike Chance',
+'+#% increased Critical Strike Chance for Spells',
+'+#% increased Critical Strike Chance with Bows',
+'+#% increased Critical Strike Chance with Claws',
+'+#% increased Critical Strike Chance with Daggers',
+'+#% increased Critical Strike Chance with Maces',
+'+#% increased Critical Strike Chance with Mines',
+'+#% increased Critical Strike Chance with One Handed Melee Weapons',
+'+#% increased Critical Strike Chance with Staves',
+'+#% increased Critical Strike Chance with Swords',
+'+#% increased Critical Strike Chance with Totem Skills',
+'+#% increased Critical Strike Chance with Traps',
+'+#% increased Critical Strike Chance with Wands',
+'+#% increased Critical Strike Multiplier',
+'+#% increased Critical Strike Multiplier for Spells',
+'+#% increased Critical Strike Multiplier with Bows',
+'+#% increased Critical Strike Multiplier with Claws',
+'+#% increased Critical Strike Multiplier with Daggers',
+'+#% increased Critical Strike Multiplier with Maces',
+'+#% increased Critical Strike Multiplier with Mines',
+'+#% increased Critical Strike Multiplier with Swords',
+'+#% increased Critical Strike Multiplier with Totem Skills',
+'+#% increased Critical Strike Multiplier with Traps',
+'+#% increased Critical Strike Multiplier with Wands',
+'+#% increased Curse Duration',
+'+#% increased Damage',
+'+#% increased Damage against Enemies that are on Low Life',
+'+#% increased Damage against Frozen, Shocked or Ignited Enemies',
+'+#% increased Damage over Time',
+'+#% increased Damage while Leeching',
+'+#% increased Damage with Poison',
+'+#% increased Damage with Wands',
+'+#% increased Defences from equipped Shield',
+'+#% increased Duration of Elemental Status Ailments on Enemies',
+'+#% increased effect of Flasks',
+'+#% increased effect of Fortify on You',
+'+#% increased effect of Non-Curse Auras you Cast',
+'+#% increased Effect of your Curses',
+'+#% increased Elemental Damage',
+'+#% increased Elemental Damage with Maces',
+'+#% increased Elemental Damage with Wands',
+'+#% increased Elemental Damage with Weapons',
+'+#% increased Endurance Charge Duration',
+'+#% increased Energy Shield from equipped Shield',
+'+#% increased Energy Shield Recharge Rate',
+'+#% increased Evasion Rating',
+'+#% increased Evasion Rating and Armour',
+'+#% increased Evasion Rating per Frenzy Charge',
+'+#% increased Evasion Rating while you have Onslaught',
+'+#% increased Fire Damage',
+'+#% increased Fire Damage with Weapons',
+'+#% increased Flask Charges gained',
+'+#% increased Flask effect duration',
+'+#% increased Flask Recovery Speed',
+'+#% increased Fortify duration',
+'+#% increased Freeze Duration on Enemies',
+'+#% increased Frenzy Charge Duration',
+'+#% increased Global Critical Strike Chance for 4 seconds when you Summon a Totem',
+'+#% increased Global Critical Strike Chance while wielding a Staff',
+'+#% increased Global Critical Strike Multiplier while wielding a Staff',
+'+#% increased Ignite Duration on Enemies',
+'+#% increased Knockback Distance',
+'+#% increased Life Leeched per second',
+'+#% increased Life Recovery from Flasks',
+'+#% increased Lightning Damage',
+'+#% increased Lightning Damage with Weapons',
+'+#% increased Light Radius',
+'+#% increased Mana Leeched per second',
+'+#% increased Mana Recovery from Flasks',
+'+#% increased Mana Regeneration Rate',
+'+#% increased maximum Energy Shield',
+'+#% increased maximum Life',
+'+#% increased maximum Mana',
+'+#% increased Melee Attack Speed',
+'+#% increased Melee Critical Strike Chance',
+'+#% increased Melee Critical Strike Multiplier',
+'+#% increased Melee Damage',
+'+#% increased Melee Physical Damage',
+'+#% increased Melee Physical Damage while holding a Shield',
+'+#% increased Mine Damage',
+'+#% increased Mine Detonation Radius',
+'+#% increased Mine Duration',
+'+#% increased Mine Laying Speed',
+'+#% increased Movement Speed',
+'+#% increased Physical Attack Damage while holding a Shield',
+'+#% increased Physical Damage',
+'+#% increased Physical Damage over Time',
+'+#% increased Physical Damage with Attacks',
+'+#% increased Physical Damage with Axes',
+'+#% increased Physical Damage with Bows',
+'+#% increased Physical Damage with Claws',
+'+#% increased Physical Damage with Daggers',
+'+#% increased Physical Damage with Maces',
+'+#% increased Physical Damage with One Handed Melee Weapons',
+'+#% increased Physical Damage with Staves',
+'+#% increased Physical Damage with Swords',
+'+#% increased Physical Damage with Two Handed Melee Weapons',
+'+#% increased Physical Damage with Wands',
+'+#% increased Physical Melee Damage while you have Fortify',
+'+#% increased Physical Weapon Damage while Dual Wielding',
+'+#% increased Power Charge Duration',
+'+#% increased Projectile Damage',
+'+#% increased Projectile Speed',
+'+#% increased Radius of Area Skills',
+'+#% increased Radius of Auras',
+'+#% increased Radius of Curses',
+'+#% increased Shock Duration on Enemies',
+'+#% increased Skill Effect Duration',
+'+#% increased Spell Damage',
+'+#% increased Spell Damage per Power Charge',
+'+#% increased Stun Duration on Enemies',
+'+#% increased Stun Duration with Bows on Enemies',
+'+#% increased Stun Duration with Two Handed Melee Weapons on Enemies',
+'+#% increased Stun Recovery',
+'+#% increased Stun Threshold',
+'+#% increased Totem Damage',
+'+#% increased Totem Duration',
+'+#% increased Totem Life',
+'+#% increased Totem Placement speed',
+'+#% increased Trap Damage',
+'+#% increased Trap Throwing Speed',
+'+#% increased Trap Trigger Radius',
+'+#% increased Wand Damage per Power Charge',
+'+#% increased Weapon Critical Strike Chance while Dual Wielding',
+'+#% less Armour and Energy Shield',
+'+#% less Chance to Block Spells and Attacks',
+'+#% less Mana Reserved',
+'+# Life gained for each Enemy hit by your Attacks',
+'+# Life gained on Kill',
+'+#% Life per Second',
+'+#% Lightning Resistance',
+'+# Mana gained for each Enemy hit by your Attacks',
+'+# Mana gained on Kill',
+'+# Mana gained when you Block',
+'+# Maximum Endurance Charge',
+'+# Maximum Frenzy Charge',
+'+# Maximum Power Charge',
+'+#% more Damage to targets at the start of their movement, dealing less Damage to targets as the projectile travels farther',
+'+#% more maximum Energy Shield',
+'+#% more Spell Damage when on Low Life',
+'+#% of Attack Damage Leeched as Life',
+'+#% of Attack Damage Leeched as Mana',
+'+#% of Cold Damage Converted to Fire Damage',
+'+#% of Damage as Life',
+'+#% of Damage is taken from Mana before Life',
+'+#% of Damage taken gained as Mana when Hit',
+'+#% of Life Regenerated per Second',
+'+#% of Lightning Damage Converted to Fire Damage',
+'+#% of maximum Life per second to maximum Life Leech rate',
+'+#% of maximum Life Regenerated per second per Endurance Charge',
+'+#% of maximum Mana per second to maximum Mana Leech rate',
+'+#% of Physical Attack Damage Leeched as Life',
+'+#% of Physical Attack Damage Leeched as Mana',
+'+#% of Physical Damage as Extra Chaos Damage',
+'+#% of Physical Damage Converted to Fire Damage',
+'+#% of Physical Damage Dealt with Claws Leeched as Life',
+'+#% of Physical Damage Dealt with Claws Leeched as Mana',
+'+#% of their maximum life as fire damage to surrounding enemies',
+'+#% of their Maximum Life when they Block',
+'+#% of Wand Physical Damage Added as Cold Damage',
+'+#% of Wand Physical Damage Added as Fire Damage',
+'+#% of Wand Physical Damage Added as Lightning Damage',
+'+#% reduced Enemy Stun Threshold',
+'+#% reduced Enemy Stun Threshold with Bows',
+'+#% reduced Enemy Stun Threshold with Maces',
+'+#% reduced Extra Damage from Critical Strikes',
+'+#% reduced Flask Charges used',
+'+#% reduced Mana Cost of Skills',
+'+#% reduced Mana Reserved',
+'+# to Accuracy Rating',
+'+#% to all Elemental Resistances',
+'+# to Armour',
+'+#% to Chaos Resistance',
+'+#% to Cold Resistance',
+'+# to Dexterity',
+'+# to Dexterity and Intelligence',
+'+# to Evasion Rating',
+'+#% to Fire Resistance',
+'+# to Intelligence',
+'+#% to Lightning Resistance',
+'+#% to maximum Cold Resistance',
+'+# to maximum Energy Shield',
+'+#% to maximum Fire Resistance',
+'+# to maximum Life',
+'+#% to maximum Lightning Resistance',
+'+# to maximum Mana',
+'+# to Maximum number of Skeletons',
+'+# to Maximum number of Spectres',
+'+# to Maximum number of Zombies',
+'+# to Melee Weapon and Unarmed range',
+'+# to Strength',
+'+# to Strength and Dexterity',
+'+# to Strength and Intelligence'
+];
+ 
+
+});
+
+    </script>
+</head>
+<body ng-app="skilltreeng" eui-index="'skilltrees'"><!-- ACTION: change to index name -->
+
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-xs-3 sidebar">
+              <p align=right><input class="styled-button-3" type="button" value="Clear All Filters" onClick="window.location.reload()"></p>
+                <h3>Private</h3>
+                <eui-singleselect field="'info.private'" size="5"></eui-singleselect> <!-- ACTION: change to field to use as facet -->
+                <h3>League</h3>
+                <eui-singleselect field="'info.league'" size="5"></eui-singleselect> <!-- ACTION: change to field to use as facet -->
+
+<h3>Filter by Class(es):</h3>
+<div eui-aggregation="ejs.TermsAggregation('class').field('info.class')" eui-filter-self="false" eui-or-filter>
+    <div ng-repeat="bucket in aggResult.buckets">
+   <input type="checkbox" id="model{{bucket.key}}" eui-filter="ejs.TermsFilter('info.class', bucket.key)" ng-model="filter.enabled">{{bucket.key}} ({{bucket.doc_count}})</input><br>
+    </div>
+</div>   
+
+<div ng-controller="BonusSelector">
+  <div class="form-group" data-ng-repeat="bonus in sliders">
+    <h3>{{bonus.id}}</h3>
+    <div eui-aggregation="ejs.StatsAggregation(bonus.id).field('nodeBonusesTotal.' + bonus.id)" eui-filter-self="true">
+      <rzslider rz-slider-model="aggResult.min" rz-slider-high="aggResult.max" rz-slider-options="{floor:0}" ></rzslider>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<b><input type="checkbox" eui-filter="ejs.RangeFilter('nodeBonusesTotal.' + bonus.id).from(aggResult.min).to(aggResult.max)" ng-model="filter.enabled" eui-filter-self="false"> Activate this slider</input></b>
+    </div>
+  </div>
+
+  <h3>Add a Slider:</h3>
+
+  <ui-select ng-model="addSlider.selected" ng-disabled="disabled" on-select="addSlider(addSlider.selected)"> 
+    <ui-select-match placeholder="Choose a bonus to add a new slider...">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="mybonus in bonuslist | filter: $select.search">{{mybonus}}</ui-select-choices>
+  </ui-select>
+
+</div>
+
+
+
+
+            </div>
+            <div class="col-xs-9 col-xs-offset-3 main">
+                <h3>Results Per Page</h3>
+                <select ng-model="indexVM.pageSize">
+                    <option ng-repeat="item in [10, 20, 50, 100]">{{item}}</option>
+                </select>
+                <h1>{{indexVM.results.hits.total}} Results</h1>
+                <ul>
+                    <li ng-repeat="doc in indexVM.results.hits.hits">
+                        {{doc._source | json | limitTo: 500}} <!-- OPTIONAL: display more meaningful data instead of json -->
+                    </li>
+                </ul>
+                <eui-simple-paging></eui-simple-paging>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

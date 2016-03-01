@@ -3,104 +3,15 @@
 require('subs/sub.uniqueItemInfoHash.pl');
 
 sub formatJSON {
+  # Decode any diacritics and unicode junk in the JSON data for simplicity - everyone just types "mjolner" etc.
+  my $rawjson = unidecode($_[0]);
 
-  # Derefence the incoming hash for ease of use
-  local %data = %{ $_[0] };
-
-  
-
-  # Localize the item hash
-  local %item;
-
-  # New API data
-  $item{shop}{sellerAccount} = $_[1];
-  $item{shop}{stash}{stashID} = $_[2];
-  $item{shop}{stash}{stashName} = $_[3];
-  $item{shop}{lastCharacterName} = $_[4];
-
-  $item{shop}{stash}{inventoryID} = $data{inventoryId};
-  $item{shop}{stash}{xLocation} += $data{x};
-  $item{shop}{stash}{yLocation} += $data{y};
-
-  # How to calculate a UUID?
-  $item{uuid} = "$item{shop}{sellerAccount}-$item{shop}{stash}{stashID}-$item{shop}{stash}{xLocation}-$item{shop}{stash}{yLocation}";
-
-  # Now that we have a UUID, lets find this item in currentStashData. We have to iterate
-  # because the results are in array format
-  # We also clear out any matching elements from the array, so at the end we are left with only items
-  # that are no longer verified
-  my $itemInES;
-  my $scanCount = 0;
-  foreach $scanItem (@{$currentStashData->{hits}->{hits}}) {
-    if ($scanItem->{_source}->{uuid} eq $item{uuid}) {
-      $itemInES = $scanItem->{_source};
-      $currentStashData->{hits}->{hits}->[$scanCount] = undef;
-      last;
-    }
-    $scanCount++;
-  }
-
-
-  $item{shop}{note} = $data{note};
-  # Process Price
-  # If there is a price in the note, then set that
-  # Otherwise, if there is a price in the stashName, then set that
-  # Should probably put the price conversion stuff into a subroutine, oh well
-  if ($item{shop}{note} =~ /\~(b\/o|price|c\/o)\s*((?:\d+)*(?:(?:\.|,)\d+)?)\s*([A-Za-z]+)\s*.*$/) {
-    my $priceType = lc($1);
-    my $priceAmount = $2;
-    my $priceCurrency = lc($3);
-
-    # Convert this to a fixed currency name
-    my $standardCurrency;
-    if ($currencyName{$priceCurrency}) {
-      $standardCurrency = $currencyName{$priceCurrency};  # We know what it is
-    } elsif ($priceCurrency) {
-      $standardCurrency = "Unknown ($priceCurrency)"; # We don't know what it is, why isn't this in the currency hash?
-    } else{
-      $amount += 0; # if there was an amount set, there's no currency, so nuke it
-      $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
-    }
-
-    $item{shop}{amount} += $priceAmount;
-    $item{shop}{currency} = $standardCurrency;
-    $item{shop}{saleType} = $priceType;
-    $item{shop}{priceSource} = "note";
-    $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
-  } elsif ($item{shop}{stash}{stashName} =~ /\~(b\/o|price|c\/o|gb\/o)\s*((?:\d+)*(?:(?:\.|,)\d+)?)\s*([A-Za-z]+)\s*.*$/) {
-    my $priceType = lc($1);
-    my $priceAmount = $2;
-    my $priceCurrency = lc($3);
-    
-    # Convert this to a fixed currency name
-    my $standardCurrency;
-    if ($currencyName{$priceCurrency}) {
-      $standardCurrency = $currencyName{$priceCurrency};  # We know what it is
-    } elsif ($priceCurrency) {
-      $standardCurrency = "Unknown ($priceCurrency)"; # We don't know what it is, why isn't this in the currency hash?
-    } else{
-      $amount += 0; # if there was an amount set, there's no currency, so nuke it
-      $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
-    }
-
-    $item{shop}{amount} += $priceAmount;
-    $item{shop}{currency} = $standardCurrency;
-    $item{shop}{saleType} = $priceType;
-    $item{shop}{priceSource} = "stashName";
-    $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
-  } else {
-    $item{shop}{saleType} = "Offer";
-    $item{shop}{priceSource} = null;
-    $item{shop}{currency} = null;
-    $item{shop}{amount} += 0;
-    $item{shop}{chaosEquiv} = 0;
-  }
-
-
-
+  # De-reference the hash for simplicity
+  $json = JSON::XS->new->utf8->pretty->allow_nonref;
+  %data = %{$json->decode($rawjson)};
 
   $item{attributes}{league} = $data{league};
-#  return("FAIL: Unknown League") if ($data{league} eq "Unknown");
+  return("FAIL: Unknown League") if ($data{league} eq "Unknown");
   $item{attributes}{identified} = $data{identified};
   $item{info}{icon} = $data{icon};
   # Strip anything after a ? from it, no need to have forced dimensions
@@ -135,9 +46,6 @@ sub formatJSON {
   if (($item{attributes}{rarity} eq "Unique") && ($item{attributes}{identified} <1)) {
     $data{name} = $uniqueInfoHash{$item{info}{icon}} if ($uniqueInfoHash{$item{info}{icon}});
   }
-
-  # Set the item level
-  $item{attributes}{ilvl} = $data{ilvl};
  
   $item{info}{fullName} = $data{name}." ".$data{typeLine}; 
   # Remove the Superior and/or any leading white space from fullName in case we got it somewhere in the merge
@@ -180,12 +88,14 @@ sub formatJSON {
 
 
 
-  local ($item{attributes}{itemType}, $item{attributes}{baseItemType}, $item{attributes}{baseItemName}) = &IdentifyType("");
+  local ($localItemType, $localBaseItemType) = &IdentifyType("");
+  $item{attributes}{baseItemType} = $localBaseItemType;
+  $item{attributes}{itemType} = $localItemType;
 
   # Don't further process items if it is unknown
   if ($item{attributes}{baseItemType} eq "Unknown") {
     my $jsonout = JSON::XS->new->utf8->encode(\%item);
-    return($jsonout, $item{uuid}, "Unknown");
+    return($jsonout);
   }
 
 
@@ -264,10 +174,6 @@ sub formatJSON {
           $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max} += $max;
           $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{min} += $min;
           $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{max} += $max;
-          # Update averages
-          $item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{avg} = sprintf('%.2f', (($item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{max}) / 2)) * 1;
-          $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{avg} = sprintf('%.2f', (($item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Elemental Damage"}{max}) / 2)) * 1;
-          $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{avg} = sprintf('%.2f', (($item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{max}) / 2)) * 1;
         }
       } elsif ($property =~ /One Handed/) {
         $item{attributes}{equipType} = "One Handed Melee Weapon";
@@ -288,12 +194,10 @@ sub formatJSON {
         my $max = $2;
         $item{properties}{$item{attributes}{baseItemType}}{$property}{min} += $min;
         $item{properties}{$item{attributes}{baseItemType}}{$property}{max} += $max;
-        $item{properties}{$item{attributes}{baseItemType}}{$property}{avg} = sprintf('%.2f', (($item{properties}{$item{attributes}{baseItemType}}{$property}{min} + $item{properties}{$item{attributes}{baseItemType}}{$property}{max}) / 2)) * 1;
 
         if (($property eq "Physical Damage") || ($property eq "Chaos Damage")) {
           $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{min} += $min;
           $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{max} += $max;
-          $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{avg} = sprintf('%.2f', (($item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{min} + $item{properties}{$item{attributes}{baseItemType}}{"Total Damage"}{max}) / 2)) * 1;
         }
 
       } elsif (($item{attributes}{baseItemType} eq "Gem") && (($property =~ /\,/) || ($isboolean))) {
@@ -316,16 +220,8 @@ sub formatJSON {
         # Remove the +'s from map attributes and set them to integers
         # see https://github.com/trackpete/exiletools-indexer/issues/53
         $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
-      } elsif (($property eq "Stack Size") && ($value =~ /^(\d+)\/(\d+)$/)) {
-        # Handle Stack Size separately
-        $item{properties}{stackSize}{current} += $1;
-        $item{properties}{stackSize}{max} += $2;
-      } else {
+      } else {                                                                                                                                                                        
         # Use a string if it's a string, number of it's a number                                                                                                                      
-        # Remove " sec" from cast times and cooldown times for gems
-        if (($item{attributes}{baseItemType} eq "Gem") && ($property =~ /^\d+(\.\d{1,2}) sec$/)) {
-          $property =~ s/ sec$//o;
-        }
         if (($value =~ /^\d+$/) || ($value =~ /^\d+(\.\d{1,2})?$/)) {                                                   
           $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;                                                                 
         } else {                                                                                                                                  
@@ -358,19 +254,6 @@ sub formatJSON {
   &parseExtendedMods("craftedMods","crafted") if ($data{craftedMods});
   &parseExtendedMods("cosmeticMods","cosmetic") if ($data{cosmeticMods});
 
-  # Enchantments are a little interesting. For now, we're going to assume they are FIXED
-  # value mods and set them as boolean true instead of variable range mods.
-  # If this turns out to be wrong, we should be able to simply call parseExtendedMods for
-  # the enchantMods line
-  foreach my $mod (@{$data{enchantMods}}) {
-    $item{attributes}{enchantModsCount}++;
-# Don't think we actually need this
-#    $mod =~ s/\'//g;
-    $mod =~ s/\.//g;
-    $item{enchantMods}{"$mod"} = \1;
-  } 
-
-
   # Build Pseudo Mods for Jewels
 #  &setJewelPseudoMods if ($item{attributes}{baseItemType} eq "Jewel");
 
@@ -379,9 +262,9 @@ sub formatJSON {
     foreach my $damage (keys(%{$item{properties}{Weapon}})) {
       if (($item{properties}{Weapon}{"$damage"}{min} > 0) && ($item{properties}{Weapon}{"$damage"}{max} > 0)) {
         my ($damageType, $damageChaff) = split(/ /, $damage);
-        $item{properties}{Weapon}{"$damage"}{avg} = int(($item{properties}{Weapon}{"$damage"}{min} + $item{properties}{Weapon}{"$damage"}{max}) / 2) * 1;
+        $item{properties}{Weapon}{"$damage"}{avg} = int(($item{properties}{Weapon}{"$damage"}{min} + $item{properties}{Weapon}{"$damage"}{max}) / 2);
 
-        $item{properties}{Weapon}{"$damageType DPS"} += int($item{properties}{Weapon}{"$damage"}{avg} * $item{properties}{Weapon}{"Attacks per Second"});
+        $item{properties}{Weapon}{"$damageType DPS"} = int($item{properties}{Weapon}{"$damage"}{avg} * $item{properties}{Weapon}{"Attacks per Second"});
 
 
       }
@@ -428,7 +311,7 @@ sub formatJSON {
   
   if ($data{sockets}[0]{attr}) {
     my %sortGroup;
-    ($item{sockets}{largestLinkGroup}, $item{sockets}{socketCount}, $item{sockets}{allSockets}, $item{sockets}{allSocketsSorted}, $item{sockets}{allSocketsGGG}, %sortGroup) = &ItemSockets();
+    ($item{sockets}{largestLinkGroup}, $item{sockets}{socketCount}, $item{sockets}{allSockets}, $item{sockets}{allSocketsSorted}, %sortGroup) = &ItemSockets();
     foreach $sortGroup (keys(%sortGroup)) {
       $item{sockets}{sortedLinkGroup}{$sortGroup} = $sortGroup{$sortGroup};
     }
@@ -442,96 +325,12 @@ sub formatJSON {
     }
   }
 
-  # Time to try out some quality calculations
-  # See https://github.com/trackpete/exiletools-indexer/issues/25
-  if ($item{attributes}{baseItemType} eq "Armour") {
-    # If this is already 20, we don't have to change anything
-    if ($item{properties}{Quality} == 20) {
-      foreach my $prop (keys(%{$item{properties}{Armour}})) {
-        next if $prop eq "Chance to Block";
-        $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} += $item{properties}{Armour}{"$prop"};
-      }
-    } else {
-      # Crap, we have to try to estimate the Q20 values
-      foreach my $prop (keys(%{$item{properties}{Armour}})) {
-        next if $prop eq "Chance to Block";
-        # Does this item have an increased mod?
-        if ($item{modsPseudo}{"#% Total increased $prop"} > 0) {
-          $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} += int($item{properties}{Armour}{"$prop"} / (1 + ($item{modsPseudo}{"#% Total increased $prop"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsPseudo}{"#% Total increased $prop"} + 20) / 100)));
-        } else {
-          $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} = int(($item{properties}{Armour}{"$prop"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
-        }
-      }
-    }
-  } elsif ($item{attributes}{baseItemType} eq "Weapon") {
-    # If this is already 20, we don't have to change anything
-    if ($item{properties}{Quality} == 20) {
-      $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += $item{properties}{Weapon}{"Physical DPS"};
-    } else {
-      # Crap, we have to try to estimate the Q20 values
-      # Does this item have an increased mod?
-      if ($item{modsTotal}{"#% increased Physical Damage"} > 0) {
-        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += int($item{properties}{Weapon}{"Physical DPS"} / (1 + ($item{modsTotal}{"#% increased Physical Damage"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsTotal}{"#% increased Physical Damage"} + 20) / 100)));
-      } else {
-        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = int(($item{properties}{Weapon}{"Physical DPS"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
-      }
-    }
-  }
-
-
-
-  my $itemStatus;
-  if ($itemInES->{uuid}) {
-    # If the current note and the stash name are the same, then the item wasn't modified
-    if (($itemInES->{shop}->{note} eq $item{shop}{note}) && ($itemInES->{shop}->{stash}->{stashName} eq $item{shop}{stash}{stashName})) {
-      $item{shop}{modified} = $itemInES->{shop}->{modified};
-      $itemStatus = "Unchanged";
-    } else {
-      $item{shop}{modified} = time() * 1000;
-      $itemStatus = "Modified";
-      &sv("i  Modified: $item{shop}{sellerAccount} | $item{info}{fullName} | $item{uuid} | $item{shop}{amount} $item{shop}{currency}\n");
-    }
-    $item{shop}{updated} = time() * 1000;
-    $item{shop}{added} = $itemInES->{shop}->{added};
-  } else {
-    # It's new!
-    $item{shop}{modified} = time() * 1000;
-    $item{shop}{updated} = time() * 1000;
-    $item{shop}{added} = time() * 1000;
-    $itemStatus = "Added";
-    &sv("i  Added: $item{shop}{sellerAccount} | $item{info}{fullName} | $item{uuid} | $item{shop}{amount} $item{shop}{currency}\n");
-  }
-
-  # Set the price if chaosEquiv is more than 0
-  if ($item{shop}{chaosEquiv} > 0) {
-    $item{shop}{hasPrice} = \1;
-  } else {
-    $item{shop}{hasPrice} = \0;
-  } 
-
-  # If there is a properties.Weapon.type set, extract the first one and set attributes.weaponType
-  if (my @types = keys(%{$item{properties}{Weapon}{type}})) {
-    $item{attributes}{weaponType} = $types[0];
-  }
-
-  # For now, just mark everything as verified since it has to be verified to be listed
-  $item{shop}{verified} = "YES";
-
-  # Create a default message
-  if ($item{shop}{amount} && $item{shop}{currency}) {
-    $item{shop}{defaultMessage} = "\@$item{shop}{sellerAccount} I would like to buy your $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
-  }
-
   my $jsonout = JSON::XS->new->utf8->encode(\%item);
-  if (($JSONLOG) && ($itemStatus ne "Unchanged")) {
-    &jsonLOG("$jsonout");
-  }
-  return($jsonout, $item{uuid}, $itemStatus);
+  return($jsonout);
 }
 
 sub IdentifyType {
   my $localItemType;
-  my $localItemBaseName;
   if ($data{frameType} == 4) {
     $localItemType = "Gem";
   } elsif ($data{frameType} == 6) {
@@ -559,23 +358,11 @@ sub IdentifyType {
   } else {
     foreach my $gearbase (keys(%gearBaseType)) {
       if ($data{typeLine} =~ /\b$gearbase\b/) {
+        &sv("Matched $data{typeLine} to $gearbase\n");
         $localItemType = $gearBaseType{"$gearbase"};
-        $localItemBaseName = $gearbase;
         last;
       }
     }
-  }
-
-  # If we didn't match the $localItemBaseName during the iteration above because
-  # the frameType wasn't clear, let's match it now
-  unless ($localItemBaseName) {
-    foreach my $gearbase (keys(%gearBaseType)) {
-      if ($data{typeLine} =~ /\b$gearbase\b/) {
-        $localItemBaseName = $gearbase;
-        last;
-      }
-    }
-    $localItemBaseName = $data{typeLine} unless ($localItemBaseName);
   }
 
   my $localBaseItemType;
@@ -598,7 +385,7 @@ sub IdentifyType {
   } else {
     $localBaseItemType = $localItemType;
   }
-  return($localItemType, $localBaseItemType, $localItemBaseName);
+  return($localItemType, $localBaseItemType);
 }
 
 sub ItemSockets {
@@ -612,7 +399,6 @@ sub ItemSockets {
 
   my $socketcount;
   my $allSockets;
-  my $allSocketsGGG;
   foreach my $group (sort keys(%{$sockets{group}})) {
 #    print "[$threadid][$timestamp] $data[$activeFragment]->[1]{name} Group: $group | Sockets: $sockets{group}{$group} (".length($sockets{group}{$group}).")\n";
     $sockets{maxLinks} = length($sockets{group}{$group}) if (length($sockets{group}{$group}) > $sockets{maxLinks});
@@ -626,19 +412,16 @@ sub ItemSockets {
     $sockets{group}{$group} =~ s/S/R/g;
     $sockets{group}{$group} =~ s/I/B/g;
     $allSockets .= "-$sockets{group}{$group}";
-    my $gggGroup = join("-", (split(//, $sockets{group}{$group})));
-    $allSocketsGGG .= " $gggGroup";
     my @sort = sort (split(//, $sockets{group}{$group}));
     my $sorted = join("", @sort);
     $sortGroup{$group} = "$sorted";
   }
-  $allSockets =~ s/^\-//o;
-  $allSocketsGGG =~ s/^\s+//o;
+  $allSockets =~ s/^\-//g;
 
   my @sort = sort (split(//, $allSockets));
   my $sorted = join("", @sort);
   $sorted =~ s/\-//g;
-  return($sockets{maxLinks},$sockets{count},$allSockets,$sorted,$allSocketsGGG,%sortGroup);
+  return($sockets{maxLinks},$sockets{count},$allSockets,$sorted,%sortGroup);
 
 
 }
@@ -661,7 +444,6 @@ sub setPseudoMods {
   my $modifier = $_[0];
   my $modname = $_[1];
   my $value = $_[2];
-  my $othermodifier = $_[3];
 
   # The code for calculating pseudo mods is a little messy right now.
   # We can proably do this without so many nested ifs
@@ -754,32 +536,7 @@ sub setPseudoMods {
     $item{modsPseudo}{"+# Total to maximum Life"} += int($value / 2);
   } elsif ($modname =~ /to maximum Life/) {
     $item{modsPseudo}{"+# Total to maximum Life"} += $value;
-  } elsif ($othermodifier eq "%" && $modname =~ /increased/) {
-    if ($modname eq "increased Armour") {
-      $item{modsPseudo}{"#% Total increased Armour"} += $value;
-    } elsif ($modname eq "increased Evasion Rating") {
-      $item{modsPseudo}{"#% Total increased Evasion Rating"} += $value;
-    } elsif ($modname eq "increased Energy Shield") {
-      $item{modsPseudo}{"#% Total increased Energy Shield"} += $value;
-    } elsif ($modname eq "increased Armour and Energy Shield") {
-      $item{modsPseudo}{"#% Total increased Armour"} += $value;
-      $item{modsPseudo}{"#% Total increased Energy Shield"} += $value;
-    } elsif ($modname eq "increased Armour and Evasion") {
-      $item{modsPseudo}{"#% Total increased Armour"} += $value;
-      $item{modsPseudo}{"#% Total increased Evasion Rating"} += $value;
-    } elsif ($modname eq "increased Armour, Evasion and Energy Shield") {
-      $item{modsPseudo}{"#% Total increased Armour"} += $value;
-      $item{modsPseudo}{"#% Total increased Energy Shield"} += $value;
-      $item{modsPseudo}{"#% Total increased Evasion Rating"} += $value;
-    } elsif ($modname eq "increased Evasion and Energy Shield") {
-      $item{modsPseudo}{"#% Total increased Evasion Rating"} += $value;
-      $item{modsPseudo}{"#% Total increased Energy Shield"} += $value;
-    }
-
-
-
   }
-
 }
 
 sub parseExtendedMods {
@@ -790,17 +547,12 @@ sub parseExtendedMods {
   return unless (($modTypeJSON) && ($modType));
 
   foreach my $modLine ( @{$data{"$modTypeJSON"}} ) {
-    # Remove any apostrophes or periods
-    $modLine =~ s/\'//g;
-    $modLine =~ s/\.//g;
-
     # Parsing for Divination cards has to be done a bit differently from other items
     if ($item{attributes}{itemType} eq "Card") {
       # clear any <size:#>{} crap out
       # oh but those stupid close } may be on another line, nice. WTF.
       $modLine =~ s/^\<size:\d+\>\{(.*?)/$1/o;
       $modLine =~ s/\}\}/\}/o;
-
 
       # if there's a default line, it's probably a secondary mod with more information, added it to the reward information
       if ($modLine =~ /^\<default\>\{(.*?):*\}\s+\<(.*?)\>\{(.*?)\}\r*$/) {
@@ -836,7 +588,7 @@ sub parseExtendedMods {
         $modname =~ s/\s+$//g;
         $item{mods}{$item{attributes}{itemType}}{$modType}{"$1#$4 $modname"} += $value;
         $item{attributes}{"$modTypeJSON"."Count"}++;
-        &setPseudoMods("$1","$modname","$value", "$4");
+        &setPseudoMods("$1","$modname","$value");
         unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
           $item{modsTotal}{"$1#$4 $modname"} += $value;
         }
@@ -885,12 +637,10 @@ sub parseExtendedMods {
         if ($value =~ /(\d+)-(\d+)/) {
           $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{min} += $1;
           $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{max} += $2;
-          $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{avg} = sprintf('%.2f', (($item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{min} + $item{mods}{$item{attributes}{itemType}}{$modType}{$modname}{max}) /2)) * 1;
           
           unless (($modType eq "cosmetic") || ($item{attributes}{itemType} eq "Gem") || ($item{attributes}{itemType} eq "Map") || $item{attributes}{itemType} eq "Flask") {
             $item{modsTotal}{$modname}{min} += $1;
             $item{modsTotal}{$modname}{max} += $2;
-            $item{modsTotal}{$modname}{avg} = sprintf('%.2f', (($item{modsTotal}{$modname}{min} + $item{modsTotal}{$modname}{max}) / 2 )) * 1;
           }
    
         } else {

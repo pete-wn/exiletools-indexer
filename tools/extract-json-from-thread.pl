@@ -19,6 +19,13 @@ use Date::Parse;
 use File::Path;
 use Text::Unidecode;
 require("subs/sub.formatJSON.pl");
+require("subs/sub.itemBaseTypes.pl");
+
+# Just null these out
+sub sv {
+}
+sub d {
+}
 
 if ($ARGV[0] =~ /\d+/) {
   $threadid = $ARGV[0];
@@ -57,10 +64,10 @@ foreach my $itemx (@{$data}) {
   print "=============================================================\n";
   print "Item #".$itemx->[0]." RAW JSON:\n";
   print $jsonx->pretty->encode($itemx->[1])."\n";  
-  my $jsonout = &formatJSON($jsonx->encode($itemx->[1]));
   print "** Modified ES JSON: ****************************************\n";
+  my ($jsonout,$uuid,$itemStatus) = &formatJSON($itemx->[1]);
   print $jsonx->pretty->encode($jsonx->decode($jsonout))."\n";
-};
+}
 
 
 

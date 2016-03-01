@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>exiletools.com APIs</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/simple-sidebar.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <?php include("menubar.html")?>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Sidebar</a>
+<div style="width:90%">
+                        <h1>Shop Indexer Elastic Search API</h1>
+
+<p>In early 2016, GGG released an entirely new backend for item trading known as the Public Stash Tab API. Players can make
+a stash tab public, after which any items added or removed from this stash tab will be pushed outwards in a river to be consumed
+by third party indexers and analyzers.</p>
+
+<p>The <a href="https://github.com/trackpete/exiletools-indexer">ExileTools Indexer</a> is an open source tool suite that transforms
+this river of data into a stateful index that can be queried for current and historical information.</p>
+
+<p>The Indexer also converts the item data published by GGG into a much more complex and powerful JSON document designed specifically for searching and analysis. This includes tracking metadata information such as when the item was added and modified, price extraction from notes, attribute extraction for pseudo mods and simple attributes such as the number of linked sockets, properties calculation such as Damage Per Second, and many more.</p>
+
+<p>This API gives everyone free access to the data inside my Elastic Search Index. Accessing this data is done via Elastic Search queries. You will need to learn about the <a href="https://www.elastic.co/guide/en/elasticsearch/client/index.html">ES DSL</a> by reading the appropriate documentation, or use one of the many <a href="https://www.elastic.co/guide/en/elasticsearch/client/index.html">Elastic Search Clients</a> that are available.</p>
+
+<p><i>All queries/etc. will be built with the ElasticSearch DSL - I am simply making this index available, you will have to write the queries!</i> That said, you can find a bunch of example queries to get you started on my <a href="https://gist.github.com/trackpete">Gist page on GitHub</a>.</p>
+
+<h2>End Points</h2>
+
+<p>The primary URL to access my Elastic Search index is as follows:</p>
+
+<pre><font size=5><b>http://api.exiletools.com/index</b></font></pre>
+
+<dl class="dl-horizontal">
+<dt style="margin-bottom:5px"><code>/_search</code></dt><dd>For submitting a search request - both <code>GET</code> and <code>POST</code> requests are allowed</dd>
+<dt style="margin-bottom:5px"><code>/_msearch</code></dt><dd>For submitting a multi-search request - both <code>GET</code> and <code>POST</code> requests are allowed</dd>
+<dt><code>/_mapping</code></dt><dd>To view the internal index structure - only <code>GET</code> requests are allowed</dd>
+</dl>
+
+<h2>Indexer Progress and Status</h2>
+
+<p>To improve transparency for players who are curious about the speed of processing items, I have made some tools available:</p>
+
+<ul>
+<li><a href="http://log.exiletools.com">Streaming socket access to the indexer Log File</a>
+<li><a href="http://exiletools.com/realtime/shop-watch">Monitor an Account's Stash Tabs in Real Time</a>
+<li><a href="http://exiletools.com/realtime/all">Real Time Item Availability of All Items</a>
+<li><a href="http://exiletools.com/realtime/uniques">Real Time Unique Item Availability</a>
+</ul>
+
+<h2>Authorization</h2>
+
+<div class="alert alert-danger" role="alert">Authorization is <b>required</b> to make a request to the API!</div>
+
+<p>You must have a valid API key to make a request to the Index API. Please note that these keys are not intended to be secret or private at this time (as many open source tools or AJAX systems will embed them in a visible way), but rather to help me keep track of which tools are using the API. <b>You may use the Development API Key during development.</b> To request an API key, <a href="/info/apikey.php">click here</a>.</p>
+
+<p>API keys may be specified in two ways:</p>
+<ul>
+<h4>1. Authorization Header</h4>
+
+<p>Simply add a Header to the web request named <code>Authorization</code> with your API key as the value. For example, to do this in curl:</p>
+
+<pre>curl -s i -H 'Authorization: DEVELOPMENT-Indexer' --XGET 'http://api.exiletools.com/index/_search?pretty'</pre>
+
+<h4>2. Basic Web Auth</h4>
+
+<p>This is more common for various libraries (javascript/etc.) that will connect to the Index API. Simply specify a username of <code>apikey</code> with the password of the actual API key. For example, to do this in curl:</p>
+
+<pre>curl -s -i -XGET 'http://apikey:DEVELOPMENT-Indexer@api.exiletools.com/index/_search?pretty'</pre>
+
+<p><i>Note that browsers like Firefox and Chrome will drop Basic Auth credentials, so do not try to use the example above in the URL bar!</i></p>
+
+</ul>
+
+<h3>Development API Key</h3>
+
+<p>Please feel free to use the following API key during initial development or experimentation. If you begin making frequent requests to the API or release a public tool, please request an API key for use so that I can keep track. Thanks!</p>
+
+<pre><font size=3>DEVELOPMENT-Indexer</font></pre>
+
+<h2>Pay Attention to Response Codes</h2>
+
+<p>The API gateway will return errors in a standard JSON format. Please remember to pay attention to these and code any programs to response properly in the event of an error. Below is an example:</p>
+
+<pre>
+HTTP/1.1 403 Forbidden
+Date: Wed, 13 Jan 2016 21:49:08 GMT
+Content-Type: application/json
+Content-Length: 37
+X-Generator: tyk.io
+Set-Cookie: SERVERID=A; path=/
+
+{
+    "error": "Key not authorised"
+}
+</pre>
+
+<h2>Caching</h2>
+
+<p>All identical requests (based on a hash of the Request URL and Request Body) will be cached for <b>20 seconds</b> by the API gateway's front-end cache. This prevents often repeated requests from causing any unnecessary load on the index.</p>
+
+<p>This means a web service can safely use common requests as part of dynamic execution - for example, using a query that pulls a list of all known unique items. Every time a user hits the web service, that list of unique items will be served from cache for 20s instead of hammering the ElasticSearch back end. If, however, you do end up creating your own very deep and complex web service, I'd suggest considering implementing some caching of your own as even a cached response can take ~100ms to travel the web.</p>
+
+<p>For example, in an active project for unique item reporting, I use local browser storage to cache common information such as lists of unique items for 10min, meaning that list can be accessed repeatedly without querying the ExileTools server.</p>
+
+<h2>Quick Start and Examples</h2>
+
+<p>The best way to start immediately testing out the ES API is to check my <a href="https://gist.github.com/trackpete">Gists of examples on GitHub</a>, which
+contains a number of very simple cut-and-paste examples using CURL. The recipes in these gists are all very simple without any explanation about
+parsing the results or managing the data itself.</p>
+
+<p>For more complex examples and a more detailed explanation of the index, check my <a href="http://exiletools.com/blog">main Blog</a> for all sorts of indexer related stuff and read up on Elastic Search - chances are you will be able to create better, more interesting, and faster queries in no time!</p>
+
+<h2>The Index JSON Structure / ElasticSearch Mappings</h2>
+
+<p>The JSON structure of the internal item documents and the resulting ElasticSearch Mappings are documented in depth on the <a href="/info/indexer-docs.html">Index JSON Structure</a> page.</p>
+
+
+<h2>JQuery, AJAX, and JSONP</h2>
+
+<p>Please note, JSONP requests are denied by my API Gateway. You must make requests as JSON, Text, etc. The following code will work:</p>
+
+<pre>
+&lt;script&gt;
+$.ajax({
+  type: "GET",
+  headers: {
+    'Authorization':'DEVELOPMENT-Indexer',
+    'Accept':'application/json',
+    'Content-Type':'application/json'
+  },
+  url: "http://api.exiletools.com/index/_mapping/field/shop.*?pretty",
+  dataType: 'text jsonp',
+}).success( function( data ) {
+    console.log('data');
+});
+&lt;/script&gt;
+</pre>
+
+<p>(I suggest you set the Accept and Content-Types just to be clear for my poor little gateway. It can be quirky.)</p>
+
+<p>You will see an Error 400 or 403 if you attempt to make this call with <code>dataType: 'jsonp'</code>. If you are getting errors like this, first make sure you
+check your browser's developer console, then I highly recommend you try to simulate the request with something like curl. Curl will actually show response bodies
+for errors where Chrome/Firefox doesn't appear to do so. For example, you will see the following error in the response body with curl if you attempt to
+request via JSONP:</p>
+
+<pre>{"error":"JSONP is disabled."}</pre>
+
+<h2>Indexer Status</h2>
+
+<p>There is a status page available that shows you the current job status, when an index was last run, whether or not it is enabled or disabled, etc. This page is available at <a href="http://exiletools.com/status">http://exiletools.com/status</a> - more information about this is available in the <a href="https://github.com/trackpete/exiletools-indexer/issues/47">GitHub Issue for its creation</a>.</p>
+
+
+
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+</body>
+
+</html>

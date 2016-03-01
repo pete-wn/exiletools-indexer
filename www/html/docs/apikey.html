@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>exile.tools APIs</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/simple-sidebar.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <?php include("menubar.html")?>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Sidebar</a>
+<div style="width:700px">
+                        <h1>Request an API Key</h1>
+
+<p>All of my API's are available for free to any interested developer. The Elastic Search API specifically can easily
+have a very high load with large complex queries, so please be considerate when providing tools that use this
+API.</p>
+
+<p>Currently only the Shop Indexer ElasticSearch API requires an API Key. If you would just like to take the ES API
+for a test drive before determining whether or not to use it, you may temporarily use the Public Development
+API Key. Please note this API Key is heavily rate limited and is not suitable for any public tool. If you run into 
+rate limits while developing a tool, I highly recommend you get our own API key!</p>
+<br>
+<ul>
+<b>Development API Key Header:</b><br><br><pre>Authorization: DEVELOPMENT-Indexer</pre>
+</ul>
+<br><hr width=100% size=1><br>
+
+<h4>Why do I need an API Key?</h4>
+
+<p>I would like to keep track of who is using this API extensively so that I can communicate with tool developers in the event
+that my server starts to get overloaded or if I find queries that are particularly burdensome. API Keys allow me to do
+this easily, as well as report on how much your application is being used.</p>
+
+<h4>How do I use the API Key?</h4>
+
+<p>Simply embed the API Key into an "Authorization" header in your HTML requests. You will receive JSON error responses if the key
+is invalid, being rate limited, etc.</p>
+
+<h4>What are the Rate Limits?</h4>
+
+<p>The default rate limits for public applications is 500 requests every 60s. If your application sees heavy use, I may be able
+to increase that, however this is already a pretty high bar!</p>
+
+<h4><font color=red>Note: You do not <i>have</i> to request an API Key for development!</font></h4>
+
+<p>I want it to be as easy as possible for people to experiment with developing tools using this index. Please feel free to use the Development API Key until a point where your site or tool has hundreds of active users. There is no need to request an API Key just to experiment or write your own personal simple tool as long as it does not make tens of requests a second repeatedly.</p>
+
+<br><hr width=100% size=1><br>
+
+<h2>Request an API Key Form:</h2>
+
+<p>If you would like your own API Key, please fill out the following form and hit submit. Please specify a valid e-mail address,
+as the API Key itself will be mailed to the address you provide. I will not use your e-mail for anything else except
+contacting you in the event of some sort of problem.</p>
+
+<p><font size=2 color=red>All fields are required!</font></p>
+
+<ul>
+
+<form action="/api-key-request" method=POST id="api-request">
+
+<p>First Name: <input type=text name="firstname" size=20></p>
+<p>Last Name: <input type=text name="lastname" size=20></p>
+<p>Email Address: <input type=text name="email" size=40></p>
+<p>Web Site (if any): <input type=text name="website" size=40></p>
+<p>
+Purpose: <select name="purpose" form="api-request">
+<option value="Public Web Site">Public Web Site</option>
+<option value="Puplic Application">Public Application</option>
+<option value="Just Exploring">Just Exploring</option>
+<option value="Personal Tool">Personal Tool</option>
+</select>
+</p>
+<p>
+<input type=submit value="Send me an API Key!">
+</p>
+
+
+
+
+</form>
+
+</ul>
+
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,244 @@
+// We define an EsConnector module that depends on the elasticsearch module.     
+var EsConnector = angular.module('EsConnector', ['elasticsearch','ui.bootstrap','ui.grid','ui.grid.autoResize','angularPromiseButtons','angular-cache','ngRoute','ui.select','ngStorage','highcharts-ng']).config( ['$routeProvider', function($routeProvider) {
+$routeProvider
+  .when('/:league/:unique/:options/:links', {
+    templateUrl: 'uniqueReport.html',
+    controller: 'uniqueReport',
+  })
+  .when('/:league/:unique/:options', {
+    templateUrl: 'uniqueReport.html',
+    controller: 'uniqueReport',
+  })
+  .when('/:league/:unique', {
+    redirectTo: '/:league/:unique/PastWeek'
+  })
+  .when('/:league', {
+    templateUrl: 'uniqueChooser.html',
+    controller: 'uniqueChooser',
+    league: 'league'
+  })
+  .otherwise({
+    redirectTo: '/'
+  });
+}]);
+
+
+
+// Create the es service from the esFactory
+// NOTE: Please do not use this API key if you re-host this page or fork this. Sign up for your own.
+// This key may be expired at any time and I need a way to notify people of changes in the API
+EsConnector.service('es', function (esFactory) {
+  return esFactory({ host: 'http://apikey:3fcfca58ada145a27b5de1f824111cd5@api.exiletools.com' });
+});
+
+// We define an Angular controller that returns the server health
+// Inputs: $scope and the 'es' service
+
+EsConnector.controller('ServerHealthController', function($scope, es) {
+    es.cluster.health(function (err, resp) {
+        if (err) {
+          // Push an error into the loader div
+          $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong checking the ES Index health / connection!<br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
+            $scope.data = err.message;
+        } else {
+            $scope.data = resp;
+        }
+    });
+});
+
+
+// init function for the Chooser so it can be loaded in multiple controllers
+var initChooser = function($scope, es, $location, $localStorage, $sessionStorage) {
+  // Check to see if we have the LeagueStats in localStorage already and if it's not too old (10min)
+  if ($localStorage.LeagueStats && (new Date() - $localStorage.AgeLeagueStats) < 600000) {
+    console.log("initChooser: LeagueStats are in local storage as of " + $localStorage.AgeLeagueStats + ", using cached data");
+    $scope.LeagueStats = $localStorage.LeagueStats;
+  } else {
+    console.log("initChooser: LeagueStats aren't in local storage or are out of date, performing new search.");
+    // Start loading icon
+    $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i>Loading league list...</div>');
+
+    var searchStart = new Date();
+    // Get a list of leagues with uniques in them
+    es.search({
+      index: 'index',
+      body: {
+        "aggs" : {
+          "leagues" : {
+          "filter": { "term": { "attributes.rarity": "Unique" } },
+            "aggs": {
+              "uniquesInLeagues": {
+                "terms": {
+                  "field": "attributes.league",
+                  "size": 10,
+                  "execution_hint": "global_ordinals_low_cardinality"
+                }
+              }
+            }
+          }
+        },
+        size:0 
+      }
+    }).then(function (response) {
+      // Create an information Array
+      LeagueStats = new Object();
+   
+      // Keep track of the number of leagues returned
+      var LeaguesFound = 0; 
+
+      // Loop through all the ItemsInLeagues buckets
+      response.aggregations.leagues.uniquesInLeagues.buckets.forEach(function (item, index, array) {
+        // Add the total count information and league name
+        LeagueStats[item.key] = item.doc_count;
+        LeaguesFound++;
+      });
+
+      var searchEnd = new Date();
+      console.log("initChooser: League Chooser Search executed in " + (searchEnd - searchStart) + "ms, found " + LeaguesFound + " leagues with uniques");
+
+      // Throw an error if no leagues are in the list
+      if (LeaguesFound < 1) {
+      // Push an error into the loader div
+        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the league list!<br/><br/><br/>ERROR: No leagues found with unique items!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+        console.log('initChooser: ERROR: No leagues found with unique items! Something wrong with index?');
+        return false;
+      }
+
+      // Return the array as LeagueStats to Angular
+      $scope.LeagueStats = LeagueStats;
+  
+      // Set this in local storage
+      $localStorage.LeagueStats = LeagueStats;
+  
+      // Set the time in local storage
+      $localStorage.AgeLeagueStats = new Date().valueOf();
+
+      // Clear loader
+      $("#loader").html('');
+      $("#loaderProgress").html('');
+  
+    }, function (err) {
+      // Push an error into the loader div
+      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the league list!<br/><br/><br/>ERROR: ' + err.message + '<br/><br/>Please try reloading this page or contact pete@pwx.me if the error continues.</div>');
+      console.trace(err.message);
+    });
+  }
+  console.log('initChooser: leagueChooser initialized');
+}
+
+EsConnector.controller('leagueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage ) {
+  // Make sure the League Chooser is fully loaded
+  initChooser($scope, es, $location, $localStorage, $sessionStorage);
+
+  // If a league is clicked, load the report for that league
+  $scope.selectLeague = function (league) {
+    $location.path(league);
+    console.log(league + " league selected");
+    return;
+  }
+
+});
+
+
+EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $localStorage, $sessionStorage) {
+  // Pull the League, Unique Item, and Report Options from the URL
+  $scope.league = $routeParams.league;
+  $scope.unique = $routeParams.unique;
+  $scope.options = $routeParams.options;
+  $scope.links = $routeParams.links;
+  // Default readyReport to false
+  $scope.readyReport = false;
+
+  // Create a scope array for errors, if any
+  $scope.errors = new Array;
+
+  console.log("Unique report for " + $scope.unique + " in " + $scope.league + " with option " + $scope.options);
+  if ($scope.links) {
+    console.log("  Specifically showing only " + $scope.links + " items"); 
+    $scope.addToTabURL = "/" + $scope.links;
+  }
+
+  // Make sure the unique list is loaded
+  initUniqueList($scope, es, $localStorage, $sessionStorage);
+
+  // Build a list of possible report types and define in an object
+  // This allows these to be added easily as needed
+  // Start by just defining the basics
+  $scope.tabs = new Object;
+  $scope.tabs.AllLeague = new Object;
+  $scope.tabs.AllLeague.title = "All League";
+  $scope.tabs.AllLeague.URL = "AllLeague";
+  $scope.tabs.AllLeague.class = "";
+  $scope.tabs.Past3Days = new Object;
+  $scope.tabs.Past3Days.title = "Modified in the Past Three Days";
+  $scope.tabs.Past3Days.URL = "Past3Days";
+  $scope.tabs.Past3Days.class = "";
+  $scope.tabs.PastWeek = new Object;
+  $scope.tabs.PastWeek.title = "Modified in the  Past Week";
+  $scope.tabs.PastWeek.URL = "PastWeek";
+  $scope.tabs.PastWeek.class = "";
+
+  // Configure the search filters for the tabs
+  // Note, they all need the attributes.rarity set to Unique to ensure the comma in the search
+  // doesn't mess up elasticsearch
+  $scope.tabs.AllLeague.SearchFilters = [
+    { "term" : { "attributes.rarity" : "Unique" } }
+  ];
+  $scope.tabs.PastWeek.SearchFilters = [
+    { "term" : { "attributes.rarity" : "Unique" } }, 
+    { "range" : { "shop.modified" : { gte : "now-1w" } } }
+  ];
+  $scope.tabs.Past3Days.SearchFilters = [
+    { "term" : { "attributes.rarity" : "Unique" } }, 
+    { "range" : { "shop.modified" : { gte : "now-3d" } } }
+  ];
+
+  // Configure the active class if scope.options is set
+  if ($scope.options) {
+    $scope.tabs[$scope.options].class = "active";
+  }
+
+  // Build a list of additional link type tab options
+  $scope.tabs6S = new Object;
+  $scope.tabs6S.Any = new Object;
+  $scope.tabs6S.Any.title = "Any Links";
+  $scope.tabs6S.Any.URL = "Any";
+  $scope.tabs6S.Any.class = "";
+  $scope.tabs6S.UpTo4L = new Object;
+  $scope.tabs6S.UpTo4L.title = "0-4 Linked Sockets";
+  $scope.tabs6S.UpTo4L.URL = "UpTo4L";
+  $scope.tabs6S.UpTo4L.class = "";
+  $scope.tabs6S.FiveLinked = new Object;
+  $scope.tabs6S.FiveLinked.title = "5L Only";
+  $scope.tabs6S.FiveLinked.URL = "FiveLinked";
+  $scope.tabs6S.FiveLinked.class = "";
+  $scope.tabs6S.SixLinked = new Object;
+  $scope.tabs6S.SixLinked.title = "6L Only";
+  $scope.tabs6S.SixLinked.URL = "SixLinked";
+  $scope.tabs6S.SixLinked.class = "";
+  // Search Filters for the link tabs
+  $scope.tabs6S.UpTo4L.SearchFilters = { "range" : { "sockets.largestLinkGroup" : { lte : 4 } } };
+  $scope.tabs6S.FiveLinked.SearchFilters = { "term" : { "sockets.largestLinkGroup" : 5 } };
+  $scope.tabs6S.SixLinked.SearchFilters = { "term" : { "sockets.largestLinkGroup" : 6 } };
+
+  // Set the search filters for this subroutine
+  $searchFilters = new Array;
+  $searchFilters = $scope.tabs[$scope.options].SearchFilters;
+
+  // Configure the active class if scope.options is set
+  if ($scope.links) {
+    console.log("Setting " + $scope.links + " to active");
+    $scope.tabs6S[$scope.links].class = "active";
+
+    // Add this to searchFilters unless it's set to Any
+    if ($scope.links != "Any") {
+      $searchFilters.push($scope.tabs6S[$scope.links].SearchFilters);
+    }
+  }
+
+
+  // Run the report function
+  readyReportFunction($scope, $routeParams, es, $localStorage, $sessionStorage, $searchFilters);
+
+});
+

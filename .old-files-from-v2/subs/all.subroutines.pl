@@ -4,6 +4,9 @@ require("subs/sub.readConfig.pl");
 require("subs/sub.currencyNames.pl");
 require("subs/sub.currencyValues.pl");
 require("subs/sub.itemBaseTypes.pl");
+require("subs/sub.leagueHash.pl");
+require("subs/sub.leagueApiNames.pl");
+require("subs/sub.processLock.pl");
 
 # Debug printing subroutine - this is for standard non-quiet logging, it gives
 # some information about what is happening but not too much.
@@ -21,7 +24,6 @@ sub sv {
 sub StartProcess {
   # Get the start time in epoch for analysis
   our $startTime = time();
-
 
   # Keep track of what this program is based on the name
   our $process = $0;
@@ -45,6 +47,8 @@ sub StartProcess {
       print "Options: sv=1\n";
     } elsif ($arg eq "-full") {
       $args{full} = 1;
+    } elsif ($arg eq "-unlock") {
+      &RemoveLock("$process");
     } else {
       $arg =~ s/^\-//o;
       $args{$arg} = shift(@ARGV);
@@ -52,15 +56,26 @@ sub StartProcess {
     }
   }
 
+  # Establish database connection for primary thread
+  $dbh = DBI->connect("dbi:mysql:$conf{dbName}","$conf{dbUser}","$conf{dbPass}", {mysql_enable_utf8 => 1}) || die "DBI Connection Error: $DBI::errstr\n";
+
   &d("* $process started\n");
+
+  # Create a lock to prevent multiple processes from running at once
+  &CreateLock("$process");
 }
 
 sub ExitProcess {
+  # Remove the lock
+  &RemoveLock("$process");
+
+  # Disconnect any dbh sessions
+  $dbh->disconnect if ($dbh->ping);
+
   # Get the end time in epoch for analysis
   our $endTime = time();
   
   &d("* [".($endTime - $startTime)." seconds] $process completed, exiting.\n");
-  close(LOG);
   exit;
 }
 

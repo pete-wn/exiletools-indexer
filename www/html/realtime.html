@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en" ng-app="EsConnector">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Path of Exile Realtime Trade Search</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link href="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.css" rel="stylesheet">
+  <link href="css/ui-layout.css" rel="stylesheet">
+  <link href="css/select.min.css" rel="stylesheet">
+  <link href="css/bootstrap-switch.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'  type='text/css'>
+
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular-route.min.js"></script>
+  <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
+  <script src="js/thirdparty/ui-bootstrap-tpls-0.14.3.min.js"></script>
+  <script src="js/thirdparty/angular-promise-buttons.min.js"></script>
+  <script src="js/thirdparty/angular-cache.min.js"></script>
+  <script src="js/thirdparty/select.min.js"></script>
+  <script src="js/thirdparty/highcharts-ng.min.js"></script>
+  <script src="js/thirdparty/bootstrap-switch.min.js"></script>
+  <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.6/ngStorage.min.js"></script>
+  <script src="http://code.highcharts.com/stock/highstock.src.js"></script>
+  <script src="http://code.highcharts.com/stock/highcharts-more.src.js"></script>
+  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+  <script src="js/es-realtime.js"></script>
+
+
+
+
+<style>
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+@font-face {
+    font-family: "fontin";
+    src: url("css/fontin-regular-webfont.woff") format('woff');
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- Note: Indenting for the body starts at base for simplicity -->
+<!-- Simple header -->
+<div style="width:100%;min-width:550px;padding:10px;padding-left:25px;background-color:#F6E3CE">
+  <noscript>Uh, it appears your browser doesn't support JavaScript! This page requires JavaScript and a host of other modern web plugins to work, sorry. :(</noscript>
+
+  <div class="row">
+    <div class="col-md-4">
+      <font style="font-size:150%;font-weight:bold">
+        Path of Exile Realtime Trade Search
+      </font>
+    </div>
+    <div class="col-md-7">
+      <font style="font-size:150%">
+        dynamically generated using the <a href="http://api.exiletools.com/info/indexer">free public ExileTools Index</a>
+      </font>
+    </div>
+    <div class="col-md-1">
+      <font style="font-size:80%;color:red;font-weight:bold">DEVELOPMENT VERSION</font>
+    </div>
+  </div>
+
+</div>
+
+<!-- Main Body DIV -->
+<div id="main" style="width:100%;padding-left:25px;padding-right:25px;min-width:550px">
+
+  <!-- table seems to work better for this than anything else -->
+  <div ng-controller="leagueChooser" class="clearfix">
+    <div ng-if="LeagueStats" style="float:left;width:80%">
+      <h4>Please Choose a League:</h4>
+      <table cellspacing=0 cellpadding=0 border=0>
+        <tr>
+          <td ng-repeat="(key, val) in LeagueStats">
+            <button class="btn" ng-click="selectLeague(key)" promise-btn style="margin:3px">{{key}}</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div style="text-align:right;padding-top:5px">
+      <!-- This is hard coded right now, should probably change it sometime -->
+      <p style="font-size:.7em">
+        <a href="https://github.com/trackpete/exiletools-indexer/issues">Follow this project on GitHub!</a>
+      </p>
+    </div>
+  </div>
+  <!-- End league Chooser -->
+
+  <hr width=100% size=1>
+  <!-- Empty Div for Loader -->
+  <div id="loaderProgress"></div>
+  <div id="loader"></div>
+  <!-- Empty Div to display content -->
+  <div class="ng-view" style="width:100%"></div>
+
+  <script type="text/ng-template" id="search.html">
+    <div class="row">
+      <div class="col-md-4">
+
+<form role="form">
+
+<div class="form-group">
+  <label for="info.fullName">Item Name Search:</label>
+  <input type="text" class="form-control" id="info.fullName">
+</div>
+<div class="form-group">
+  <label for="shop.sellerAccount">Seller Account Name:</label>
+  <input type="text" class="form-control" id="shop.sellerAccount">
+</div>
+
+<div class="form-group" ng-if="selectRarity">
+  <ui-select ng-model="rarity.selected" theme="bootstrap" ng-disabled="disabled">
+    <ui-select-match placeholder="Choose a rarity">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="rarity in selectRarity">{{rarity}}</ui-select-choices>
+  </ui-select>
+</div>
+
+<div class="form-group" style="text-align:right">
+  <label for="shop.hasPrice">Price Listed:</label>
+  <input type="checkbox" name="shop.hasPrice" checked data-on-text="Yes" data-off-text="No" data-size="small">
+</div>
+
+<div class="form-group" style="text-align:right">
+  <label for="attributes.identified">Identified:</label>
+  <input type="checkbox" name="attributes.identified" checked data-on-text="Yes" data-off-text="No" data-size="small">
+</div>
+
+
+<div class="form-group row">
+  <div class="col-sm-6" style="text-align:right">
+    <b>Item Level Min/Max:</b>
+  </div>
+  <div class="col-sm-3">
+    <input type="text" class="form-control" id="attributes.ilvl.min">
+  </div>
+  <div class="col-sm-3">
+    <input type="text" class="form-control" id="attributes.ilvl.max">
+  </div>
+</div>
+<div class="form-group row">
+  <div class="col-sm-6" style="text-align:right">
+    <b>Chaos Equiv Price Min/Max:</b>
+  </div>
+  <div class="col-sm-3">
+    <input type="text" class="form-control" id="shop.chaosEquiv.min">
+  </div>
+  <div class="col-sm-3">
+    <input type="text" class="form-control" id="shop.chaosEquiv.max">
+  </div>
+</div>
+<div class="form-group row">
+  <div class="col-sm-6" style="text-align:right">
+    <b>Required Level:</b>
+  </div>
+  <div class="col-sm-3">
+    <input type="test" class="form-control" id=requirements.level">
+  </div>
+  <div class="col-sm-3">
+    <input type="checkbox" name="requirements.Level.minmax" checked data-on-text="Min" data-off-text="Max" data-size="mini">
+  </div>
+</div>
+
+<hr width=100% size=1>
+
+<div class="form-group" ng-if="selectBaseItemType">
+  <ui-select ng-model="baseItemType.selected" theme="bootstrap" ng-disabled="disabled" on-select="chooseBaseItemType(baseItemType.selected)">                    
+    <ui-select-match placeholder="Choose a Base Item Type">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="baseItemType in selectBaseItemType">{{baseItemType}}</ui-select-choices>
+  </ui-select>
+</div>
+
+<div class="form-group" ng-if="selectEquipType.length > 1">
+  <ui-select ng-model="equipType.selected" theme="bootstrap" ng-disabled="disabled" on-select="chooseEquipType(equipType.selected)">
+    <ui-select-match placeholder="Choose an Equip Type">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="equipType in selectEquipType">{{equipType}}</ui-select-choices>
+  </ui-select>
+</div>
+
+<div class="form-group" ng-if="selectItemType.length > 1">
+  <ui-select ng-model="itemType.selected" theme="bootstrap" ng-disabled="disabled" on-select="chooseItemType(itemType.selected)">
+    <ui-select-match placeholder="Choose a Weapon Type">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="itemType in selectItemType">{{itemType}}</ui-select-choices>
+  </ui-select>
+</div>
+
+
+<div ng-if="chosenType == 'Weapon' || chosenType == 'Any'">
+  <h4>Weapon Properties:</h4>
+  <div class="form-group row">
+    <div class="col-sm-4">
+      <label for="properties.Weapon.Physical DPS">Min PDPS:</label>
+      <input type="text" class="form-control" id="properties.Weapon.Physical DPS">
+    </div>
+    <div class="col-sm-4">
+      <label for="properties.Weapon.Elemental DPS">Min Ele DPS:</label>
+      <input type="text" class="form-control" id="properties.Weapon.Elemental DPS">
+    </div>
+    <div class="col-sm-4">
+      <label for="properties.Weapon.Total DPS">Min Total DPS:</label>
+      <input type="text" class="form-control" id="properties.Weapon.Total DPS">
+    </div>
+  </div>
+  <div class="form-group row">
+    <div class="col-sm-4">
+      <label for="properties.Weapon.Attacks per Second">Min APS:</label>
+      <input type="text" class="form-control" id="properties.Weapon.Attacks per Second">
+    </div>
+    <div class="col-sm-4">
+      <label for="properties.Weapon.Critical Strike Chance">Min Crit:</label>
+      <input type="text" class="form-control" id="properties.Weapon.Critical Strike Chance">
+    </div>
+    <div class="col-sm-4">
+      <label for="propertiesPseudo.Weapon.estimatedQ20.Physical DPS">Q20 PDPS:</label>
+      <input type="text" class="form-control" id="propertiesPseudo.Weapon.estimatedQ20.Physical DPS">
+    </div>
+  </div>
+
+</div>
+
+<div ng-if="chosenType == 'Armour' || chosenType == 'Any'">
+  <h4>Armour Properties:</h4>
+  <div class="form-group" style="text-align:right">
+    <label for="useEstimatedQ20">Normalize to 20% Quality: </label>
+    <input type="checkbox" name="useEstimatedQ20" checked>
+  </div>
+  <div class="form-group row">
+    <div class="col-sm-4">
+      <label for="properties.Armour.Armour">Min Armour:</label>
+      <input type="text" class="form-control" id="properties.Armour.Armour">
+    </div>
+    <div class="col-sm-4">
+      <label for="properties.Armour.Evasion Rating">Min Evasion:</label>
+      <input type="text" class="form-control" id="properties.Armour.Evasion Rating">
+    </div>
+    <div class="col-sm-4">
+      <label for="properties.Armour.Energy Shield">Min ES:</label>
+      <input type="text" class="form-control" id="properties.Armour.Energy Shield">
+    </div>
+  </div>
+  <div class="form-group row">
+    <div class="col-sm-4">
+      <label for="properties.Armour.Chance to Block">Min Block %:</label>
+      <input type="text" class="form-control" id="properties.Armour.Chance to Block">
+    </div>
+  </div>
+</div>
+
+<div ng-if="chosenType == 'Gem' || chosenType == 'Any'">
+  <h4>Gem Properties:</h4>
+  <div class="form-group row">
+    <div class="col-sm-4">
+      <label for="properties.Gem.Level">Min Level</label>
+      <input type="text" class="form-control" id="properties.Gem.Level">
+    </div>
+    <div class="col-sm-4">
+      <label for="properties.Quality">Min Quality</label>
+      <input type="text" class="form-control" id="properties.Quality">
+    </div>
+    <div class="col-sm-4" ng-if="gemTypes">
+      <label for="gemType">Type:</label>
+      <ui-select multiple ng-model="chosenGemType.selected" theme="bootstrap" ng-disabled="disabled" name="gemType">
+        <ui-select-match placeholder="...">{{$item}}</ui-select-match>
+        <ui-select-choices repeat="type in gemTypes">{{type}}</ui-select-choices>
+      </ui-select>
+    </div>
+  </div>
+</div>
+
+<div ng-if="chosenType == 'Armour' || chosenType == 'Weapon' || chosenType == 'Any'">
+  <h4>Sockets:</h4>
+  <div class="form-group row">
+    <div class="col-sm-6">
+      <label for="sockets.socketCount">Min # Sockets:</label>
+      <input type="text" class="form-control" id="sockets.socketCount">
+    </div>
+    <div class="col-sm-6">
+      <label for="sockets.largestLinkGroup">Largest Link #:</label>
+      <input type="text" class="form-control" id="sockets.largestLinkGroup">
+    </div>
+  </div>
+</div>
+
+<div ng-if="displayModData">
+  <h4>Mods:</h4>
+  <div class="row" ng-repeat="modChooser in addModChoosers">
+    <div class="col-sm-9">
+      <ui-select ng-model="chosenMod1.selected" theme="bootstrap" ng-disabled="disabled" name="chosenMod1" on-select="addModChooser()">
+        <ui-select-match placeholder="Choose a mod">{{$select.selected}}</ui-select-match>
+        <ui-select-choices repeat="mod in displayModData">{{mod}}</ui-select-choices>
+      </ui-select>
+    </div>
+    <div class="col-sm-3">
+      <input type="text" class="form-control" id="chosenMod1">
+    </div>
+  </div>
+
+</div>
+
+
+</form>
+      </div>
+      <div class="col-md-8">
+      right side results
+      </div>
+    </div>
+
+
+
+
+
+  </script>
+
+  </div>
+</div>
+
+
+
+</body>
+</html>

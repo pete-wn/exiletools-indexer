@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" ng-app="EsConnector">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Path of Exile Public Stash Tab Watcher</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link href="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.css" rel="stylesheet">
+  <link href="css/ui-layout.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'  type='text/css'>
+
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular-route.min.js"></script>
+  <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
+  <script src="js/thirdparty/ui-bootstrap-tpls-0.14.3.min.js"></script>
+  <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
+  <script src="js/es-watcher.js"></script>
+
+<style>
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+@font-face {
+    font-family: "fontin";
+    src: url("css/fontin-regular-webfont.woff") format('woff');
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- Note: Indenting for the body starts at base for simplicity -->
+<!-- Simple header -->
+<div style="width:100%;min-width:550px;padding:10px;padding-left:25px;background-color:#F6E3CE">
+  <noscript>Uh, it appears your browser doesn't support JavaScript! This page requires JavaScript and a host of other modern web plugins to work, sorry. :(</noscript>
+
+  <div class="row">
+    <div class="col-md-4">
+      <font style="font-size:150%;font-weight:bold">
+        Path of Exile Public Stash Tab Watcher
+      </font>
+    </div>
+    <div class="col-md-7">
+      <font style="font-size:150%">
+        dynamically generated using the <a href="http://api.exiletools.com/info/indexer">free public ExileTools Index</a>
+      </font>
+    </div>
+    <div class="col-md-1">
+      <font style="font-size:80%;color:red;font-weight:bold">DEVELOPMENT VERSION</font>
+    </div>
+  </div>
+
+</div>
+
+<!-- Main Body DIV -->
+<div id="main" style="width:100%;padding-left:25px;padding-right:25px;min-width:550px">
+
+<br>
+<form ng-submit="selectSellerAccount()" ng-controller="selectAccount">
+Monitor a seller account: <input type="text" ng-model="sellerAccount" name="sellerAccount" /> <input type="submit" id="submit" value="Monitor" />
+</form>
+
+
+<br>
+  <div class="ng-view" style="width:100%"></div>
+
+  <!-- START Template for Report -->
+  <script type="text/ng-template" id="shop-report.html">
+    <div ng-if="sellerAccount">
+      <hr width=100% size=1/>
+      <font size=+3><b>Monitoring Public Stash Tabs for {{sellerAccount}}: </b></font> <input type="button" value="Start Monitoring" ng-click="StartTimer()" /> <input type="button" value="Stop Monitoring" ng-click="StopTimer()" />
+      <br>
+
+<div ng-bind = "Message"></div>
+    </div>
+
+    <div id="TabData" ui-grid="{ data: TabData }" ng-if="TabDataIsPopulated" style="width:98%;min-height:800px"></div>
+
+</div>
+  </script>
+  <!-- END Template for Unique Chooser -->
+
+
+
+</div>
+
+
+</body>
+</html>

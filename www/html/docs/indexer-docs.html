@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>ExileTools ElasticSearch Shop Index API Mapping Documentation</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/simple-sidebar.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <?php include("menubar.html")?>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Sidebar</a>
+<div style="width:90%">
+
+<div style="width:800px">
+<h1>The Index JSON Structure</h1>
+
+<p><font size=1><b>Last Updated: 2016/02/25</b></font></p>
+
+<p>Each item received from pathofexile.com is structured in a JSON format intended for display with their javascript mouseover. In order to index these items in an efficient manner while adding in shop data, the indexer completely re-formats the item into a new structure used by ElasticSearch. This structure will be returned in the _source data from an ElasticSearch query and is explained in detail below<p>
+
+<p>The full mapping can be accessed using the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-mapping.html">Get Mapping API</a> from ElasticSearch. I have also provided a simple tool that will extract plain text mapping links for fields as follows:</p>
+
+<ul>
+  <li> <a href="http://exiletools.com/info/mapping">http://exiletools.com/info/mapping</a> shows the entire mapping<br><br>
+  <li> <code>http://exiletools.com/info/mapping?field=[mapping]</code> shows information for a specific field and can used at any depth (<code>*</code> is supported). Examples include:<br><br>
+  <ul>
+    <li> <a href="http://exiletools.com/info/mapping?field=info">http://exiletools.com/info/mapping?field=info</a> show all info fields
+    <li> <a href="http://exiletools.com/info/mapping?field=mods.Amulet.explicit">http://exiletools.com/info/mapping?field=mods.Amulet.explicit</a> show all Amulet explicit mods
+    <li> <a href="http://exiletools.com/info/mapping?field=mods.*.explicit">http://exiletools.com/info/mapping?field=mods.*.explicit</a> show all possible explicit mods
+    <li> <a href="http://exiletools.com/info/mapping?field=mods.Ring.crafted">http://exiletools.com/info/mapping?field=mods.Ring.crafted</a> show all Ring crafted mods
+    <li> <a href="http://exiletools.com/info/mapping?field=properties.Gem.type">http://exiletools.com/info/mapping?field=properties.Gem.type</a> show all possible Gem types
+    <li> <a href="http://exiletools.com/info/mapping?field=properties.Gem.type">http://exiletools.com/info/mapping?field=properties.Gem.type</a> show all possible Gem types
+  </ul>
+</ul>
+
+<hr width=100% size=1>
+
+<p>The table below is generally ordered by the importance of sections, rather than alphabetically/etc. Some example ElasticSearch queries may be linked for different sections, these examples can be browsed directly <a href="https://gist.github.com/trackpete">on my GitHub Gist page</a>.</p>
+
+<p>Some notes on the structure and information below:</p>
+
+<ul class="list" style="margin-left:0px">
+  <li style="margin-bottom:5px"> String fields are non_analyzed and case sensitive except where indicated otherwise. For example, <code>amulet</code> will return no matches if the string in the field is <code>Amulet</code>.
+  <li style="margin-bottom:5px"> Many fields will only be present if they are relevant. For example, an item with no <code>Requirements</code> will not have any data for <code>Requirements</code> in its JSON structure (instead of a bunch of <code>0's</code> or <code>nulls</code>). There are some exceptions to this.
+  <li style="margin-bottom:5px"> The mapping is globally dynamic. New fields that are parsed in the conversion may be added at any time. For example, if someone posts a new item that has a requirement of 50 Awesomeness, a new <code>requirements.Awesomeness</code> mapping should be added.
+  <li> <i>[original:field]</i> denotes the data is extracted directly from the given field in the original JSON data
+</ul>
+
+</div>
+
+<font size=2>
+<table class=table table-condensed>
+<tr>
+<th>Mapping</th>
+<th>Description</th>
+</tr>
+  <tr><td><font size=4><code><b>uuid</b></code></font></td><td>A unique identifier for the item provided by GGG. This is based on a hash of the player's account and the unique id for the item, so it should always remain the same in a player's stash. You can use the uuid to directly reference an item as the uuid will also be the item's Elastic Search id.</td></tr>
+  <tr><td><font size=4><code><b>info</b></code></font></td><td>Contains basic information about the item</td></tr></dt><br>
+
+  <tr><td><code>info.icon</code></td><td>The CDN URL of the item's fullsize icon</td></tr>
+  <tr><td><code>info.typeLine</code></td><td><i>[original:typeLine]</i> Typically this is the end of the name, such as "Heavy Belt" or "Heavy Belt of Awesomeness."</td></tr>
+  <tr><td><code>info.name</code></td><td><i>[original:name]</i> The prefix name of the item. This is not populated if the item is normal/magical and does not have a prefix.</td></tr>
+  <tr><td><code>info.fullName</code></td><td>The item's full name in a not_analyzed string. This data is case and formatting sensitive. It is built from <code>name</code> and <code>typeline</code>. Searching against this field will require wildcards or exact matches - it may be best to search against <code>info.tokenized.fullName</code> instead. Note that where possible, unidentified Unique Items will have their <code>fullName</code> programmatically forced to the proper Unique Item name.</td></tr>
+  <tr><td><code>info.descrText</code></td><td><i>[original:descrText]</i> The descriptive text from the item if available in a not_analyzed string.  Newlines/etc. may be removed. Use this data for display, not searching.</td></tr>
+  <tr><td><code>info.flavourText</code></td><td><i>[original:flavourText]</i> The flavour text of the item if available in a not_analyzed string. Newlines/etc. may be removed. Use this data for display, not searching.</td></tr>
+  <tr><td><code>info.tokenized.DivinationReward</code></td><td>This contains an ngram analyzed set of tokens describing the Divination Card Reward for Divination Cards. Use this for search if you are searching for Divination Cards that give "claw" rewards, for example.</td></tr>
+  <tr><td><code>info.tokenized.fullName</code></td><td>ngram analyzed full name in lower case. Use this to search for "shav" for example.</td></tr>
+  <tr><td><code>info.tokenized.descrText</code></td><td>ngram analyzed description text. Use this for searching for words in the description text.</td></tr>
+  <tr><td><code>info.tokenized.flavourText</code></td><td>ngram analyzed flavour text. Use this for searching for words in the flavour text.</td></tr>
+
+  <tr><td><code><font size=4><b>shop</b></font></code></td><td>Contains information about the shop the item is listed in as well as prices/etc.</td></tr>
+
+  <tr><td><code>shop.added</code></td><td>The epoch (millis) time the item was first added to the index.</td></tr>
+  <tr><td><code>shop.updated</code></td><td>The epoch (millis) time the item was last updated in the index whether or not a change was made (usually the time it was last verified)</td></tr>
+  <tr><td><code>shop.modified</code></td><td>The epoch (millis) time the item was last modified (requires a change, such as verification status, price, etc.)</td></tr>
+  <tr><td><code>shop.verified</code></td><td>
+    <p>Verification status in not_analyzed string.</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>YES</kbd></dt><dd>Item is Verified as of last update.</dd>
+      <dt style="margin-bottom:5px"><kbd>GONE</kbd></dt><dd>Item is no longer Verified as of last update. The <code>shop.modified</code> field shows when the item when from <code>YES</code> to <code>GONE</code></dd>
+      <dt><kbd>OLD</kbd></dt><dd>Item has not been updated for a few days and may be stale.</dd>
+    </dl>
+  </td></tr>
+  <tr><td><code>shop.amount</code></td><td>The amount of currency requested (if any)</td></tr>
+  <tr><td><code>shop.currency</code></td><td>The type of currency requested (if any)</td></tr>
+  <tr><td><code>shop.chaosEquiv</code></td><td>A derived chaos equivalent value based on <code>shop.amount</code> and <code>shop.currency</code>. It is fixed and will not always reflect current trading values. This field is intended to be primarily used for sorting or generalized calculations. Searching for items with a <code>chaosEquiv &gt; 0</code> will only show items with a listed price. The rates used for index conversion are <a href="http://exiletools.com/rates">available here</a>.</td></tr>
+  <tr><td><code>shop.saleType</code></td><td><p>This indicates what type of sale the item was listed as:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>b/o</kbd></dt><dd>The item was tagged with a buyout price</dd>
+      <dt style="margin-bottom:5px"><kbd>price</kbd><dt><dd>The item was tagged with a fixed price</dd>
+      <dt style="margin-bottom:5px"><kbd>c/o</kbd></dt><dd>The item was tagged with a current offer amount</dd>
+      <dt><kbd>offer</kbd></dt><dd>The item was not tagged, offers are required</dd>
+    </dl>
+  </td></tr>
+  <tr><td><code>shop.note</code></td><td>The original note embedded with the item.</td></tr>
+  <tr><td><code>shop.sellerAccount</code></td><td>The account name of the seller</td></tr>
+  <tr><td><code>shop.stash.stashName</code></td><td>The name of the Stash Tab where the item is listed</td></tr>
+  <tr><td><code>shop.stash.xLocation</code></td><td>The x location of the top left of the item.</td></tr>
+  <tr><td><code>shop.stash.yLocation</code></td><td>The y location of the top left of the item.</td></tr>
+  <tr><td><code>shop.stash.inventoryID</code></td><td>GGG's internal inventoryID of the Stash Tab</td></tr>
+  <tr><td><code>shop.stash.stashID</code></td><td>GGG's UUID for the Stash Tab</td></tr>
+
+  <tr><td><code><font size=4><b>attributes</b></font></code></td><td>Contains a combination of fixed and derived attributes for the item</td></tr>
+
+  <tr><td><code>attributes.baseItemType</code></td><td><p>This contains the item's determined base type. As of this update, the baseItemType can be one of the following:</p>
+    <ul class="list-unstyled" style="margin-left:25px">
+      <li style="margin-bottom:5px"> <kbd>Armour</kbd>
+      <li style="margin-bottom:5px"> <kbd>Card</kbd>
+      <li style="margin-bottom:5px"> <kbd>Currency</kbd>
+      <li style="margin-bottom:5px"> <kbd>Flask</kbd>
+      <li style="margin-bottom:5px"> <kbd>Gem</kbd>
+      <li style="margin-bottom:5px"> <kbd>Jewel</kbd>
+      <li style="margin-bottom:5px"> <kbd>Jewelry</kbd>
+      <li style="margin-bottom:5px"> <kbd>Map</kbd>
+      <li style="margin-bottom:5px"> <kbd>Vaal Fragment</kbd>
+      <li> <kbd>Weapon</kbd>
+    </ul>
+    <p>An ElasticSearch aggregation query to list the <code>baseItemType</code> options <a href="https://gist.github.com/trackpete/94a0b7fdc13af003bb79">is available here</a>.</p>
+  </td></tr>
+  <tr><td><code>attributes.itemType</code></td><td><p>This contains the item's determined type. It is more precise than <code>itemBaseType</code> and represents the item type as the game reads it. The following is a list of item types as of this update (these may change over time) for each <code>baseItemType</code>:</p>
+
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Armour:</code> <kbd>Body</kbd> <kbd>Boots</kbd> <kbd>Gloves</kbd> <kbd>Helmet</kbd> <kbd>Shield</kbd> <kbd>Quiver</kbd> <li>
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li style="margin-bottom:5px"><code>Card</code> <kbd>Card</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Currency</code> <kbd>Currency</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Flask</code> <kbd>Flask</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Gem</code> <kbd>Gem</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Jewel</code> <kbd>Jewel</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Jewelry</code> <kbd>Amulet</kbd> <kbd>Belt</kbd> <kbd>Ring</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Map</code> <kbd>Map</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Vaal Fragment</code> <kbd>Vaal Fragment</kbd></li> 
+    </ul>
+    <ul class="list-inline" style="margin-left:25px">
+      <li><code>Weapon</code> <kbd>Axe</kbd> <kbd>Bow</kbd> <kbd>Claw</kbd>  <kbd>Dagger</kbd> <kbd>Fishing Rod</kbd> <kbd>Mace</kbd> <kbd>Sceptre</kbd> <kbd>Staff</kbd> <kbd>Sword</kbd> <kbd>Wand</kbd></li> 
+    </ul>
+    </ul>
+    <p>An ElasticSearch aggregation query to list the <code>itemType</code> options for a <code>baseItemType</code> <a href="https://gist.github.com/trackpete/a654edec9fc1a1894e7b">is available here</a>.</p>
+    <p>A more advanced nested aggregation query that shows all <code>baseItemType</code> and their possible <code>itemType</code> <a href="https://gist.github.com/trackpete/b174e9bfab95385a0f74">is available here.</a></p>
+  </td></tr>
+  <tr><td><code>attributes.equipType</code></td><td><p>The item's determined equippable type. This differs from <code>itemType</code> in that it specifically notes which slot this item should be equipped in and how the item will be treated by the game. In most cases, the <code>equipType</code> and the <code>itemType</code> will be the same (and not shown below), however it will differ in the following areas:</p>
+    <ul class="list-inline" style="margin-left:25px">
+      <li>Every <code>Weapon</code> will have an <code>equipType</code> of one of the following:  <kbd>One Handed Melee Weapon</kbd> <kbd>Two Handed Melee Weapon</kbd> <kbd>One Handed Projectile Weapon</kbd> <kbd>Bow</kbd></li>
+    </ul> 
+    <ul class="list-inline" style="margin-left:25px">
+      <li>Jewelry with an <code>itemType</code> of <code>Amulet</code> will have an <code>equipType</code> of one of the following: <kbd>Amulet</kbd> <kbd>Talisman</kbd></li>
+    </ul>
+  <p><code>equipType</code> and <code>itemType</code> should be used together when appropriate. For example, to find a <kbd>Two Handed Mace</kbd> you must filter by <code>itemType=Mace</code> and <code>equipType=Two Handed Melee Weapon</code>.</p>
+
+  <p>An advanced nested aggregation query that shows all current <code>equipType</code> values for each <code>baseItemType</code> <a href="https://gist.github.com/trackpete/45ca4b868883d600ff00">is available here.</a></p>
+  
+  <p>An example boolean query to find all <kbd>Two Handed Maces</kbd> using both <code>equipType</code> and <code>itemType</code> matches <a href="https://gist.github.com/trackpete/bddb205ae3cc4e96b02f">is available here.</a></p>
+  </td></tr>
+  <tr><td><code>attributes.league</code></td><td><i>[original:league]</i> The league name attached to the item in GGG's notation</td></tr>
+  <tr><td><code>attributes.rarity</code></td><td><p>The determined rarity of the item, based on the <i>original:frameType</i> value. As of this update, rarity can be one of the following:</p>
+    <ul class="list-unstyled" style="margin-left:25px">
+      <li style="margin-bottom:5px"> <kbd>Normal</kbd>
+      <li style="margin-bottom:5px"> <kbd>Magic</kbd>
+      <li style="margin-bottom:5px"> <kbd>Rare</kbd>
+      <li style="margin-bottom:5px"> <kbd>Unique</kbd>
+      <li style="margin-bottom:5px"> <kbd>Gem</kbd>
+      <li style="margin-bottom:5px"> <kbd>Currency</kbd>
+      <li> <kbd>Divination Card</kbd>
+    </ul>
+    <p><i>Note: Quest Items (frameType=7) are not stored in the index.</i></p>
+    <p>An aggregation query to show all <code>rarity</code> types <a href="https://gist.github.com/trackpete/439a8575b6e424e7ca64">is available here</a>.</p>
+  </td></tr>
+  <tr><td><code>attributes.frameType</code></td><td><i>[original:frameType]</i> The original frameType specified by GGG, saved for reference.</td></tr>
+  <tr><td><code>attributes.corrupted</code></td><td><i>[original:corrupted]</i> Boolean field, <code>true</code> indicates the item is Corrupted</td></tr>
+  <tr><td><code>attributes.identified</code></td><td><i>[original:identified]</i> Boolean field, <code>true</code> indicates the item is Identified</td></tr>
+  <tr><td><code>attributes.mirrored</code></td><td><i>[original:mirrored]</i> Boolean field, <code>true</code> indicates the item is Mirrored</td></tr>
+  <tr><td><code>attributes.lockedToCharacter</code></td><td><i>[original:lockedToCharacter]</i> Boolean field, <code>true</code> indicates the item is locked to the character, however I don't believe GGG actually uses this</td></tr>
+  <tr><td><code>attributes.support</code></td><td><i>[original:support]</i> Boolean field, <code>true</code> indicates the item is a Support Gem while <code>false</code> indicates it is a Active Skill Gem. Note that non-gem items often have this set to <code>true</code> by GGG for some reason.</td></tr>
+  <tr><td><code>attributes.inventoryHeight</code></td><td><i>[original:inventoryHeight]</i> The number of vertical squares the item takes up in the inventory.</td></tr>
+  <tr><td><code>attributes.inventoryWidth</code></td><td><i>[original:inventoryWidth]</i> The number of horizontal squares the item takes up in the inventory.</td></tr>
+  <tr><td><code>attributes.implicitModsCount</code></td><td>A number indicating how many lines of Implicit Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines. This value only reflects the number of entries in the original JSON array.</td></tr>
+  <tr><td><code>attributes.cosmeticModsCount</code></td><td>A number indicating how many lines of Cosmetic Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines. This value only reflects the number of entries in the original JSON array.</td></tr>
+  <tr><td><code>attributes.explicitModsCount</code></td><td>A number indicating how many lines of Explicit Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines (and sometimes one line can be multiple mods). This value only reflects the number of entries in the original JSON array.</td></tr>
+  <tr><td><code>attributes.craftedModsCount</code></td><td>A number indicating how many lines of Crafted Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines (and sometimes one line can be multiple mods). This value only reflects the number of entries in the original JSON array.</td></tr>
+
+  <tr><td><code><font size=4><b>requirements</b></font></code></td><td>Information about the stats required to use the item</td></tr>
+
+  <tr><td><code>requirements.Dex</code></td><td>The Dexterity stat required. This is calculated from a requirement of <code>Dex</code> or <code>Dexterity</code> on the item.</td></tr>
+  <tr><td><code>requirements.Str</code></td><td>The Strength stat required. This is calculated from <code>Str</code> or <code>Strength</code> on the item.</td></tr>
+  <tr><td><code>requirements.Int</code></td><td>The Intelligence stat required. This is calculated from <code>Int</code> or <code>Intelligence</code> on the item.</td></tr>
+  <tr><td><code>requirements.Level</code></td><td>The Level required. This is calculated from <Code>Lvl</code> or <code>Level</code> on the item.</td></tr>
+
+  <tr><td><code><font size=4><b>sockets</b></font></code></td><td>This mapping contains socket information and will only be populated for items with sockets.</td></tr>
+
+  <tr><td><code>sockets.socketCount</code></td><td>The number of sockets on the item</td></tr>
+  <tr><td><code>sockets.largestLinkGroup</code></td><td>A number that indicates the largest link group on the item (i.e. "6" for "6L", "3" for "3L", "1" for no links)</td></tr>
+  <tr><td><code>sockets.allSockets</code></td><td>
+    <p>Text notation for the sockets as specified by GGG. This goes upper left, upper right, middle right, middle left, lower left, lower right. The text values here are converted from their stat values to their color values for simplicity. Text values without a separator are linked, while values separated by a dash (<code>-</code>) are not linked.</p>
+    <p>Possible socket colors are:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>R</kbd></dt><dd>Red (Strength)</dd>
+      <dt style="margin-bottom:5px"><kbd>G</kbd></dt><dd>Green (Dexterity)</dd>
+      <dt style="margin-bottom:5px"><kbd>B</kbd></dt><dd>Blue (Intelligence)</dd>
+      <dt><kbd>W</kbd></dt><dd>White (Any)</dd>
+    </dl>
+    <p>Some examples of the return text and how to interpret them are below:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>R-R-R</kbd></dt><dd>This item has 3 Red sockets, none of which are linked</dd>
+      <dt style="margin-bottom:5px"><kbd>RR</kbd></dt><dd>This item has 2 Red sockets and they are linked</dd>
+      <dt style="margin-bottom:5px"><kbd>RBB-R-G</kbd></dt><dd>This item has 5 sockets. The first three are Red, Blue, and Blue and they are linked. It also has a Red and Green socket that are not linked</dd>
+      <dt style="margin-bottom:5px"><kbd>BB-GG</kbd></dt><dd>This item has 2 Blue sockets that are linked, followed by 2 Green sockets that are linked</dd>
+      <dt><kbd>WWWWWW</kbd></dt><dd>Likely Tabula Rasa, this item has 6 linked White sockets</dd>
+    </dl>
+  </td></tr>
+  <tr><td><code>sockets.allSocketsSorted</code></td><td>This contains a simple list of all of the sockets sorted by color for searching. For example, if you want to find an item with three blue sockets anywhere on an item, you can search this field with a wildcard for <code>*BBB*</code></td></tr>
+  <tr><td><code>sockets.sortedLinkGroup</code></td><td>
+    <p>This contains a separate object for each link group, with the sockets in the group sorted for searching. For example, if you want to find an item that has at least a 4L with 2 Blue, 1 Red, and 1 Green, you would need to search each link group (<code>0</code>, <code>1</code>, <code>2</code>... etc.) for <code>*BBGR*</code> (note the wildcard match should be sorted)</p>
+    <p>An example ElasticSearch query to find this object <a href="https://gist.github.com/trackpete/db7cd64b4efb36bb4795">available here.</a>.</p>
+  </td></tr>
+
+  <tr><td><code><font size=4><b>properties</b></font></code></td><td>
+
+    <p>The properties mapping contains information from the <code>properties</code> fields in the original JSON, however it is divided into sub-mappings based on the <code>baseItemType</code> of the item. This was done to allow dynamic search filters based on the item type selected. A query for the properties of a Flask, for example, should not give you the option to search for an Armour amount.</p>
+    <p>In addition to these sub-mappings, there is some data tied directly to <code>properties</code>. An overview of all of this is below.</p>
+    <p>Note that unless otherwise specified, no values are normalized for Quality 0 or 20.</p>
+    <p>Some of the mappings below have <code>properties</code> shorted to <code>p</code> for formatting - they are still <code>properties</code> in the actual mapping</p>
+  </td></tr>
+
+  <tr><td><code>properties.Quality</code></td><td>A number indicating the +% Quality of the item</td></tr>
+  <tr><td><code>properties.Armour.*</code></td><td>
+    <p><i>[original:properties]</i> This set of mappings includes basic information about Armour items. At the time of writing it includes the following mappings:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>Armour</kbd></dt><dd>The Armour stat of the item</dd>
+      <dt style="margin-bottom:5px"><kbd>Energy Shield</kbd></dt><dd>The Energy Shield stat of the item</dd>
+      <dt style="margin-bottom:5px"><kbd>Evasion Rating</kbd></dt><dd>The Evasion Rating stat of the item</dd>
+      <dt><kbd>Chance to Block</kbd></dt><dd>The item's percent chance to block as an integer</dd>
+    </dl>
+
+  </td></tr>
+  <tr><td><code>p.Card.Stack Size</code></td><td><i>[original:properties]</i> A string containing the stack size - this is not interpreted. It will usually be something like <code>1/5</code> etc. It is generally assumed that if someone posts an item with a Stack Size that the price/listing/etc. is for 1 item in the stack, so stack size is not very important.</td></tr>
+  <tr><td><code>p.Currency.Imprinted</code></td><td><i>[original:properties]</i> Unknown?</td></tr>
+  <tr><td><code>p.Currency.Stack Size</code></td><td><i>[original:properties]</i> A string containing the stack size - this is not interpreted. It will usually be something like <code>1/5</code> etc. It is generally assumed that if someone posts an item with a Stack Size that the price/listing/etc. is for 1 item in the stack, so stack size is not very important.</td></tr>
+  <tr><td><code>properties.Flask.*</code></td><td>
+    <p><i>[original:properties]</i> This set of mappings contains various Flask properties derived from the original JSON data. It includes the flask action (such as <code>+3000 to Armour</code>), how long the effect lasts, etc.</p>
+    <p>Some Flask properties include two values (<code>%1</code> and <code>%2</code> in the original JSON, for example). These are extracted and converted to <code>#</code> in the property name, with the primary and secondary value mapped as <code>x</code> and <code>y</code>. An example of this is below:<p>
+
+    <p><kbd>Recovers # Life over # Seconds</kbd>:<br>
+       <code>properties.Flask.Recovers # Life over # Seconds.x</code> is <code>500</code><br>
+       <code>properties.Flask.Recovers # Life over # Seconds.y</code> is <code>5</code><br><br>
+       The readable item will be: <kbd>Recovers 500 Life over 5 Seconds</kbd></p>
+
+    <p>The full list of Flask mappings can be seen via a mapping query such as: <code>curl 'http://apikey:DEVELOPMENT-Indexer@api.exiletools.com/index/_mapping/field/properties.Flask.*?pretty'</code>
+  </td></tr>
+  <tr><td><code>properties.Gem.*</code></td><td>
+    <p><i>[original:properties]</i> This set of mappings contains almost all of the important information about Gems (they have Properties, not Mods). Almost every stat other than Quality for a gem will have its own mapping in this series. The full list of Gem mappings can be seen via a mapping query such as: <code>curl 'http://apikey:DEVELOPMENT-Indexer@api.exiletools.com/index/_mapping/field/properties.Gem.*?pretty'</code></p>
+    <p>Some of the more important groupings under <code>properties.Gem</code> are listed below:</p>
+
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>Level</kbd></dt><dd>The current level of the gem</dd>
+      <dt style="margin-bottom:5px"><kbd>type.*</kbd></dt><dd>A Boolean <code>true</code> is set for each type that applies to the gem, such as <code>type.Bow=true</code> for Bow Gems</dd>
+      <dt><kbd>experience.*</kbd></dt><dd>Contains information on the experience for the gem</dd>
+    </dl>
+
+    <p>And of course there are more for things like Cast Time, Cooldown Time, Critical Strike Chance, etc.</p>
+    <p>Some example Elastic Search queries for Gems are available here:</p>
+    <ul class="list" style="margin-left:0px">
+      <li> <a href="https://gist.github.com/trackpete/fd4c5b2a3bc47c1356f9">Find the names of all type: AoE gems</a></li>
+      <li> <a href="https://gist.github.com/trackpete/9a68c4a4826737a76cde">Find some level 20 or higher gems</a></li>
+      <li> <a href="https://gist.github.com/trackpete/e4f2a041cd70c05a7208">Find some level 19 Fireball gems that are more than 50% leveled towards 20</a></li>
+    </ul>
+  </td></tr>
+  <tr><td><code>properties.Jewel.*</code></td><td>
+    <p><i>[original:properties]</i> Jewel properties - at the time of writing, there are three:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>Limited to</kbd></dt><dd>An integer saying how many of this jewel you may have socketed (infinite if not set)</dd>
+      <dt style="margin-bottom:5px"><kbd>Radius</kbd></dt><dd>A string indicating the radius of the jewel</dd>
+      <dt><kbd>The Goddess</kbd></dt><dd>?? This is set as a boolean <code>true</code> for the <kbd>Survival Secrets</kbd> jewel. Not sure what's up with this.</dd>
+    </dl>
+  </td></tr>
+  <tr><td><code>properties.Map.*</code></td><td>
+    <p><i>[original:properties]</i> Map properties - at the time of writing, there are four:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>Item Quantity</kbd></dt><dd>An integer of the Item Quantity bonus (i.e. <code>150</code> means <code>+150%</code>)</dd>
+      <dt style="margin-bottom:5px"><kbd>Item Rarity</kbd></dt><dd>An integer of the Item Rarity bonus (i.e. <code>150</code> means <code> +150%</code>)</dd>
+      <dt style="margin-bottom:5px"><kbd>Map Tier</kbd></dt><dd>The tier (aka level, sorta) of the map as an integer value.</dd>
+      <dt><kbd>Monster Pack Size</kbd></dt><dd>An integer of the Monster Pack Size bonus (i.e. <code>30</code> means <code> +30%</code>)</dd>
+    </dl>
+  </td></tr>
+  <tr><td><code>properties.Weapon.*</code></td><td>
+    <p><i>[original:properties]</i> This set of mappings contains an extensive set of both direct and calculated data about weapons. At the time of writing, this includes:</p>
+
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>Attacks per Second</kbd></dt><dd><i>[original:Attacks per Second]</i> The attacks per second (APS) of the weapon</dd>
+      <dt style="margin-bottom:5px"><kbd>Chaos DPS</kbd></dt><dd>If the item has flat Chaos damage, this number is the average flat Chaos damage times APS</dd>
+      <dt style="margin-bottom:5px"><kbd>Chaos Damage</kbd></dt><dd>This will have a <code>Chaos Damage.min</code> and <code>Chaos Damage.max</code> mapping with integer values if the item has flat chaos damage</dd>
+      <dt style="margin-bottom:5px"><kbd>Critical Strike Chance</kbd></dt><dd><i>[original:Critical Strike Chance]</i>The current critical strike chance of the weapon</dd>
+      <dt style="margin-bottom:5px"><kbd>Elemental DPS</kbd></dt><dd>The calculated DPS of all Elemental damage on the weapon (<a href="https://github.com/trackpete/exiletools-indexer/issues/62">bugged as of 2015/12/16</a>)</dd>
+      <dt style="margin-bottom:5px"><kbd>Elemental Damage</kbd></dt><dd><code>min</code> and <code>max</code> of all elemental damage added together. Note this confuses some complex unique items such as Dyadus</dd>
+      <dt style="margin-bottom:5px"><kbd>Physical DPS</kbd></dt><dd>Calculated average physical damage DPS</dd>
+      <dt style="margin-bottom:5px"><kbd>Physical Damage</kbd></dt><dd><code>min</code> and <code>max</code> physical flat damage</dd>
+      <dt style="margin-bottom:5px"><kbd>Total DPS</kbd></dt><dd>Calculated total of physical, elemental, and chaos DPS</dd>
+      <dt><kbd>type</kbd></dt><dd>This is a set of boolean submappings (i.e. `properties.Weapon.type.Dagger=true`) for Weapon types as used by skills/etc. to determine which types of weapon the item is. This is different than `equipType` or `itemType` as it indicates specific properties flagged by the game.</dd>
+    </dl>
+  </td></tr>
+
+<tr><td colspan=2>
+  <h2><b>Mods Mappings:</b></h2>
+
+  <p>GGG provides mod information in a very simple array for implicit, explicit, crafted, and cosmetic mods. On import, these mods are parsed through a series
+of rules, generally as follows:</p>
+
+  <ul>
+    <li> Single numbers are replaced with a <code>#</code> in the mapping field, with the actual number added to the value - examples of this include:<br><br>
+    <ul>
+      <li> <kbd>Socketed Gems have 8% reduced Mana Cost</kbd> becomes <code>Socketed Gems have #% reduced Mana Cost : 8</code>
+      <li> <kbd>Gain 10 Life when you Taunt an Enemy</kbd> becomes <code>Gain # Life when you Taunt an Enemy : 10</code>
+      <li> <kbd>-1 Maximum Power Charges</kbd> becomes <code>-# Maximum Power Charges : 1</code>
+      <li> <kbd>+2% to maximum Fire Resistance</kbd> becomes <code>+#% to maximum Fire Resistance : 2</code>
+      <li> <kbd>+14 to all Attributes</kbd> becomes <code>+# to all Attributes : 14</code>
+      <li> <kbd>10% increased maximum Life</kbd> becomes <code>#% increased maximum Life : 10</code>
+      <li> <kbd>+20 to maximum Life</kbd> becomes <code>+# to maximum Life : 20</code>
+   </ul><br>
+
+    <li> Paired numbers separated by a <code>-</code> are replaced with <code>#-#</code> in the mapping field, with a <code>min</code> and <code>max</code> submapping created for the first and second value. Examples of this include:<br><br> 
+    <ul>
+      <li> <kbd>Adds 1-30 Chaos Damage</kbd> becomes <code>Adds #-# Chaos Damage.min : 1</code> and <code>Adds #-# Chaos Damage.max : 30</code>
+      <li> <kbd>Adds 1-2 Fire Attack Damage per Buff on You</kbd> becomes <code>Adds #-# Fire Attack Damage per Buff on You.min : 1</code> and <code>Adds #-# Fire Attack Damage per Buff on You.max : 2</code>
+    </ul><br>
+
+    <li> Mods with no numerical values embedded are mapped directly with the mod name and set as a boolean <code>true</code>. Examples include:<br><br>
+      <ul>
+        <li> <kbd>Culling Strike</kbd> becomes <code>Culling Strike : true</code>
+        <li> <kbd>Has Verdant Weapon Effect</kbd> becomes <code>Has Verdant Weapon Effect : true</code>
+        <li> <kbd>Hits can't be Evaded</kbd> becomes <code>Hits can't be Evaded : true</code>
+      </ul><br>
+  </ul>
+
+  <p>The mappings for mods are divided into three major mapping sets, each of which provides slightly different information:</p>
+
+  <dl class="dl-horizontal">
+    <dt style="margin-bottom:5px"><kbd>mods</kbd></dt><dd>This contains the individual mod information as it is attached to the item. The mods mapping is dividing into a series of sub mappings for optimized search, beginning with <code>equipType</code> followed by the mod type (<code>implicit</code> <code>explicit</code> <code>crafted</code> <code>cosmetic</code>). Individual mods are then nested below this, for example <code>mods.Amulet.crafted.+# to maximum Life</code></dd>
+    <dt style="margin-bottom:5px"><kbd>modsTotal</kbd></dt><dd>This is a flat mapping (no <code>equipType</code>) that contains the sum of all exactly matching mods on an item. For example, if an amulet has <code>mods.Amulet.implicit.+10 to Strength</code> and <code>mods.Amulet.explicit.+20 to Strength</code>, the corresponding <code>modsTotal</code> mapping and value will be <code>modsTotal.+# to Strength : 30</code>. <b>Note:</b> Boolean (true/false) mods, Cosmetic mods, Map item mods, Gem item mods, Flask item mods, and Divination Card mods are not added to <code>modsTotal</code> because these mods are never duplicated in implicit/explicit/crafted.</dd>
+    <dt><kbd>modsPseudo</kbd></dt><dd>These are custom built mods that each require an individually configuring parsing routine to determine. They include things such as total life on an item and are documented in more detail below.</dd>
+  </dl>
+
+  <p>You can browse a simple list of the mappings in the current index at the following links:</p>
+
+  <ul>
+    <li> <a href="http://exiletools.com/info/mapping?field=mods">mods mappings</a>
+    <li> <a href="http://exiletools.com/info/mapping?field=modsTotal">modsTotal mappings</a>
+    <li> <a href="http://exiletools.com/info/mapping?field=modsPseudo">modsPseudo mappings</a>
+  </ul>
+
+  <h3>Using the mappings for tool development:</h3>
+
+  <p>The theory behind laying out sub mappings for <code>equipType</code> is to allow more accurate and stricter search by laying out reactive search parameters. This works when the searcher is being lazy (searching for <code>mods.Amulet.explicit.+# to maximum Life</code> will find Amulets without needing to specify <code>equipType</code>) but more importantly allows a tool developer to define a workflow where <i>only valid mods can be searched for.</i></p>
+
+  <p>The mapping makes it very simple to only show valid mods for Amulets if the player is searching for an Amulet. Instead of scrolling through a huge list of every possible mod, many of which are not possible on Amulets, they can be presented with a list of <i>only valid mods</i>. Using dynamic ES queries, you can even show the user how many Amulets are available with that mod and what the actual range is - preventing someone from ever searching for an Amulet with +200 to maximum Life if the highest one in the index has only +86 to maximum Life.</p>
+
+  <p>The intent is that any time someone searches for an item, ideally they will start by specifying the <code>equipType</code> to optimize the search. If this is not specified, you can still pull possible mappings using wildcard matches against the field names - then list those with the <code>equipType</code>! Thus if this isn't specified and they go straight to mods, they can still narrow down the <code>equipType</code> by selecting from the appropriate section on the mods list.</p>
+
+  <p><code>modsTotal</code> is just kinda left there as a bit of an orphan. It will allow you to search for items with +2 to Endurance Charges, for example, but you have to know what items can have that as an implicit and explicit mod to be added together first - or, you can just do a generic search and see what happens! I'm not sure how often people would use the <code>modsTotal</code> but I've left it in as an interesting thing, since you can search for a combined implicit and explicit mod value without having to create a pseudo mod.</p>
+
+</td></tr>
+  <tr><td><code><font size=4><b>modsPseudo</b></font></code></td><td>
+    <p>This section contains a current list of pseudo mods - note that these may be expanded at any time, watch <a href="https://github.com/trackpete/exiletools-indexer/issues/38">this issue on Github</a> for more:</p>
+
+  <ul>
+    <li style="margin-bottom:5px"> <kbd># of Elemental Resistances</kbd> The number of different elemental resistances on the item
+    <li style="margin-bottom:5px"> <kbd># of Resistances</kbd> The number of different resistances on the item (elemental + chaos)
+    <li style="margin-bottom:5px"> <kbd>+# Total to Attributes</kbd> The total number of attribute points the item gives (note: use <code>modsTotal.+# to all Attributes</code> for a flat number to all attributes)
+    <li style="margin-bottom:5px"> <kbd>+# Total to [Attribute]</kbd> The total number of this attribute from all mods that give attribute bonuses (Dexterity, Strength, Intelligence)
+    <li style="margin-bottom:5px"> <kbd>+# Total to maximum Life</kbd> Includes all flat life bonuses on the item plus the life bonus from all Strength on the item.
+    <li style="margin-bottom:5px"> <kbd>+# Total to Elemental Resistances</kbd> The total value of all elemental resistances on the item from all mods with elemental resist
+    <li style="margin-bottom:5px"> <kbd>+# Total to Resistances</kbd> The total value of all resistances on the item (elemental + chaos) from all mods with resists
+    <li> <kbd>+# Total to [Type] Resistance</kbd> The total value of all resistance mods on the item for the specified type (Cold, Chaos, etc.)
+
+
+  </ul>
+
+</td></tr></table>
+
+<!--
+
+  <tr><td><code>x</code></td><td>x</td></tr>
+  <tr><td><code>x</code></td><td>x</td></tr>
+  <tr><td><code>x</code></td><td>x</td></tr>
+  <tr><td><code>x</code></td><td>x</td></tr>
+  <tr><td><code>x</code></td><td>x</td></tr>
+  <tr><td><code>x</code></td><td>x</td></tr>
+</table>
+
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>1</kbd></dt><dd>2</dd>
+      <dt style="margin-bottom:5px"><kbd>1</kbd></dt><dd>2</dd>
+      <dt><kbd>1</kbd></dt><dd>2</dd>
+    </dl>
+-->
+
+</font>
+<p>On mods: (these are examples, not actual structure)</p>
+
+<ul>
+<li>No, I can't tell you what tier of mod or what actual mod or how many prefix/suffixes are on a mod. GGG does not make that information available.
+<li>The modstotal section is literally just a bunch of "modnametotal += mod value" calculations - if the mods don't have the exact same name, they don't get added together. That's why there's a separate entry for total Fire Resistance vs Fire and Lightning Resistance. Go to Pseudo Mods where they are available for non-literal totals.
+</ul>
+
+
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+</body>
+
+</html>

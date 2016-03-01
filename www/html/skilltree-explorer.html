@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en" ng-app="EsConnector">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Path of Exile Top Players Skilltree Explorer</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link href="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.css" rel="stylesheet">
+  <link href="css/ui-layout.css" rel="stylesheet">
+  <link href="css/select.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'  type='text/css'>
+
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular-route.min.js"></script>
+  <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
+  <script src="js/thirdparty/ui-bootstrap-tpls-0.14.3.min.js"></script>
+  <script src="js/thirdparty/angular-promise-buttons.min.js"></script>
+  <script src="js/thirdparty/angular-cache.min.js"></script>
+  <script src="js/thirdparty/select.min.js"></script>
+  <script src="js/thirdparty/highcharts-ng.min.js"></script>
+  <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.6/ngStorage.min.js"></script>
+  <script src="http://code.highcharts.com/stock/highstock.src.js"></script>
+  <script src="http://code.highcharts.com/stock/highcharts-more.src.js"></script>
+  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+  <script src="js/es-skilltree.js"></script>
+
+<style>
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+@font-face {
+    font-family: "fontin";
+    src: url("css/fontin-regular-webfont.woff") format('woff');
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- Note: Indenting for the body starts at base for simplicity -->
+<!-- Simple header -->
+<div style="width:100%;min-width:550px;padding:10px;padding-left:25px;background-color:#F6E3CE">
+  <noscript>Uh, it appears your browser doesn't support JavaScript! This page requires JavaScript and a host of other modern web plugins to work, sorry. :(</noscript>
+
+  <div class="row">
+    <div class="col-md-4">
+      <font style="font-size:150%;font-weight:bold">
+        Path of Exile Top Player's Skilltree Explorer
+      </font>
+    </div>
+    <div class="col-md-7">
+      <font style="font-size:150%">
+        dynamically generated using the <a href="http://exiletools.com/blog/2016/02/02/analyzing-skilltree-data-for-the-top-path-of-exile-players/">public ExileTools Top Player's Skilltrees Index</a>
+      </font>
+    </div>
+    <div class="col-md-1">
+      <font style="font-size:80%;color:red;font-weight:bold">DEVELOPMENT VERSION</font>
+    </div>
+  </div>
+
+</div>
+
+<!-- Main Body DIV -->
+<div id="main" style="width:100%;padding-left:25px;padding-right:25px;min-width:550px">
+
+  <!-- table seems to work better for this than anything else -->
+  <div ng-controller="leagueChooser" class="clearfix">
+    <div ng-if="LeagueStats" style="float:left;width:80%">
+      <h4>To Explore Skilltrees, Choose a League:</h4>
+      <table cellspacing=0 cellpadding=0 border=0>
+        <tr>
+          <td ng-repeat="(key, val) in LeagueStats">
+            <button class="btn" ng-click="selectLeague(key)" promise-btn style="margin:3px">{{key}}</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div style="text-align:right;padding-top:5px">
+      <!-- This is hard coded right now, should probably change it sometime -->
+      <p style="font-size:.8em">
+        <b><font color=darkgray>Most Recent Data Run:</font></b><br>
+        <b>{{MostRecentRun}}</b>
+      </p>
+      <p style="font-size:.7em">
+        <a href="https://github.com/trackpete/exiletools-indexer/issues">Follow this project on GitHub!</a>
+      </p>
+    </div>
+  </div>
+  <!-- End league Chooser -->
+
+  <hr width=100% size=1>
+  <!-- Empty Div for Loader -->
+  <div id="loaderProgress"></div>
+  <div id="loader"></div>
+  <!-- Empty Div to display content -->
+  <div class="ng-view" style="width:100%"></div>
+
+  <!-- START Template for Unique Chooser -->
+  <script type="text/ng-template" id="uniqueChooser.html">
+    <div ng-if="Uniques">
+      <ui-select ng-model="unique.selected" theme="selectize" ng-disabled="disabled" style="min-width:250px;max-width:550px" on-select="selectUnique(unique.selected)">
+        <ui-select-match placeholder="Choose a unique item...">{{$select.selected}}</ui-select-match>
+        <ui-select-choices repeat="unique in Uniques | filter: $select.search">{{unique}}</ui-select-choices>
+      </ui-select>
+    </div>
+  </script>
+  <!-- END Template for Unique Chooser -->
+
+  <!-- START Template for the Unique Report -->
+  <script type="text/ng-template" id="uniqueReport.html">
+  <!-- Empty Div for failedReport -->
+  <div ng-if="failedReport">
+    <div class="alert alert-warning" role="alert" style="min-width:200px;max-width:800px">
+     <p style="font-size:200%"><i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;&nbsp;There was a problem generating this report!</p>
+     <hr width=100% size=1>
+     <p>
+        The most likely reason for this error is that you attempted a highly filtered search for a rare item and thus received no
+        results for one or more queries. For example, if you search for "6L Ashrend Buckskin Tunics in the Past 3 Days" it's likely
+        there are no matching results and thus you will see this page. Please <a href="javascript:history.back()">go back and try a less restrictive search</a>.
+     </p>
+     <p>
+       You can also <a href="#/{{league}}/{{unique}}/AllLeague">click here to reset to a simple All League search for this item.</a>
+     </p>
+     <hr width=100% size=1>
+     <p>You attempted to generate a report for:</p><br>
+     <ul>
+       <li> League: <b>{{league}}</b>
+       <li> Unique Item: <b>{{unique}}</b>
+       <li> Report Option: <b>{{options}}</b>
+       <li ng-if="links"> Links Filter: <b>{{links}}</b>
+     </ul><br>
+     <p>The backend returned the following error(s):</p><br>
+     <ul>
+       <li ng-repeat="error in errors"> {{error}}
+     </ul>
+    </div>
+  </div>
+
+    <!-- Master DIV - only displays data if readyReport is set -->
+    <div style="width:100%" ng-if="readyReport">
+      <!-- Tabs to select different reports, data pulled from javascript for easy updating -->
+      <ul class="nav nav-tabs">
+        <li ng-repeat="tab in tabs" role="presentation" class="{{tab.class}}"><a href="#/{{league}}/{{unique}}/{{tab.URL}}{{addToTabURL}}">{{tab.title}}</a></li>
+      </ul>
+      <br>
+      <ul class="nav nav-tabs" ng-if="hasUpTo6Sockets">
+        <li ng-repeat="tab in tabs6S" role="presentation" class="{{tab.class}}"><a href="#/{{league}}/{{unique}}/{{options}}/{{tab.URL}}">{{tab.title}}</a></li>
+      </ul>
+      <br>
+
+      <table width=100% border=0 style="background:linear-gradient(to bottom, #cf7025 0%,  #FFFFFF 90%)">
+        <tr>
+          <td valign=top style="padding-left:15px;padding-top:15px;padding-bottom:15px;padding-right:2px">
+            <img ng-repeat="url in Icons" ng-src="{{url}}" style="max-height:150px">
+          </td>
+          <td valign=top style="padding-left:3px;padding-top:15px;padding-bottom:15px;padding-right:15px">
+            <p style="font-size:5vw"><font face="fontin"><b>{{unique}}</b></font></p>
+            <p style="font-size:.8em">
+              <b><i class="fa fa-database">&nbsp;</i> {{league}}</b> League &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
+              <b><i class="fa fa-cog">&nbsp;</i> {{baseItemType}}</b> Base &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
+              <b><i class="fa fa-cogs">&nbsp;</i> {{itemType}}</b> Type &nbsp;&nbsp;&nbsp;<i class="fa fa-angle-right"></i>&nbsp;&nbsp;&nbsp;
+              <b><i class="fa fa-child">&nbsp;</i> {{equipType}}</b> Equip Slot
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <hr width=100% size=1>
+      <h1>General Shop Forum Information:</h1><br>
+
+      <div class="row" style="">
+        <div class="col-md-3" style="">
+          <div class="alert alert-info" ng-if="itemsTotal" style="text-align:center">
+            <p style="font-size:200%">
+              <i class="fa fa-check-square-o fa-lg"></i> 
+              {{itemsTotal}} Total Seen
+            </p>
+            <p style="font-size:130%">
+              {{verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD}} ({{(verifiedPrice.YES + verifiedPrice.GONE + verifiedPrice.OLD) / (verified.YES + verified.GONE + verified.OLD) * 100 | number : 0}}%) with B/O
+            </p>
+          </div>
+        </div>
+        <div class="col-md-3" style="">
+          <div class="alert alert-success" ng-if="verified.YES" style="text-align:center">
+            <p style="font-size:200%">
+              <i class="fa fa-shopping-cart fa-lg"></i> {{verified.YES}} Verified Now
+            </p>
+            <p style="font-size:130%">
+              {{verifiedPrice.YES}} ({{verifiedPrice.YES / verified.YES * 100 | number : 0}}%) with B/O
+            </p>
+          </div>
+        </div>
+        <div class="col-md-3" style="">
+          <div class="alert alert-danger" ng-if="verified.GONE" style="text-align:center" uib-popover="Gone items changed from verified to unverified or were removed from a shop. It usually indicates either the seller gave up on selling the item or successfully traded it to another player." popover-trigger="mouseenter">
+            <p style="font-size:200%">
+              <i class="fa fa-external-link fa-lg"></i> {{verified.GONE}} Gone
+            </p>
+            <p style="font-size:130%">
+              {{verifiedPrice.GONE}} ({{verifiedPrice.GONE / verified.GONE * 100 | number : 0}}%) with B/O
+            </p>
+          </div>
+        </div>
+          <div class="col-md-3" style="">
+          <div class="alert alert-warning" ng-if="uniqueSellers" style="text-align:center" uib-popover="This data shows the number of unique seller account names (not shop forum threads) that have listed this item for sale" popover-trigger="mouseenter">
+            <p style="font-size:200%">
+              <i class="fa fa-users fa-lg"></i> Sellers: {{uniqueSellers}}
+            </p>
+            <p style="font-size:130%">
+              {{uniqueSellersWithPrice}} ({{uniqueSellersWithPrice / uniqueSellers * 100 | number : 0}}%) used a B/O
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:100%;padding-left:3%;padding-right:3%;padding-top:15px;padding-bottom:15px;background-color:#EEEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;" ng-if="graphCommonRankConfig" uib-popover="If this graph doesn't appear properly, try hitting reload - I'm still tracking down this occasional bug, sorry!" popover-trigger="mouseenter">
+        <p ng-if="graphCommonRankConfig" style="font-size:1.1.5em;padding-left:2%">{{unique}} is the <font size=+2><b>{{commonRank}}{{commonRankOrd}}</b></font> most common unique for sale in {{league}} out of {{totalCount}} different unique items</p>
+        <div style="width:100%"><highchart id="graphCommonRank" config="graphCommonRankConfig" ng-if="graphCommonRankConfig"></highchart></div>
+        <!-- Once again tables seem the best way to format this -->
+        <center>
+          <table style="width:90%;font-size:80%;font-weight:bold">
+            <tr><td>Extremely Common</td><td>Common</td><td align=right>Uncommon</td><td align=right>Extremely Uncommon</td></tr>
+          </table>
+         </center>
+      </div>
+
+      <br>
+      <hr width=100% size=1>
+      <h1>Pricing Data: <small>(for items with prices only)</small></h1><br>
+
+      <div class="row" style="">
+        <div class="col-md-4">
+          <div style="text-align:center;background-color:#EEFFEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
+            <p style="font-size:2.5em;font-weight:bold">Lowest 5% Price</p>
+            <div class="row">
+              <div class="col-xs-6" style="font-size:1.5em"><b><font color=#00BB00>Verified Now:</b><br/>{{value.allTime5 | number : 1}} {{value.allTime5Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><b><font color=#BB0000>GONE:</b><br/>{{valueGONE.allTime5 | number : 1}} {{valueGONE.allTime5Type}}</font></div>
+            </div>
+            <highchart id="chartPrices5thGONE" config="chartPrices5thGONEConfig" style="height:200px"></highchart>
+            <p><b>5%</b> of this item were listed at or below this price.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div style="text-align:center;background-color:#FFFFEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
+            <p style="font-size:2.5em;font-weight:bold">Lowest 15% Price</p>
+            <div class="row">
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#00BB00><b>Verified Now:</b><br/>{{value.allTime15 | number : 1}} {{value.allTime15Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#BB0000><b>GONE:</b><br/>{{valueGONE.allTime15 | number : 1}} {{valueGONE.allTime15Type}}</font></div>
+            </div>
+            <highchart id="chartPrices15thGONE" config="chartPrices15thGONEConfig" style="height:200px"></highchart>
+            <p><b>15%</b> of this item were listed at or below this price.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div style="text-align:center;background-color:#FFEEEE;border: 1px solid #CCCCCC;-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;">
+            <p style="font-size:2.5em;font-weight:bold">Lowest 50% Price</p>
+            <div class="row">
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#00BB00><b>Verified Now:</b><br/>{{value.allTime50 | number : 1}} {{value.allTime50Type}}</font></div>
+              <div class="col-xs-6" style="font-size:1.5em"><font color=#BB0000><b>GONE:</b><br/>{{valueGONE.allTime50 | number : 1}} {{valueGONE.allTime50Type}}</font></div>
+            </div>
+            <highchart id="chartPrices50thGONE" config="chartPrices50thGONEConfig" style="height:200px"></highchart>
+            <p><b>50%</b> of this item were listed at or below this price.</p>
+          </div>
+        </div>
+      </div>
+      <br>
+      <hr width=100% size=1>
+      <h1>Miscellaneous Statistics:</h1><br>
+
+      <!-- Gauges for various item stats, specific layout is in es-uniques.js -->
+      <div class="row" style="width:100%">
+        <div class="col-md-4" style="text-align:center" uib-popover="In general, a Gone rate higher than 70% indicates the item is in demand and is likely to sell if priced appropriately. Rates lower than 50% indicate the item is not very popular and a seller should undercut the market to have a chance of selling it." popover-trigger="mouseenter">
+          <highchart id="gauge3GoneRatio" config="gauge3GoneRatioConfig" ng-if="verified.GONE > 0"></highchart>
+          <div ng-if="!verified.GONE"><b>No <font color=darkorange><b>GONE</b></font> items found matching this search.</b></div>
+        </div>
+        <div class="col-md-4" style="text-align:center" uib-popover="Unidentified uniques are determined by comparing the item icon with known identified uniques, however this is not always completely accurate. In general, an Unidentified rate of more than 5% is unusual." popover-trigger="mouseenter">
+          <highchart id="gauge1Unid" config="gauge1UnidConfig" ng-if="unidentifiedTotal > 0"></highchart>
+          <div ng-if="!unidentifiedTotal"><b>No <font color=darkgray><b>Unidentified</b></font> items found matching this search.</b></div>
+        </div>
+        <div class="col-md-4" style="text-align:center">
+          <highchart id="gauge2Corrupted" config="gauge2CorruptedConfig" ng-if="corruptedTotal > 0"></highchart>
+          <div ng-if="!corruptedTotal"><b>No <font color=red><b>Corrupted</b></font> items found matching this search.</b></div>
+        </div>
+      </div>
+
+      <br>
+      <hr width=100% size=1>
+      <h1>Specific Currency Type Statistics:</h1><br>
+
+      <div class="row" style="width:100%">
+        <div class="col-md-6"><div id="CurrencyTypes" ui-grid="CurrencyTypesGridOptions" style="height:300px"></div></div>
+        <div class="col-md-6"><div id="commonPricesGone" ui-grid="commonPricesGoneGridOptions" style="height:300px"></div></div>
+      </div>
+
+      <br>
+      <hr width=100% size=1>
+      <h1>Total Added and Removed per Day:</h1><br>
+      <p><i>Note: The index tracks when an item was added separately from when the item was last modified. Items can be added three weeks ago but modified yesterday, for example (modified means the price was changed).</i></p>
+      <div style="width:100%" class="clearfix">
+        <highchart id="chart1AddedRemoved" config="chart1AddedRemovedConfig" class="span10"></highchart>
+      </div>
+    </div>
+  </script>
+  <!-- END Template for the Unique Report -->
+
+
+
+</div>
+
+
+</body>
+</html>

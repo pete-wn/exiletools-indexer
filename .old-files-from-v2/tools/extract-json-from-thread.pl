@@ -50,19 +50,13 @@ $rawjson =~ s/\<\<set:(\S+?)\>\>//g;
 # encode the JSON data into something perl can reference 
 local $data = decode_json(encode("utf8", $rawjson));
 
-$outcount = 0;
-
 # Break down the JSON into individual items
 foreach my $itemx (@{$data}) {
   my $jsonx = JSON->new;
   undef %item;
-  next unless ($itemx->[1]->{typeLine} eq "Foul Staff");
-  $outcount++;
-  open(OUT, ">/tmp/staff/$outcount");
   print "=============================================================\n";
   print "Item #".$itemx->[0]." RAW JSON:\n";
   print $jsonx->pretty->encode($itemx->[1])."\n";  
-  print OUT $jsonx->pretty->encode($itemx->[1])."\n";  
   my $jsonout = &formatJSON($jsonx->encode($itemx->[1]));
   print "** Modified ES JSON: ****************************************\n";
   print $jsonx->pretty->encode($jsonx->decode($jsonout))."\n";

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Unofficial Official Path of Exile API: Character List</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/simple-sidebar.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <?php include("menubar.html")?>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Sidebar</a>
+<div style="width:90%">
+
+<div style="width:800px">
+<h1>Unofficial Official Path of Exile API: Character List</h1>
+
+<p><font size=1><b>Last Updated: 2015/12/29</b></font></p>
+
+<p>This page contains unofficial documentation on the pathofexile.com API to access a list of characters for accounts. This is not strictly an official API service, however it is publicly available and used by many tools.</p>
+
+
+<p>This API is available at the following base URL:</p>
+
+<pre><font size=4><b>https://pathofexile.com/character-window/get-characters</b></font></pre>
+
+<hr width=100% size=1>
+<h2>Request:</h2>
+
+<p>This API accepts the following parameters via GET or POST:</p>
+
+<font size=2>
+<table class=table table-condensed>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+<tr><td><code>accountName</code></td><td>The name of the account for which you would like to list the characters. If you are logged into pathofexile.com and do not specify an <code>accountName</code> it will default to your own account.</td></tr>
+
+</table>
+
+
+<div style="margin-top:35px" class="alert alert-info" role="alert">It is important to note that this API will only return data for accounts with character privacy disabled, or your own account if you have a valid session id!</div>
+<hr width=100% size=1>
+
+<h2>Response:</h2>
+
+<p>All characters are returned in a simple JSON array, with each character embedded as a JSON object:</p>
+
+<font size=2>
+<table class=table table-condensed>
+<tr>
+<th>JSON field</th>
+<th>Description</th>
+</tr>
+<tr><td><code>name</code></td><td>The character's name</td></tr>
+<tr><td><code>league</code></td><td>The league the character is in</td></tr>
+<tr><td><code>classId</code></td><td><p>A numerical id indicating the class:</p>
+    <dl class="dl-horizontal">
+      <dt style="margin-bottom:5px"><kbd>0</kbd></dt><dd>Scion</dd>
+      <dt style="margin-bottom:5px"><kbd>1</kbd></dt><dd>Marauder</dd>
+      <dt style="margin-bottom:5px"><kbd>2</kbd></dt><dd>Ranger</dd>
+      <dt style="margin-bottom:5px"><kbd>3</kbd></dt><dd>Witch</dd>
+      <dt style="margin-bottom:5px"><kbd>4</kbd></dt><dd>Duelist</dd>
+      <dt style="margin-bottom:5px"><kbd>5</kbd></dt><dd>Templar</dd>
+      <dt><kbd>6</kbd></dt><dd>Shadow</dd>
+    </dl>
+</td></tr>
+<tr><td><code>class</code></td><td>Text of the class type</td></tr>
+<tr><td><code>level</code></td><td>The current level of the character</td></tr>
+</table>
+<hr width=100% size=1>
+
+<div class="alert alert-danger" role="alert"><p>Invalid account names or accounts with characters hidden via privacy settings will return the generic response:</p>
+<p style="margin-left:25px"><font size=4><pre>false</pre></font></p></div>
+
+<hr width=100% size=1>
+
+<p>Example Pretty Printed output from this endpoint can be seen below:</p>
+
+<pre>
+[
+  {
+    "name": "myrangerdude",
+    "league": "Standard",
+    "classId": 2,
+    "class": "Ranger",
+    "level": 66
+  },
+  {
+    "name": "myduelistdude",
+    "league": "Standard",
+    "classId": 4,
+    "class": "Duelist",
+    "level": 81
+  },
+  {
+    "name": "anotherduelistOP",
+    "league": "Standard",
+    "classId": 4,
+    "class": "Duelist",
+    "level": 78
+  },
+  {
+    "name": "mycritmaster",
+    "league": "Standard",
+    "classId": 6,
+    "class": "Shadow",
+    "level": 82
+  }
+]
+</pre>
+
+
+
+
+
+
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+</body>
+
+</html>
