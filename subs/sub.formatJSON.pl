@@ -534,7 +534,7 @@ sub formatJSON {
 
   # Create a default message
   if ($item{shop}{amount} && $item{shop}{currency}) {
-    $item{shop}{defaultMessage} = "\@$item{shop}{sellerAccount} I would like to buy your $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
+    $item{shop}{defaultMessage} = "\@$item{shop}{lastCharacterName} I would like to buy your $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
   }
 
   my $jsonout = JSON::XS->new->utf8->encode(\%item);
