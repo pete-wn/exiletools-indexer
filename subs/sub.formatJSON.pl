@@ -64,6 +64,7 @@ sub formatJSON {
 
     $item{shop}{amount} += $priceAmount;
     $item{shop}{currency} = $standardCurrency;
+    $item{shop}{price}{"$standardCurrency"} += $priceAmount;
     $item{shop}{saleType} = $priceType;
     $item{shop}{priceSource} = "note";
     $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
