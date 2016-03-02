@@ -52,15 +52,15 @@
 <p>The full mapping can be accessed using the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-mapping.html">Get Mapping API</a> from ElasticSearch. I have also provided a simple tool that will extract plain text mapping links for fields as follows:</p>
 
 <ul>
-  <li> <a href="http://exiletools.com/info/mapping">http://exiletools.com/info/mapping</a> shows the entire mapping<br><br>
-  <li> <code>http://exiletools.com/info/mapping?field=[mapping]</code> shows information for a specific field and can used at any depth (<code>*</code> is supported). Examples include:<br><br>
+  <li> <a href="http://api.exiletools.com/endpoints/mapping">http://api.exiletools.com/endpoints/mapping</a> shows the entire mapping<br><br>
+  <li> <code>http://api.exiletools.com/endpoints/mapping?field=[mapping]</code> shows information for a specific field and can used at any depth (<code>*</code> is supported). Examples include:<br><br>
   <ul>
-    <li> <a href="http://exiletools.com/info/mapping?field=info">http://exiletools.com/info/mapping?field=info</a> show all info fields
-    <li> <a href="http://exiletools.com/info/mapping?field=mods.Amulet.explicit">http://exiletools.com/info/mapping?field=mods.Amulet.explicit</a> show all Amulet explicit mods
-    <li> <a href="http://exiletools.com/info/mapping?field=mods.*.explicit">http://exiletools.com/info/mapping?field=mods.*.explicit</a> show all possible explicit mods
-    <li> <a href="http://exiletools.com/info/mapping?field=mods.Ring.crafted">http://exiletools.com/info/mapping?field=mods.Ring.crafted</a> show all Ring crafted mods
-    <li> <a href="http://exiletools.com/info/mapping?field=properties.Gem.type">http://exiletools.com/info/mapping?field=properties.Gem.type</a> show all possible Gem types
-    <li> <a href="http://exiletools.com/info/mapping?field=properties.Gem.type">http://exiletools.com/info/mapping?field=properties.Gem.type</a> show all possible Gem types
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=info">http://api.exiletools.com/endpoints/mapping?field=info</a> show all info fields
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=mods.Amulet.explicit">http://api.exiletools.com/endpoints/mapping?field=mods.Amulet.explicit</a> show all Amulet explicit mods
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=mods.*.explicit">http://api.exiletools.com/endpoints/mapping?field=mods.*.explicit</a> show all possible explicit mods
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=mods.Ring.crafted">http://api.exiletools.com/endpoints/mapping?field=mods.Ring.crafted</a> show all Ring crafted mods
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=properties.Gem.type">http://api.exiletools.com/endpoints/mapping?field=properties.Gem.type</a> show all possible Gem types
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=properties.Gem.type">http://api.exiletools.com/endpoints/mapping?field=properties.Gem.type</a> show all possible Gem types
   </ul>
 </ul>
 
@@ -74,6 +74,7 @@
   <li style="margin-bottom:5px"> String fields are non_analyzed and case sensitive except where indicated otherwise. For example, <code>amulet</code> will return no matches if the string in the field is <code>Amulet</code>.
   <li style="margin-bottom:5px"> Many fields will only be present if they are relevant. For example, an item with no <code>Requirements</code> will not have any data for <code>Requirements</code> in its JSON structure (instead of a bunch of <code>0's</code> or <code>nulls</code>). There are some exceptions to this.
   <li style="margin-bottom:5px"> The mapping is globally dynamic. New fields that are parsed in the conversion may be added at any time. For example, if someone posts a new item that has a requirement of 50 Awesomeness, a new <code>requirements.Awesomeness</code> mapping should be added.
+  <li> Any object that has a <code>.min</code> and <code>.max</code> field should also have a <code>.avg</code> field which is the average of those two
   <li> <i>[original:field]</i> denotes the data is extracted directly from the given field in the original JSON data
 </ul>
 
@@ -114,7 +115,7 @@
   </td></tr>
   <tr><td><code>shop.amount</code></td><td>The amount of currency requested (if any)</td></tr>
   <tr><td><code>shop.currency</code></td><td>The type of currency requested (if any)</td></tr>
-  <tr><td><code>shop.chaosEquiv</code></td><td>A derived chaos equivalent value based on <code>shop.amount</code> and <code>shop.currency</code>. It is fixed and will not always reflect current trading values. This field is intended to be primarily used for sorting or generalized calculations. Searching for items with a <code>chaosEquiv &gt; 0</code> will only show items with a listed price. The rates used for index conversion are <a href="http://exiletools.com/rates">available here</a>.</td></tr>
+  <tr><td><code>shop.chaosEquiv</code></td><td>A derived chaos equivalent value based on <code>shop.amount</code> and <code>shop.currency</code>. It is fixed and will not always reflect current trading values. This field is intended to be primarily used for sorting or generalized calculations. Searching for items with a <code>chaosEquiv &gt; 0</code> will only show items with a listed price (but use <code>shop.hasPrice</code> for queries that are not aggregations/etc. on <code>chaosEquiv</code>). The rates used for index conversion are <a href="http://exiletools.com/rates">available here</a>.</td></tr>
   <tr><td><code>shop.saleType</code></td><td><p>This indicates what type of sale the item was listed as:</p>
     <dl class="dl-horizontal">
       <dt style="margin-bottom:5px"><kbd>b/o</kbd></dt><dd>The item was tagged with a buyout price</dd>
@@ -125,6 +126,10 @@
   </td></tr>
   <tr><td><code>shop.note</code></td><td>The original note embedded with the item.</td></tr>
   <tr><td><code>shop.sellerAccount</code></td><td>The account name of the seller</td></tr>
+  <tr><td><code>shop.priceSource</code></td><td>Indicates whether the price is from a note or a stashtab global buyout</td></tr>
+  <tr><td><code>shop.hasPrice</code></td><td>Boolean <code>true</code> if the item has a price, <code>false</code> if it does not</td></tr>
+  <tr><td><code>shop.defaultMessage</code></td><td>A pre-constructed message that can be used to whisper a player about buying the item</td></tr>
+  <tr><td><code>shop.lastCharacterName</code></td><td>The name of the character logged in when the Stash Tab was changed</td></tr>
   <tr><td><code>shop.stash.stashName</code></td><td>The name of the Stash Tab where the item is listed</td></tr>
   <tr><td><code>shop.stash.xLocation</code></td><td>The x location of the top left of the item.</td></tr>
   <tr><td><code>shop.stash.yLocation</code></td><td>The y location of the top left of the item.</td></tr>
@@ -223,6 +228,10 @@
   <tr><td><code>attributes.cosmeticModsCount</code></td><td>A number indicating how many lines of Cosmetic Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines. This value only reflects the number of entries in the original JSON array.</td></tr>
   <tr><td><code>attributes.explicitModsCount</code></td><td>A number indicating how many lines of Explicit Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines (and sometimes one line can be multiple mods). This value only reflects the number of entries in the original JSON array.</td></tr>
   <tr><td><code>attributes.craftedModsCount</code></td><td>A number indicating how many lines of Crafted Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines (and sometimes one line can be multiple mods). This value only reflects the number of entries in the original JSON array.</td></tr>
+  <tr><td><code>attributes.enchantModsCount</code></td><td>A number indicating how many lines of Enchant Mods the item has. <b>This is not definitive.</b> Some <i>single</i> mods may have multiple lines (and sometimes one line can be multiple mods). This value only reflects the number of entries in the original JSON array.</td></tr>
+  <tr><td><code>attributes.baseItemName</code></td><td>The determined underlying base item name, i.e. <kbd>Rustic Sash</kbd> or <kbd>Spiny Maul</kbd>, etc.</td></tr>
+  <tr><td><code>attributes.ilvl</code></td><td><i>[original:ilvl]</i> The Item Level of the item</td></tr>
+  <tr><td><code>attributes.weaponType</code></td><td>If the item is a weapon, this will give a specific type such as <kbd>One Handed Mace</kbd>, <kbd>Dagger</kbd>, <kbd>Two Handed Axe</kbd>, etc.</td></tr>
 
   <tr><td><code><font size=4><b>requirements</b></font></code></td><td>Information about the stats required to use the item</td></tr>
 
@@ -254,6 +263,11 @@
     </dl>
   </td></tr>
   <tr><td><code>sockets.allSocketsSorted</code></td><td>This contains a simple list of all of the sockets sorted by color for searching. For example, if you want to find an item with three blue sockets anywhere on an item, you can search this field with a wildcard for <code>*BBB*</code></td></tr>
+  <tr><td><code>sockets.allSocketsGGG</code></td><td>This contains a text string similar to GGG's style of socket listing, where <code>-</code> indicates a link and a space indicates a gap (i.e. <code>B-B G-R</code> means the first two are blue and linked, then a gap, then a linked green and red)</td></tr>
+  <tr><td><code>sockets.totalWhite</code></td><td>A count of the total White sockets on the item</td></tr>
+  <tr><td><code>sockets.totalGreen</code></td><td>A count of the total White sockets on the item</td></tr>
+  <tr><td><code>sockets.totalBlue</code></td><td>A count of the total White sockets on the item</td></tr>
+  <tr><td><code>sockets.totalRed</code></td><td>A count of the total White sockets on the item</td></tr>
   <tr><td><code>sockets.sortedLinkGroup</code></td><td>
     <p>This contains a separate object for each link group, with the sockets in the group sorted for searching. For example, if you want to find an item that has at least a 4L with 2 Blue, 1 Red, and 1 Green, you would need to search each link group (<code>0</code>, <code>1</code>, <code>2</code>... etc.) for <code>*BBGR*</code> (note the wildcard match should be sorted)</p>
     <p>An example ElasticSearch query to find this object <a href="https://gist.github.com/trackpete/db7cd64b4efb36bb4795">available here.</a>.</p>
@@ -278,6 +292,8 @@
     </dl>
 
   </td></tr>
+  <tr><td><code>p.stackSize.current</code></td><td>The current stack size</td></tr>
+  <tr><td><code>p.stackSize.max</code></td><td>The maximum stack size</td></tr>
   <tr><td><code>p.Card.Stack Size</code></td><td><i>[original:properties]</i> A string containing the stack size - this is not interpreted. It will usually be something like <code>1/5</code> etc. It is generally assumed that if someone posts an item with a Stack Size that the price/listing/etc. is for 1 item in the stack, so stack size is not very important.</td></tr>
   <tr><td><code>p.Currency.Imprinted</code></td><td><i>[original:properties]</i> Unknown?</td></tr>
   <tr><td><code>p.Currency.Stack Size</code></td><td><i>[original:properties]</i> A string containing the stack size - this is not interpreted. It will usually be something like <code>1/5</code> etc. It is generally assumed that if someone posts an item with a Stack Size that the price/listing/etc. is for 1 item in the stack, so stack size is not very important.</td></tr>
@@ -333,7 +349,7 @@
     <dl class="dl-horizontal">
       <dt style="margin-bottom:5px"><kbd>Attacks per Second</kbd></dt><dd><i>[original:Attacks per Second]</i> The attacks per second (APS) of the weapon</dd>
       <dt style="margin-bottom:5px"><kbd>Chaos DPS</kbd></dt><dd>If the item has flat Chaos damage, this number is the average flat Chaos damage times APS</dd>
-      <dt style="margin-bottom:5px"><kbd>Chaos Damage</kbd></dt><dd>This will have a <code>Chaos Damage.min</code> and <code>Chaos Damage.max</code> mapping with integer values if the item has flat chaos damage</dd>
+      <dt style="margin-bottom:5px"><kbd>Chaos Damage</kbd></dt><dd>This will have a <code>Chaos Damage.min</code> and <code>Chaos Damage.max</code>  mapping with integer values if the item has flat chaos damage</dd>
       <dt style="margin-bottom:5px"><kbd>Critical Strike Chance</kbd></dt><dd><i>[original:Critical Strike Chance]</i>The current critical strike chance of the weapon</dd>
       <dt style="margin-bottom:5px"><kbd>Elemental DPS</kbd></dt><dd>The calculated DPS of all Elemental damage on the weapon (<a href="https://github.com/trackpete/exiletools-indexer/issues/62">bugged as of 2015/12/16</a>)</dd>
       <dt style="margin-bottom:5px"><kbd>Elemental Damage</kbd></dt><dd><code>min</code> and <code>max</code> of all elemental damage added together. Note this confuses some complex unique items such as Dyadus</dd>
@@ -343,14 +359,23 @@
       <dt><kbd>type</kbd></dt><dd>This is a set of boolean submappings (i.e. `properties.Weapon.type.Dagger=true`) for Weapon types as used by skills/etc. to determine which types of weapon the item is. This is different than `equipType` or `itemType` as it indicates specific properties flagged by the game.</dd>
     </dl>
   </td></tr>
+ <tr><td><code><font size=4><b>propertiesPseudo</b></font></code></td><td>
+    <p>This mapping contains some dervied Pseudo mods from item properties, primarily projected <kbd>+20% Quality</kbd> statistics.
+  <tr><td><code>propertiesPseudo.Armour.estimatedQ20.Evasion Rating</code></td><td>The projected evasion stat of the item with +20% Quality</td></tr>
+  <tr><td><code>propertiesPseudo.Armour.estimatedQ20.Armour</code></td><td>The projected armour stat of the item with +20% Quality</td></tr>
+  <tr><td><code>propertiesPseudo.Armour.estimatedQ20.Energy Shield</code></td><td>The projected energy shield stat of the item with +20% Quality</td></tr>
+  <tr><td><code>propertiesPseudo.Weapon.estimatedQ20.Physical DPS</code></td><td>The projected total physical DPS of the item with +20% Quality</td></tr>
+
+  </td></tr>
 
 <tr><td colspan=2>
   <h2><b>Mods Mappings:</b></h2>
 
-  <p>GGG provides mod information in a very simple array for implicit, explicit, crafted, and cosmetic mods. On import, these mods are parsed through a series
+  <p>GGG provides mod information in a very simple array for implicit, explicit, crafted, enchant, and cosmetic mods. On import, these mods are parsed through a series
 of rules, generally as follows:</p>
 
   <ul>
+    <li> Enchant mods are fixed and are thus set to boolean <code>true/false</code>
     <li> Single numbers are replaced with a <code>#</code> in the mapping field, with the actual number added to the value - examples of this include:<br><br>
     <ul>
       <li> <kbd>Socketed Gems have 8% reduced Mana Cost</kbd> becomes <code>Socketed Gems have #% reduced Mana Cost : 8</code>
@@ -387,9 +412,9 @@ of rules, generally as follows:</p>
   <p>You can browse a simple list of the mappings in the current index at the following links:</p>
 
   <ul>
-    <li> <a href="http://exiletools.com/info/mapping?field=mods">mods mappings</a>
-    <li> <a href="http://exiletools.com/info/mapping?field=modsTotal">modsTotal mappings</a>
-    <li> <a href="http://exiletools.com/info/mapping?field=modsPseudo">modsPseudo mappings</a>
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=mods">mods mappings</a>
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=modsTotal">modsTotal mappings</a>
+    <li> <a href="http://api.exiletools.com/endpoints/mapping?field=modsPseudo">modsPseudo mappings</a>
   </ul>
 
   <h3>Using the mappings for tool development:</h3>
@@ -407,6 +432,9 @@ of rules, generally as follows:</p>
     <p>This section contains a current list of pseudo mods - note that these may be expanded at any time, watch <a href="https://github.com/trackpete/exiletools-indexer/issues/38">this issue on Github</a> for more:</p>
 
   <ul>
+    <li style="margin-bottom:5px"> <kbd>#% Total increased Evasion Rating </kbd> The total Evasion Rating % increases on the item
+    <li style="margin-bottom:5px"> <kbd>#% Total increased Armour </kbd> The total Armour % increases on the item
+    <li style="margin-bottom:5px"> <kbd>#% Total increased Energy Shield </kbd> The total Energy Shield % increases on the item
     <li style="margin-bottom:5px"> <kbd># of Elemental Resistances</kbd> The number of different elemental resistances on the item
     <li style="margin-bottom:5px"> <kbd># of Resistances</kbd> The number of different resistances on the item (elemental + chaos)
     <li style="margin-bottom:5px"> <kbd>+# Total to Attributes</kbd> The total number of attribute points the item gives (note: use <code>modsTotal.+# to all Attributes</code> for a flat number to all attributes)
