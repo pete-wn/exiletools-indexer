@@ -1,5 +1,7 @@
 # Version 3.1
 
+* Added support for the `id` tag to set item `uuid` in version 2.2 of Path of Exile
+
 * Corrected the `defaultMessage` to use `lastCharacterName` instead of `sellerAccount`
   * https://github.com/trackpete/exiletools-indexer/issues/108
 

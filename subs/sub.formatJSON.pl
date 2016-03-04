@@ -22,8 +22,7 @@ sub formatJSON {
   $item{shop}{stash}{xLocation} += $data{x};
   $item{shop}{stash}{yLocation} += $data{y};
 
-  # How to calculate a UUID?
-  $item{uuid} = "$item{shop}{stash}{stashID}-$item{shop}{stash}{xLocation}-$item{shop}{stash}{yLocation}";
+  $item{uuid} = $data{id};
 
   # Now that we have a UUID, lets find this item in currentStashData. We have to iterate
   # because the results are in array format
