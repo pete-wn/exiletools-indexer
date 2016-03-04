@@ -47,11 +47,7 @@ $template = '
       }
       ],
       "properties" : {
-        "RunTimestamp" : {
-          "type" : "date",
-          "format" : "epoch_second"
-        },
-        "updateTimestamp" : {
+        "runTime" : {
           "type" : "date",
           "format" : "epoch_second"
         }

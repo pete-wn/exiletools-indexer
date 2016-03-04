@@ -16,7 +16,7 @@
   <script src="js/thirdparty/ui-bootstrap-0.14.3.min.js"></script>
   <script src="js/thirdparty/highstock/js/highstock.js"></script>
   <script src="js/thirdparty/highstock/js/modules/exporting.js"></script>
-  <script src="js/es.js"></script>
+  <script src="js/es-dashboard.js"></script>
   <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
 
 
@@ -82,7 +82,7 @@
 
   <p/><hr width=100% size=1 />
 
-  <div ng-controller="ThreadHeadlineStats">
+  <div ng-controller="StashTabHeadlineStats">
 
 <p align=center><i>Note: The data below does not include statistics from the initial historical import of data - the index created on Nov 19 included an import of data from a few months prior.</i></p>
 
@@ -92,10 +92,10 @@
 <tr bgcolor=#e5fff9>
 <td valign=top align=center width=33%>
 <b>Current Index Created:</b><br>
-<font size=5>{{FirstThread}}</font>
+<font size=5>{{FirstStashTab}}</font>
 </td><td valign=top align=center>
-<b>Total Shops Tracked:</b><br>
-<font size=7>{{UniqueShopCount | number}}</font>
+<b>Total Stash Tabs Tracked:</b><br>
+<font size=7>{{stashTabCount | number}}</font>
 </td><td valign=top align=center width=33%>
 <b>Unique Seller Accounts:</b><br>
 <font size=7>{{UniqueSellerCount | number}}</font>
@@ -104,14 +104,12 @@
 <table cellspacing=0 cellpadding=15 border=0 width=100%>
 <tr bgcolor=#ccfff2>
 <td valign=top align=center>
-<b>Total Shop Updates Processed:</b><br>
-<font size=7>{{TotalThreadsProcessed | number}}</font>
+<b>Total Stash Tab Updates Processed:</b><br>
+<font size=7>{{TotalStashTabsProcessed | number}}</font>
 </td><td valign=top align=center>
-<b>Updates via Procurement:</b><br>
-<font size=7>{{generatedWith.Procurement | number}}</font>
+<b>Total Seconds Spent Processing:</b><br>
+<font size=7>{{TotalSeconds}}</font>
 </td><td valign=top align=center>
-<b>Updates via Acquisition Plus:</b><br>
-<font size=7>{{generatedWith['Acquisition Plus'] | number}}</font>
 </td><tr></table>
 <br>
 <table cellspacing=0 cellpadding=15 border=0 width=100%>
@@ -152,12 +150,6 @@
   <div id="GraphShopPagesFetched" style="height: 400px; min-width: 310px"></div>
   </td><td width=30% valign=top>
   <div style="padding:20px">
-    <h3>A Note on Threads:</h3>
-<p>
-Once the index is populated with known threads (typically, any thread updated in the last few months in Standard or all threads in short term leagues), every single known thread will be refreshed at least once a day whether the thread is bumped or not.
-</p>
-<p>
-This <i>refreshing</i> of threads is where the bulk of the analysis and processing time is spent. Each hour, up to a maximum of 5,000 threads are refreshed.
 </p>
 
 
@@ -171,8 +163,8 @@ This <i>refreshing</i> of threads is where the bulk of the analysis and processi
     <div id="GraphTotalTransferMB" style="height: 400px; min-width: 310px"></div>
   </td><td width=30% valign=top>
     <div style="padding:20px">
-    <p><b><font size=5>{{TotalMB | number : 0}}MB</font></b> of compressed data has been transferred from pathofexile.com since this index was created at {{FirstDay}}.</p>
-    <p>Uncompressed data used for analysis is typically 4-5x the size of the compressed data.</p>
+    <p><b><font size=5>{{TotalMB | number : 2}}MB</font></b> of compressed data has been transferred from pathofexile.com since this index was created at {{FirstDay}}.</p>
+    <p><b><font size=5>{{TotalMBProcessed | number : 2}}MB</font></b> of uncompressed data has been processed.</p>
     </div>
   </td></tr></table>
 </div>

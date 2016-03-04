@@ -12,6 +12,7 @@ use Date::Parse;
 use Time::HiRes qw(usleep);
 use Search::Elasticsearch;
 use Text::Unidecode;
+use Data::Dumper;
 
 
 # Load in external subroutines
@@ -35,6 +36,7 @@ select((select($JSONLOG), $|=1)[0]);
 # Otherwise, make sure it is pointed at a valid location and the directory
 # exists
 $saveToDiskLocation = "$conf{baseDir}/riverData";
+
 
 # The official Public Stash Tab API URL
 our $apiURL = "http://www.pathofexile.com/api/public-stash-tabs";
@@ -65,18 +67,33 @@ local $e = Search::Elasticsearch->new(
 
 local $itemBulk = $e->bulk_helper(
   index => "$conf{esItemIndex}",
-  max_count => '3000',
+  max_count => '5000',
   max_size => '0',
   type => "$conf{esItemType}",
 );
 
 local $stashTabStatsBulk = $e->bulk_helper(
   index => "$conf{esStatsIndex}",
-  max_count => '500',
+  max_count => '5000',
   max_size => '0',
   type => "stashtab",
 );
 
+
+# On startup, check the stats index for the most recent run to start from that next_change_id
+my $lastRun = $e->search(
+  index => "$conf{esStatsIndex}",
+  type => "run",
+  body => {
+    query => {
+      match_all => {}
+    },
+    size => 1,
+    sort => { "runTime" => { "order" => "desc" } }
+  }
+);
+
+my $next_change_id = $lastRun->{hits}->{hits}->[0]->{_source}->{next_change_id} if ($lastRun->{hits}->{total} > 0);
 
 # This variable will cause the system to continually re-run the river
 # If any extreme errors occur in the subroutine, it should be cleared out
@@ -90,7 +107,7 @@ while($keepRunning) {
     sleep 120;
   } elsif ($status =~ /next_change_id:(.*?)$/) {
     $next_change_id = $1;
-    sleep 5;
+    sleep 1;
   } else {
     &d("FATAL ERROR: RunRiver did not return a valid status! \"$status\" Aborting!\n");
     die;
@@ -211,10 +228,13 @@ sub RunRiver {
     $stashTabStatsBulk->index({
       id => "$stash->{id}-$runTime",
       source => {
-        uuid => "$stash->{id}-$runTime",
+        stashID => "$stash->{id}-$runTime",
         accountName => $stash->{accountName},
-        itemCount => $itemCount,
-        goneCount => $goneCount,
+        totalItems => $itemCount * 1,
+        gone => $goneCount * 1,
+        added => $itemStats{Added} * 1,
+        modified => $itemStats{Modified} * 1,
+        unchanged => $itemStats{Unchanged} * 1,
         stashId => $stash->{id},
         stashName => $stash->{stash},
         runTime => $runTime,
@@ -246,19 +266,23 @@ sub RunRiver {
       body => {
         uuid => "$runTime",
         runTime => $runTime,
-        totalTransferKB => ($changeStats{TotalTransferBytes} / 1024),
-        totalUncompressedTransferKB => ($changeStats{TotalUncompressedBytes} / 1024),
-        totalStashes => $changeStats{Stashes},
-        totalItems => $changeStats{TotalItems},
+        totalTransferKB => ($changeStats{TotalTransferBytes} / 1024) * 1,
+        totalUncompressedTransferKB => ($changeStats{TotalUncompressedBytes} / 1024) * 1,
+        totalStashes => $changeStats{Stashes} * 1,
+        totalItems => $changeStats{TotalItems} * 1,
         change_id => $change_id,
         next_change_id => $riverData{next_change_id},
-        secondsToComplete => $interval,
-        itemsPerSecond => ($changeStats{TotalItems} / $interval),
-        stashesPerSecond => ($changeStats{Stashes} / $interval)
+        secondsToComplete => $interval * 1,
+        itemsPerSecond => ($changeStats{TotalItems} / $interval) * 1,
+        stashesPerSecond => ($changeStats{Stashes} / $interval) * 1,
+        itemsAdded => $changeStats{Added} * 1,
+        itemsUnchanged => $changeStats{Unchanged} * 1,
+        itemsModified => $changeStats{Modified} * 1,
+        itemsGone => $changeStats{GoneItems} * 1
       }
     );
     # If saveToDiskLocation is set, let's store a copy of the data
-    if ($saveToDiskLocation) {
+    if (($saveToDiskLocation) && ($change_id)) {
       my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);                             
       my $yyyymmdd = sprintf "%.4d%.2d%.2d", $year+1900, $mon+1, $mday;
       unless (-d "$saveToDiskLocation/$yyyymmdd") {
@@ -268,6 +292,8 @@ sub RunRiver {
       print $SAVERIVER "$content";
       close($SAVERIVER);
     }
+
+    # Save the next_change_id to disk
   } else {
     &d("! No changes found this id! Will retry.\n");
   }
