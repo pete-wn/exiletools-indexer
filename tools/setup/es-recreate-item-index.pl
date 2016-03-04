@@ -27,7 +27,8 @@ $template = '
     "index" : {
       "refresh_interval" : "3s",
       "number_of_shards" : "3",
-      "number_of_replicas" : "1"
+      "number_of_replicas" : "1",
+      "requests.cache.enable" : true
     },
     "analysis" : {
       "analyzer" : {
@@ -44,7 +45,7 @@ $template = '
           "type" : "edgeNGram",
           "min_gram" : "3",
           "max_gram" : "6",
-          "token_chars": [ "letter", "digit" ]
+          "token_chars": [ "letter", "digit", "whitespace", "punctuation", "symbol" ]
         }
       }
     }

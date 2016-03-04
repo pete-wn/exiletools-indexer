@@ -27,7 +27,7 @@ require("subs/sub.formatJSON.pl");
 # If you do not want to export a JSON log file, simply comment out
 # the creation of the filehandle
 open(our $JSONLOG, ">>", "$conf{baseDir}/logs/item-log.json") || die "FATAL: Unable to open json log!\n";
-select((select($JSONLOG), $|=1)[0]);
+#select((select($JSONLOG), $|=1)[0]);
 
 # Some users may want to store source copies of the original river JSON data
 # on disk. This allows you to re-build a live index from historical data, and
@@ -62,38 +62,43 @@ local $e = Search::Elasticsearch->new(
 #   trace_to => ['File','/tmp/eslog.txt'],
 
   # Huge request timeout for bulk indexing
-  request_timeout => 300
+  request_timeout => 500
 );
 
 local $itemBulk = $e->bulk_helper(
   index => "$conf{esItemIndex}",
-  max_count => '5000',
-  max_size => '0',
+  max_count => '10000',
+  max_size => '15000000',
+  max_time => '60',
   type => "$conf{esItemType}",
 );
 
 local $stashTabStatsBulk = $e->bulk_helper(
   index => "$conf{esStatsIndex}",
-  max_count => '5000',
-  max_size => '0',
+  max_count => '500',
+  max_size => '1000000',
+  max_time => '60',
   type => "stashtab",
 );
 
 
 # On startup, check the stats index for the most recent run to start from that next_change_id
-my $lastRun = $e->search(
-  index => "$conf{esStatsIndex}",
-  type => "run",
-  body => {
-    query => {
-      match_all => {}
-    },
-    size => 1,
-    sort => { "runTime" => { "order" => "desc" } }
-  }
-);
+$checkRunHistory = 0;
+if ($checkRunHistory) {
+  my $lastRun = $e->search(
+    index => "$conf{esStatsIndex}",
+    type => "run",
+    body => {
+      query => {
+        match_all => {}
+      },
+      size => 1,
+      sort => { "runTime" => { "order" => "desc" } }
+    }
+  );
 
-my $next_change_id = $lastRun->{hits}->{hits}->[0]->{_source}->{next_change_id} if ($lastRun->{hits}->{total} > 0);
+  $next_change_id = $lastRun->{hits}->{hits}->[0]->{_source}->{next_change_id} if ($lastRun->{hits}->{total} > 0);
+}
 
 # This variable will cause the system to continually re-run the river
 # If any extreme errors occur in the subroutine, it should be cleared out
@@ -256,7 +261,7 @@ sub RunRiver {
   
   if ($changeStats{Stashes} > 0) {
     $interval = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
-    &d("* ThisChangeID: $changeStats{Stashes} Stashes | $changeStats{TotalItems} Total Items | $changeStats{GoneItems} Gone Items | $changeStats{TotalTransferBytes} bytes transferred | $changeStats{TotalUncompressedBytes} bytes uncompressed | ".sprintf("%.2f", $interval)." seconds | ".sprintf("%.2f",($changeStats{TotalItems} / $interval))." items/s | ".sprintf("%.2f", ($changeStats{Stashes} / $interval))." stashes/s\n");
+    &d("* ThisChangeID: $changeStats{Stashes} Stashes | $changeStats{TotalItems} Items | ".int($changeStats{TotalTransferBytes} / 1024)." KB | ".int($changeStats{TotalUncompressedBytes} / 1024)." KB processed | ".sprintf("%.2f", $interval)." seconds | ".sprintf("%.2f",($changeStats{TotalItems} / $interval))." items/s | ".sprintf("%.2f", ($changeStats{Stashes} / $interval))." stashes/s\n");
 
     # Add Run information to the indexing stats index
     $e->index(

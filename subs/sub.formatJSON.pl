@@ -41,7 +41,7 @@ sub formatJSON {
   }
 
 
-  $item{shop}{note} = $data{note};
+  $item{shop}{note} = $data{note} if ($data{note});
   # Process Price
   # If there is a price in the note, then set that
   # Otherwise, if there is a price in the stashName, then set that
@@ -59,15 +59,17 @@ sub formatJSON {
       $standardCurrency = "Unknown ($priceCurrency)"; # We don't know what it is, why isn't this in the currency hash?
     } else{
       $amount += 0; # if there was an amount set, there's no currency, so nuke it
-      $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
+#      $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
     }
 
-    $item{shop}{amount} += $priceAmount;
-    $item{shop}{currency} = $standardCurrency;
-    $item{shop}{price}{"$standardCurrency"} += $priceAmount;
+    $item{shop}{amount} += $priceAmount if ($priceAmount > 0);
+    $item{shop}{currency} = $standardCurrency if ($standardCurrency);
+    $item{shop}{price}{"$standardCurrency"} += $priceAmount if ($priceAmount > 0);
     $item{shop}{saleType} = $priceType;
     $item{shop}{priceSource} = "note";
-    $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
+    if ($item{shop}{amount} ) {
+      $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
+    }
   } elsif ($item{shop}{stash}{stashName} =~ /\~(b\/o|price|c\/o|gb\/o)\s*((?:\d+)*(?:(?:\.|,)\d+)?)\s*([A-Za-z]+)\s*.*$/) {
     my $priceType = lc($1);
     my $priceAmount = $2;
@@ -81,20 +83,26 @@ sub formatJSON {
       $standardCurrency = "Unknown ($priceCurrency)"; # We don't know what it is, why isn't this in the currency hash?
     } else{
       $amount += 0; # if there was an amount set, there's no currency, so nuke it
-      $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
+# Removed for https://github.com/trackpete/exiletools-indexer/issues/112
+#      $standardCurrency = "NONE"; # set currency to NONE because currency isn't set
     }
 
-    $item{shop}{amount} += $priceAmount;
-    $item{shop}{currency} = $standardCurrency;
+    $item{shop}{amount} += $priceAmount if ($priceAmount > 0);
+    $item{shop}{currency} = $standardCurrency if ($standardCurrency);
+    $item{shop}{price}{"$standardCurrency"} += $priceAmount if ($priceAmount > 0);
     $item{shop}{saleType} = $priceType;
     $item{shop}{priceSource} = "stashName";
-    $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
+    if ($item{shop}{amount}) {
+      $item{shop}{chaosEquiv} += &StandardizeCurrency("$priceAmount","$standardCurrency");
+    }
   } else {
     $item{shop}{saleType} = "Offer";
-    $item{shop}{priceSource} = null;
-    $item{shop}{currency} = null;
-    $item{shop}{amount} += 0;
-    $item{shop}{chaosEquiv} = 0;
+# Do not set these values if there is no price
+# https://github.com/trackpete/exiletools-indexer/issues/112
+#    $item{shop}{priceSource} = null;
+#    $item{shop}{currency} = null;
+#    $item{shop}{amount} += 0;
+#    $item{shop}{chaosEquiv} = 0;
   }
 
 

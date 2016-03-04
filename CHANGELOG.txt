@@ -10,6 +10,14 @@
   * Please don't blow this up
   * https://github.com/trackpete/exiletools-indexer/issues/109 
 
+* `shop.chaosEquiv` and `shop.currency` and `shop.amount` should not be set for items that do not have prices.
+  * This also applies to `shop.price.[currency]` fields
+  * https://github.com/trackpete/exiletools-indexer/issues/112
+
+* `shop.note` will not be set for an item without a note
+
+* You can now set poe-watch-stash-tab-river to pull the most recent next_change_id from the stats index and start from there.
+
 
 
 # OLDER CHANGES
