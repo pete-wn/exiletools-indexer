@@ -19,6 +19,7 @@ $chaos{"Portal Scroll"} = 1 / 160;
 $chaos{"Regal Orb"} = 2;
 $chaos{"Scroll of Wisdom"} = 1 / 160; 
 $chaos{"Vaal Orb"} = 1;
+$chaos{"Perandus Coins"} = 1 / 100;
 
 sub StandardizeCurrency {
   my $target = $_[0];

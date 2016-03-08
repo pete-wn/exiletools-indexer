@@ -76,5 +76,10 @@ $currencyName{mirror} = "Mirror of Kalandra";
 $currencyName{mirrors} = "Mirror of Kalandra";
 $currencyName{vaal} = "Vaal Orb";
 $currencyName{vaals} = "Vaal Orb";
+$currencyName{coin} = "Perandus Coins";
+$currencyName{coins} = "Perandus Coins";
+$currencyName{p} = "Perandus Coins";
+$currencyName{perandus} = "Perandus Coins";
+$currencyName{shekel} = "Perandus Coins";
 
 return true;
