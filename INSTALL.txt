@@ -1,0 +1,23 @@
+To get this up and running:
+
+1. Install, configure and start Elasticsearch
+2. Edit the tools/setup/es-recreate* files with a proper index name, then run them
+3. Touch .dbcreds in root directory (it does not need anything in it, current legacy)
+4. Edit the config file in the root directory and set a proper basedir and index names that match step 2
+5. mkdir -p the basedir and basedir/logs
+6. Edit poe-watch-stash-tab-river and make sure the JSONLOG section is commented out if you don't want this
+7. Install perl, cpanminus, and all required perl modules (see below)
+   # cpanm LWP::UserAgent JSON JSON::XS Encode utf8::all Date::Parse Time::HiRes Search::Elasticsearch Text::Unidecode Data::Dumper 
+8. put "elasticsearch" as an alias in /etc/hosts for your localhost
+9. Remove the two extra eshost lines from poe-watch-stash-tab-river if they're in there (and the , on the line above)
+10. run ./poe-watch-stash-tab-river and away it goes!
+
+You can use the example supervisord configuration file to set this to be run automatically.
+
+The first few runs may be slow as Elasticsearch builds the proper mappings, but everything should speed up before too long.
+
+You can also copy everything in www/html to your nginx or apache root directory and get access to the dashboard/etc. stuff,
+though you will need to change the URL's in them to your local install of elasticsearch for everything to work.
+
+
+      -Pete
