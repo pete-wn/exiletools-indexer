@@ -375,6 +375,8 @@ sub formatJSON {
 # Don't think we actually need this
 #    $mod =~ s/\'//g;
     $mod =~ s/\.//g;
+    $mod =~ s/\n/ /g;
+    $mod =~ s/\\n/ /g;
     $item{enchantMods}{"$mod"} = \1;
   } 
 

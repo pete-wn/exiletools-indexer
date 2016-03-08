@@ -44,7 +44,7 @@ $template = '
         "edge_ngram" : {
           "type" : "edgeNGram",
           "min_gram" : "3",
-          "max_gram" : "6",
+          "max_gram" : "12",
           "token_chars": [ "letter", "digit", "whitespace", "punctuation", "symbol" ]
         }
       }

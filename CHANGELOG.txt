@@ -23,6 +23,12 @@
 * Added Perandus Coin support
   * https://github.com/trackpete/exiletools-indexer/issues/115
 
+* Maximum ngram size for edge_ngram tokenized fields has been changed from 6 to 12. This will require a full rebuild of the index using the new settings to take effect.
+  * https://github.com/trackpete/exiletools-indexer/issues/120
+
+* Code has been added to remove the `\n` character from mapping names for `enchantMods`. This will require a full rebuild of the dynamic mapping.
+  * https://github.com/trackpete/exiletools-indexer/issues/119
+
 
 # OLDER CHANGES
 
