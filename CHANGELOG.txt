@@ -20,6 +20,8 @@
 
 * You can now set poe-watch-stash-tab-river to pull the most recent next_change_id from the stats index and start from there.
 
+* Added Perandus Coin support
+  * https://github.com/trackpete/exiletools-indexer/issues/115
 
 
 # OLDER CHANGES
