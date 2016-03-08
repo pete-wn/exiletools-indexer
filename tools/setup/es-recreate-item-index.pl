@@ -32,8 +32,8 @@ $template = '
     },
     "analysis" : {
       "analyzer" : {
-        "edge_ngram" : {
-          "tokenizer" : "edge_ngram"
+        "ngram" : {
+          "tokenizer" : "ngram"
         },
         "analyzer_keyword": {
           "tokenizer" : "keyword",
@@ -41,10 +41,10 @@ $template = '
         }
       },
       "tokenizer" : {
-        "edge_ngram" : {
-          "type" : "edgeNGram",
-          "min_gram" : "3",
-          "max_gram" : "12",
+        "ngram" : {
+          "type" : "nGram",
+          "min_gram" : "4",
+          "max_gram" : "8",
           "token_chars": [ "letter", "digit", "whitespace", "punctuation", "symbol" ]
         }
       }
@@ -128,22 +128,22 @@ $template = '
                 "fullName" : {
                   "type" : "string",
                   "index" : "analyzed",
-                  "analyzer" : "edge_ngram"
+                  "analyzer" : "ngram"
                 },
                 "descrText" : {
                   "type" : "string",
                   "index" : "analyzed",
-                  "analyzer" : "edge_ngram"
+                  "analyzer" : "ngram"
                 },
                 "DivinationReward" : {
                   "type" : "string",
                   "index" : "analyzed",
-                  "analyzer" : "edge_ngram"
+                  "analyzer" : "ngram"
                 },
                 "flavourText" : {
                   "type" : "string",
                   "index" : "analyzed",
-                  "analyzer" : "edge_ngram"
+                  "analyzer" : "ngram"
                 }
               }
             }

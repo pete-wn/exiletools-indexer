@@ -23,11 +23,12 @@
 * Added Perandus Coin support
   * https://github.com/trackpete/exiletools-indexer/issues/115
 
-* Maximum ngram size for edge_ngram tokenized fields has been changed from 6 to 12. This will require a full rebuild of the index using the new settings to take effect.
+* The tokenized fields have been changed from using `edge_ngram` to straight `ngram` tokenizers. This will allow matching against ngrams in the middle or end of the string (i.e. `wrappings`) and may greatly increase matches. The minimum ngram size is now 4 and the maximum is 8 - you should not begin any typehead/etc. until four characters are input. For unique item names, you should still attempt to match against a direct list of the unique item names to avoid excess hits. This will require a full rebuild of the index to take effect.
   * https://github.com/trackpete/exiletools-indexer/issues/120
 
 * Code has been added to remove the `\n` character from mapping names for `enchantMods`. This will require a full rebuild of the dynamic mapping.
   * https://github.com/trackpete/exiletools-indexer/issues/119
+
 
 
 # OLDER CHANGES
