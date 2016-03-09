@@ -390,32 +390,10 @@ sub formatJSON {
       if (($item{properties}{Weapon}{"$damage"}{min} > 0) && ($item{properties}{Weapon}{"$damage"}{max} > 0)) {
         my ($damageType, $damageChaff) = split(/ /, $damage);
         $item{properties}{Weapon}{"$damage"}{avg} = int(($item{properties}{Weapon}{"$damage"}{min} + $item{properties}{Weapon}{"$damage"}{max}) / 2) * 1;
-
         $item{properties}{Weapon}{"$damageType DPS"} += int($item{properties}{Weapon}{"$damage"}{avg} * $item{properties}{Weapon}{"Attacks per Second"});
-
-
       }
     }
   }
-
-
-
-
-  #  if ($item{properties}{Armour}{Quality}) {
-  #    if ($item{properties}{Armour}{"Energy Shield"}) {
-  #      $item{propertiesQ20}{Armour}{"Energy Shield"} = $item{properties}{Armour}{"Energy Shield"} * (1.2 - ($item{properties}{Armour}{Quality} / 100));
-  #    }
-  #    if ($item{properties}{Armour}{"Armour"}) {
-  #      $item{propertiesQ20}{Armour}{"Armour"} = $item{properties}{Armour}{"Armour"} * (1.2 - ($item{properties}{Armour}{Quality} / 100));
-  #    }
-  #    if ($item{properties}{Armour}{"Evasion"}) {
-  #      $item{propertiesQ20}{Armour}{"Evasion"} = $item{properties}{Armour}{"Evasion"} * (1.2 - ($item{properties}{Armour}{Quality} / 100));
-  #    }
-  #  } elsif ($item{properties}{Weapon}{Quality}) {
-  #    # Calculate Weapon Q20
-  #  }
-
-
 
   # Set the equipType for weapons and stuff
   unless ($item{attributes}{equipType}) {
@@ -488,16 +466,25 @@ sub formatJSON {
       }
     }
   } elsif ($item{attributes}{baseItemType} eq "Weapon") {
-    # If this is already 20, we don't have to change anything
-    if ($item{properties}{Quality} == 20) {
-      $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += $item{properties}{Weapon}{"Physical DPS"};
-    } else {
-      # Crap, we have to try to estimate the Q20 values
-      # Does this item have an increased mod?
-      if ($item{modsTotal}{"#% increased Physical Damage"} > 0) {
-        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += int($item{properties}{Weapon}{"Physical DPS"} / (1 + ($item{modsTotal}{"#% increased Physical Damage"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsTotal}{"#% increased Physical Damage"} + 20) / 100)));
+    # only process items with more than 0 physical dps
+    if ($item{properties}{Weapon}{"Physical DPS"} > 0) {
+      # If this is already 20, we don't have to change anything
+      if ($item{properties}{Quality} == 20) {
+        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += $item{properties}{Weapon}{"Physical DPS"};
       } else {
-        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = int(($item{properties}{Weapon}{"Physical DPS"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
+        # Crap, we have to try to estimate the Q20 values
+        # Does this item have an increased mod?
+        if ($item{modsTotal}{"#% increased Physical Damage"} > 0) {
+          $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += int($item{properties}{Weapon}{"Physical DPS"} / (1 + ($item{modsTotal}{"#% increased Physical Damage"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsTotal}{"#% increased Physical Damage"} + 20) / 100)));
+        } else {
+          $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = int(($item{properties}{Weapon}{"Physical DPS"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
+        }
+      }
+      # Update Total DPS per Issue #114
+      if ($item{properties}{Weapon}{"Elemental DPS"}) {
+        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Total DPS"} += $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} + $item{properties}{Weapon}{"Elemental DPS"};
+      } else {
+        $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Total DPS"} += $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"};
       }
     }
   }
@@ -818,6 +805,8 @@ sub parseExtendedMods {
     # Remove any apostrophes or periods
     $modLine =~ s/\'//g;
     $modLine =~ s/\.//g;
+    $modLine =~ s/\n/ /g;
+    $modLine =~ s/\\n/ /g;
 
     # Parsing for Divination cards has to be done a bit differently from other items
     if ($item{attributes}{itemType} eq "Card") {

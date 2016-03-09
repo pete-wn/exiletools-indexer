@@ -26,8 +26,11 @@
 * The tokenized fields have been changed from using `edge_ngram` to straight `ngram` tokenizers. This will allow matching against ngrams in the middle or end of the string (i.e. `wrappings`) and may greatly increase matches. The minimum ngram size is now 4 and the maximum is 8 - you should not begin any typehead/etc. until four characters are input. For unique item names, you should still attempt to match against a direct list of the unique item names to avoid excess hits. This will require a full rebuild of the index to take effect.
   * https://github.com/trackpete/exiletools-indexer/issues/120
 
-* Code has been added to remove the `\n` character from mapping names for `enchantMods`. This will require a full rebuild of the dynamic mapping.
+* Code has been added to remove the `\n` character from mapping names for `enchantMods`. This will require a full rebuild of the dynamic mapping. NOTE: This now removes \n from ALL MODS just in case.
   * https://github.com/trackpete/exiletools-indexer/issues/119
+
+* A new field `propertiesPseudo.Weapon.estimatedQ20.Total DPS` has been added which includes Physical + Elemental DPS assuming Q20 for Physical
+  * https://github.com/trackpete/exiletools-indexer/issues/114
 
 
 
