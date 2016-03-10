@@ -35,6 +35,9 @@
 * The Stash Tab API processing pipeline now supports parallel processing. NOTE: This may break the pipeline completely on non-SYS V systems that do not support IPC based sharedmem. Sorry.
   * https://github.com/trackpete/exiletools-indexer/issues/121
 
+* poe-watch-stash-tab-river.pl will now check for HTTP success codes and sleep for 2min due to an error
+
+
 
 # OLDER CHANGES
 

@@ -93,6 +93,9 @@ while($keepRunning) {
   if ($status eq "Maintenance") {
     &d("Maintenance message received on pathofexile.com, sleeping for 2 minutes!\n");
     sleep 120;
+  } elsif ($status =~ /^Failed/) {
+    &d("Web Server Error: $status | Sleeping for 2 minutes!\n");
+    sleep 120;
   } elsif ($status =~ /next_change_id:(.*?)$/) {
     $next_change_id = $1;
     sleep 1;
@@ -124,6 +127,9 @@ sub RunRiver {
 
   $t0 = [Time::HiRes::gettimeofday];
   my $response = $ua->get("$fetchURL",'Accept-Encoding' => $can_accept);
+  unless ($response->is_success) {
+    return("Failed: ".$response->status_line);
+  }
   my $content = $response->decoded_content;
   # Check for an error in the response code!!
 
