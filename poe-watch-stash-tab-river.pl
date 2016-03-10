@@ -4,7 +4,6 @@ $|=1;
 
 # Set required modules, these must all be installed!
 use LWP::UserAgent;
-use JSON;
 use JSON::XS;
 use Encode;
 use utf8::all;
@@ -13,7 +12,17 @@ use Time::HiRes qw(usleep);
 use Search::Elasticsearch;
 use Text::Unidecode;
 use Data::Dumper;
+use Parallel::ForkManager;
+use Array::Split qw( split_by split_into );
+use IPC::Shareable (':lock');
 
+$SIG{INT} = \&catch_int;
+sub catch_int {
+  &d("!!! [$$] Caught SIGINT, exiting...\n");
+  IPC::Shareable->clean_up;
+  &ExitProcess;
+  exit 3;
+}
 
 # Load in external subroutines
 require("subs/all.subroutines.pl");
@@ -26,7 +35,8 @@ require("subs/sub.formatJSON.pl");
 #
 # If you do not want to export a JSON log file, simply comment out
 # the creation of the filehandle
-open(our $JSONLOG, ">>", "$conf{baseDir}/logs/item-log.json") || die "FATAL: Unable to open json log!\n";
+# THIS IS DIABLED FOR NOW SORRY
+#open(our $JSONLOG, ">>", "$conf{baseDir}/logs/item-log.json") || die "FATAL: Unable to open json log!\n";
 #select((select($JSONLOG), $|=1)[0]);
 
 # Some users may want to store source copies of the original river JSON data
@@ -37,49 +47,22 @@ open(our $JSONLOG, ">>", "$conf{baseDir}/logs/item-log.json") || die "FATAL: Una
 # exists
 $saveToDiskLocation = "$conf{baseDir}/riverData";
 
+# The number of processes to fork
+if ($args{forks}) {
+  $forkMeMax = $args{forks};
+} else {
+  $forkMeMax = 6;
+}
+
+&connectElastic;
 
 # The official Public Stash Tab API URL
 our $apiURL = "http://www.pathofexile.com/api/public-stash-tabs";
-
-# This is for testing
-#our $apiURL = "http://localhost:8080/stash-api-test";
 
 # Create a user agent
 our $ua = LWP::UserAgent->new;
 # Make sure it accepts gzip
 our $can_accept = HTTP::Message::decodable;
-
-# Nail up the Elastic Search connections
-local $e = Search::Elasticsearch->new(
-  cxn_pool => 'Sniff',
-  cxn => 'Hijk',
-  nodes =>  [
-    "$conf{esHost}:9200",
-    "$conf{esHost2}:9200",
-    "$conf{esHost3}:9200"
-  ],
-  # enable this for debug but BE CAREFUL it will create huge log files super fast
-#   trace_to => ['File','/tmp/eslog.txt'],
-
-  # Huge request timeout for bulk indexing
-  request_timeout => 500
-);
-
-local $itemBulk = $e->bulk_helper(
-  index => "$conf{esItemIndex}",
-  max_count => '10000',
-  max_size => '15000000',
-  max_time => '60',
-  type => "$conf{esItemType}",
-);
-
-local $stashTabStatsBulk = $e->bulk_helper(
-  index => "$conf{esStatsIndex}",
-  max_count => '500',
-  max_size => '1000000',
-  max_time => '60',
-  type => "stashtab",
-);
 
 
 # On startup, check the stats index for the most recent run to start from that next_change_id
@@ -144,13 +127,18 @@ sub RunRiver {
   my $content = $response->decoded_content;
   # Check for an error in the response code!!
 
-  # Create a local hash for statistics data
+  # Create a local hash for statistics data and tie it to memory for sharing across child processes
   my %changeStats;
+  my %IPCoptions = (
+    create    => 1,
+    exclusive => 0,
+    mode      => 0666,
+    destroy   => 0,
+  );
+  tie %changeStats, 'IPC::Shareable', 'CHST', \%IPCoptions;
+
   $changeStats{TotalTransferBytes} += length($response->content);
   $changeStats{TotalUncompressedBytes} += length($response->decoded_content);
-
-
-
 
   # Check for Maintenance message
   if ($content =~ /pathofexile.com is currently down for maintenance. Please try again later/) {
@@ -160,6 +148,7 @@ sub RunRiver {
   # Remove funky <<set formatting
   $content =~ s/\<\<set:(\S+?)\>\>//g;
 
+  $interval = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
   # encode the JSON riverData into something perl can reference 
   $json = JSON::XS->new->utf8->pretty->allow_nonref;
   my %riverData = %{$json->decode($content)};
@@ -169,99 +158,133 @@ sub RunRiver {
   $t0 = [Time::HiRes::gettimeofday];
   $t1 = [Time::HiRes::gettimeofday];
 
-  # iterate the stashes
-  foreach $stash (@{$riverData{stashes}}) {
-    $changeStats{Stashes}++;
+  # Iterate the stashes to see how many there are and if we should fork systems for processing
+  my $stashNum = scalar(@{$riverData{stashes}});
 
-    # Fetch a current list of items in this stash in the index
-    # set it to local to the formatJSON subroutine can see it
-    local $currentStashData = $e->search(
-      index => "$conf{esItemIndex}",
-      type => "$conf{esItemType}",
-      body => {
-        query => {
-          bool => {
-            must => [
-              { term => { "shop.stash.stashID" => $stash->{id} } },
-              { term => { "shop.verified" => "YES" } }
-            ]
-
-          }
-        },
-        size => 500
-      }
-    );
-    $itemSearchTime += $currentStashData->{took};
-  
-    my $itemCount = 0;
-    my %itemStats;
-    $itemStats{Added} = 0;
-    $itemStats{Unchanged} = 0;
-    $itemStats{Modified} = 0;
-
-    foreach $item (@{$stash->{items}}) {
-      $changeStats{TotalItems}++;
-      $itemCount++;
-
-      my ($jsonout,$uuid,$itemStatus) = &formatJSON($item, "$stash->{accountName}", "$stash->{id}", "$stash->{stash}", "$stash->{lastCharacterName}");
-      $changeStats{"$itemStatus"}++;
-      $itemStats{"$itemStatus"}++;
-#      &sv(">>>> Processed: $stash->{accountName} | $stash->{id} | $stash->{stash} | $uuid\n");
-      $itemBulk->index({ id => "$uuid", source => "$jsonout" });
+  # Determine how many forks to spawn to handle a minimum of 20 stashes per fork up to maximum forks
+  my $stashPerFork;
+  for (my $forkCheck=$forkMeMax; $forkCheck > 0; $forkCheck--) {
+    my $check = int($stashNum / $forkCheck + 1);
+    if ($check > 20) {
+      $forkMe = $forkCheck;
+      $stashPerFork = $check;
+      last;
     }
-
-    # Anything left in the currentStashData array is gone, update the index appropriately
-    my $goneCount = 0;
-    foreach $scanItem (@{$currentStashData->{hits}->{hits}}) {
-      if ($scanItem->{_source}->{uuid}) {
-        $goneCount++;
-        $changeStats{GoneItems}++;
-
-        my $item = $scanItem->{_source}; 
-        $item->{shop}->{modified} = time() * 1000;
-        $item->{shop}->{updated} = time() * 1000;
-        $item->{shop}->{verified} = "GONE";
-        my $jsonout = JSON::XS->new->utf8->encode($item);
-        $itemBulk->index({ id => "$item->{uuid}", source => "$jsonout" });
-        &sv("i  Gone: $item->{shop}->{sellerAccount} | $item->{info}->{fullName} | $item->{uuid} | $item->{shop}->{amount} $item->{shop}->{currency}\n");
-
-      }
-    }
-
-    &sv("% StashTab: $stash->{accountName} | $stash->{stash} | $stash->{id} | $itemCount Total Items | $itemStats{Added} Added | $itemStats{Modified} Modified | $itemStats{Unchanged} Unchanged | $goneCount GONE\n");
-    # Add stash information to indexing stats index
-    $stashTabStatsBulk->index({
-      id => "$stash->{id}-$runTime",
-      source => {
-        stashID => "$stash->{id}-$runTime",
-        accountName => $stash->{accountName},
-        totalItems => $itemCount * 1,
-        gone => $goneCount * 1,
-        added => $itemStats{Added} * 1,
-        modified => $itemStats{Modified} * 1,
-        unchanged => $itemStats{Unchanged} * 1,
-        stashId => $stash->{id},
-        stashName => $stash->{stash},
-        runTime => $runTime,
-      }
-    });
-
-    # Display some stats on stash tab processing speed
-#    if ($changeStats{Stashes} % 10 == 0) {
-#      $interval = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
-#      $intervalShort = Time::HiRes::tv_interval ( $t1, [Time::HiRes::gettimeofday]);
-#      &sv("10 Stashes [$changeStats{Stashes} Total | $changeStats{TotalItems} Items] processed in $intervalShort [$interval] seconds | $itemSearchTime ms search time | $changeStats{GoneItems} Items Gone\n");
-#      $t1 = [Time::HiRes::gettimeofday];
-#      our $itemSearchTime = 0;
-#    }
   }
-#  &sv("Bulk Flushing\n");
-  $itemBulk->flush;
-  $stashTabStatsBulk->flush;
+  my $stashPerFork = int($stashNum / $forkMe + 1);
+  $stashPerFork = 10 if ($stashPerFork < 10);
+  &d("! ThisChangeIDPrep: $stashNum Stashes | $stashPerFork per fork | $forkMe forks\n");
+
+  # Split the stash data into subarrays for each fork
+  my @stashArrays = split_into($forkMe, @{$riverData{stashes}});
+
+  # Spawn a new fork for each stashArray
+  my $manager = new Parallel::ForkManager( $forkMe );
+  foreach $stashArray (@stashArrays) {
+
+    $manager->start and next;
+    &connectElastic; 
+    my %IPCoptions = (
+      create    => 0,
+      exclusive => 1,
+      mode      => 0666,
+      destroy   => 0,
+    );
+    $cshandle = tie %localChangeStats, 'IPC::Shareable', 'CHST', \%IPCoptions;
+
+    my $forkPID = $$;
+    foreach $stash (@{$stashArray}) {
+      $cshandle->shlock;
+      $localChangeStats{Stashes}++;
+      $cshandle->shunlock;
   
+      # Fetch a current list of items in this stash in the index
+      # set it to local to the formatJSON subroutine can see it
+      local $currentStashData = $e->search(
+        index => "$conf{esItemIndex}",
+        type => "$conf{esItemType}",
+        body => {
+          query => {
+            bool => {
+              must => [
+                { term => { "shop.stash.stashID" => $stash->{id} } },
+                { term => { "shop.verified" => "YES" } }
+              ]
+  
+            }
+          },
+          size => 500
+        }
+      );
+      $itemSearchTime += $currentStashData->{took};
+    
+      my $itemCount = 0;
+      my %itemStats;
+      $itemStats{Added} = 0;
+      $itemStats{Unchanged} = 0;
+      $itemStats{Modified} = 0;
+  
+      foreach $item (@{$stash->{items}}) {
+        $cshandle->shlock;
+        $localChangeStats{TotalItems}++;
+        $cshandle->shunlock;
+        $itemCount++;
+  
+        my ($jsonout,$uuid,$itemStatus) = &formatJSON($item, "$stash->{accountName}", "$stash->{id}", "$stash->{stash}", "$stash->{lastCharacterName}");
+        $cshandle->shlock;
+        $localChangeStats{"$itemStatus"}++;
+        $cshandle->shunlock;
+        $itemStats{"$itemStatus"}++;
+        $itemBulk->index({ id => "$uuid", source => "$jsonout" });
+      }
+  
+      # Anything left in the currentStashData array is gone, update the index appropriately
+      my $goneCount = 0;
+      foreach $scanItem (@{$currentStashData->{hits}->{hits}}) {
+        if ($scanItem->{_source}->{uuid}) {
+          $goneCount++;
+          $cshandle->shlock;
+          $localChangeStats{GoneItems}++;
+          $cshandle->shunlock;
+  
+          my $item = $scanItem->{_source}; 
+          $item->{shop}->{modified} = time() * 1000;
+          $item->{shop}->{updated} = time() * 1000;
+          $item->{shop}->{verified} = "GONE";
+          my $jsonout = JSON::XS->new->utf8->encode($item);
+          $itemBulk->index({ id => "$item->{uuid}", source => "$jsonout" });
+          &sv("[$forkPID] i  Gone: $item->{shop}->{sellerAccount} | $item->{info}->{fullName} | $item->{uuid} | $item->{shop}->{amount} $item->{shop}->{currency}\n");
+  
+        }
+      }
+  
+      &sv("[$forkPID] % StashTab: $stash->{accountName} | $stash->{stash} | $stash->{id} | $itemCount Total Items | $itemStats{Added} Added | $itemStats{Modified} Modified | $itemStats{Unchanged} Unchanged | $goneCount GONE\n");
+      # Add stash information to indexing stats index
+      $stashTabStatsBulk->index({
+        id => "$stash->{id}-$runTime",
+        source => {
+          stashID => "$stash->{id}-$runTime",
+          accountName => $stash->{accountName},
+          totalItems => $itemCount * 1,
+          gone => $goneCount * 1,
+          added => $itemStats{Added} * 1,
+          modified => $itemStats{Modified} * 1,
+          unchanged => $itemStats{Unchanged} * 1,
+          stashId => $stash->{id},
+          stashName => $stash->{stash},
+          runTime => $runTime,
+        }
+      });
+    }
+    $itemBulk->flush;
+    $stashTabStatsBulk->flush;
+    $manager->finish;
+  }
+  $manager->wait_all_children;
+
   if ($changeStats{Stashes} > 0) {
     $interval = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
-    &d("* ThisChangeID: $changeStats{Stashes} Stashes | $changeStats{TotalItems} Items | ".int($changeStats{TotalTransferBytes} / 1024)." KB | ".int($changeStats{TotalUncompressedBytes} / 1024)." KB processed | ".sprintf("%.2f", $interval)." seconds | ".sprintf("%.2f",($changeStats{TotalItems} / $interval))." items/s | ".sprintf("%.2f", ($changeStats{Stashes} / $interval))." stashes/s\n");
+    &d("* ThisChangeIDEnd:  $changeStats{Stashes} Stashes | $changeStats{TotalItems} Items | ".int($changeStats{TotalTransferBytes} / 1024)." KB | ".int($changeStats{TotalUncompressedBytes} / 1024)." KB processed | ".sprintf("%.2f", $interval)." seconds | ".sprintf("%.2f",($changeStats{TotalItems} / $interval))." items/s | ".sprintf("%.2f", ($changeStats{Stashes} / $interval))." stashes/s\n");
 
     # Add Run information to the indexing stats index
     $e->index(
@@ -297,12 +320,11 @@ sub RunRiver {
       print $SAVERIVER "$content";
       close($SAVERIVER);
     }
-
-    # Save the next_change_id to disk
   } else {
     &d("! No changes found this id! Will retry.\n");
   }
-#  &d("Next Change ID: $riverData{next_change_id}\n");
+  (tied %changeStats)->remove;
+  IPC::Shareable->clean_up;
 
   if ($riverData{next_change_id}) {
     return("next_change_id:$riverData{next_change_id}");
@@ -316,4 +338,40 @@ sub jsonLOG {
   return unless($JSONLOG);
   my $message = $_[0];
   print $JSONLOG "$message\n";
+}
+
+sub connectElastic {
+
+  # Nail up the Elastic Search connections
+  our $e = Search::Elasticsearch->new(
+    cxn_pool => 'Sniff',
+    cxn => 'Hijk',
+    nodes =>  [
+      "$conf{esHost}:9200",
+      "$conf{esHost2}:9200",
+      "$conf{esHost3}:9200"
+    ],
+    # enable this for debug but BE CAREFUL it will create huge log files super fast
+  #   trace_to => ['File','/tmp/eslog.txt'],
+  
+    # Huge request timeout for bulk indexing
+    request_timeout => 180
+  );
+  
+  our $itemBulk = $e->bulk_helper(
+    index => "$conf{esItemIndex}",
+    max_count => '5000',
+    max_size => '15000000',
+    max_time => '60',
+    type => "$conf{esItemType}",
+  );
+  
+  our $stashTabStatsBulk = $e->bulk_helper(
+    index => "$conf{esStatsIndex}",
+    max_count => '500',
+    max_size => '1000000',
+    max_time => '60',
+    type => "stashtab",
+  );
+
 }
