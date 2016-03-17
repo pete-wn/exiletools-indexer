@@ -40,31 +40,6 @@
       <div class="collapse navbar-collapse" ng-class="!navCollapsed && 'in'" ng-click="navCollapsed = true">
       
         <ul class="nav navbar-nav">
-<!--          
-          <li class="active"><a href="#">How do I make this do something?</a></li>
-          <li><a href="#">What about this?</a></li>
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Static Dropdown <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="#">Action</a></li>
-              <li><a href="#">Another action</a></li>
-              <li><a href="#">Something else here</a></li>
-              <li><a href="#">Separated link</a></li>
-            </ul>
-          </li>
-
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" ng-controller="LeagueList">Dynamic Dropdown?<b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="#">Action</a></li>
-              <li><a href="#">Another action</a></li>
-              <li><a href="#">Something else here</a></li>
-              <li><a href="#">Separated link</a></li>
-              <li><a href="#">One more separated link</a></li>
-            </ul>
-          </li>
--->
-          
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li><a href="http://exiletools.com">ExileTools.com</a></li>
@@ -76,97 +51,91 @@
   
   <div style="width:100%;background-color:#ffebcc;padding:10px;text-align:top">
     <p><b>This page contains statistics and information about the ElasticSearch Index at ExileTools that powers the free and public <a href="http://api.exiletools.com/info/indexer.html">Shop Indexer API</a> service.</b></p>
-    <p>All of this information is rendered live in your browser via ElasticSearch queries to the Item and Stats indexes, and can be used as examples to generate far more complex queries and statistics about the Path of Exile economy. This dashboard itself is fully open sourced and <a href="https://github.com/trackpete/exiletools-reporting">available on GitHub</a>. You can find the queries used in the <code>js/es.js</code>, and can submit issues or pull requests for suggested improvements.</p>
-    <p><i>Why is the current index so young when ExileTools has been indexing for over a year?</i> The current index was completely rebuilt in late November to bring far more data into ElasticSearch and fix a bunch of bugs (upgrading the indexer to <a href="https://github.com/trackpete/exiletools-indexer/">an opensource v2 release</a>). I also tend to recreate the index after major patches because of changes to mod names/etc. that affect the mappings.</p>
+    <p>All of this information is rendered live in your browser via ElasticSearch queries to the Item and Stats indexes. This dashboard itself is fully open sourced and <a href="https://github.com/trackpete/exiletools-indexer">available on GitHub</a>.</p>
   </div>
 
   <p/><hr width=100% size=1 />
 
   <div ng-controller="StashTabHeadlineStats">
-
-<p align=center><i>Note: The data below does not include statistics from the initial historical import of data - the index created on Nov 19 included an import of data from a few months prior.</i></p>
-
-<!-- Oh tables, how happy they make everyone -->
-
-<table cellspacing=0 cellpadding=15 border=0 width=100%>
-<tr bgcolor=#e5fff9>
-<td valign=top align=center width=33%>
-<b>Current Index Created:</b><br>
-<font size=5>{{FirstStashTab}}</font>
-</td><td valign=top align=center>
-<b>Total Stash Tabs Tracked:</b><br>
-<font size=7>{{stashTabCount | number}}</font>
-</td><td valign=top align=center width=33%>
-<b>Unique Seller Accounts:</b><br>
-<font size=7>{{UniqueSellerCount | number}}</font>
-</td></tr></table>
-<br>
-<table cellspacing=0 cellpadding=15 border=0 width=100%>
-<tr bgcolor=#ccfff2>
-<td valign=top align=center>
-<b>Total Stash Tab Updates Processed:</b><br>
-<font size=7>{{TotalStashTabsProcessed | number}}</font>
-</td><td valign=top align=center>
-<b>Total Seconds Spent Processing:</b><br>
-<font size=7>{{TotalSeconds}}</font>
-</td><td valign=top align=center>
-</td><tr></table>
-<br>
-<table cellspacing=0 cellpadding=15 border=0 width=100%>
-<tr bgcolor=#b3ffec>
-<td valign=top align=center width=25%>
-<b>Total Items Added:</b><br>
-<font size=7>{{TotalItemsAdded | number}}</font>
-</td><td valign=top align=center width=25%>
-<b>Total Items Removed:</b><br>
-<font size=7>{{TotalItemsRemoved | number}}</font>
-</td><td valign=top align=center width=25%>
-<b>Total Items Modified:</b><br>
-<font size=7>{{TotalItemsModified | number}}</font>
-</td><td valign=top align=center width=25%>
-<b>Total Items Processed In All Updates:</b><br>
-<font size=7>{{TotalItemsProcessed | number}}</font>
-</td></tr></table>
-
-
+    <div ng-if="!FirstStashTab">
+      <i class="fa fa-spinner fa-spin"></i> <b><i>Loading Headline Statistics from index...</i></b>
+    </div>
+    <div ng-if="FirstStashTab">
+      <div class="row" style="background-color:#ffeeee">
+        <div class="col-md-3" style="text-align:center">
+          <b>Current Index Created:</b><br>
+          <font size=5>{{FirstStashTab}}</font>
+        </div>
+        <div class="col-md-3" style="text-align:center">
+          <b>Total Stash Tabs Tracked:</b><br>
+          <font size=7>{{stashTabCount | number}}</font>
+        </div>
+        <div class="col-md-3" style="text-align:center">
+          <b>Unique Seller Accounts:</b><br>
+          <font size=7>{{UniqueSellerCount | number}}</font>
+        </div>
+        <div class="col-md-3" style="text-align:center">
+          <b>Total Stash Tab Updates Processed:</b><br>
+          <font size=7>{{TotalStashTabsProcessed | number}}</font>
+        </div>
+      </div><p>
+      <div class="row" style="background-color:#ffcdcd">
+        <div class="col-md-3" style="text-align:center">
+          <b>Total Items Added:</b><br>
+          <font size=7>{{TotalItemsAdded | number}}</font>
+        </div>
+        <div class="col-md-3" style="text-align:center">
+          <b>Total Items Removed:</b><br>
+          <font size=7>{{TotalItemsRemoved | number}}</font>
+        </div>
+        <div class="col-md-3" style="text-align:center">
+          <b>Total Items Modified:</b><br>
+          <font size=7>{{TotalItemsModified | number}}</font>
+        </div>
+        <div class="col-md-3" style="text-align:center">
+          <b>Total Items Processed In All Updates:</b><br>
+          <font size=7>{{TotalItemsProcessed | number}}</font>
+        </div>
+      </div>
+    </div>
   </div>
 
   <p/><hr width=100% size=1 />
   <!-- This query now also has all the above information and we should put it into one table. How? lol. -->
   <div ng-controller="GeneralLeagueStats">
-    <h3>Index Statistics for Items Updated Recently (Last 3 Days):</h2>
-    <div id="GridRecentItemsInLeague" ui-grid="{ data: RecentGeneralStats, enableHorizontalScrollbar:0 }" style="width:100%;height:152px"></div>
-    <p/>
-    <h3>Overall Current Index Statistics:</h2>
-    <div id="GridItemsInLeague" ui-grid="{ data: GeneralStats, enableHorizontalScrollbar:0 }" style="width:100%;height:212px"></div>
+    <div ng-if="!GeneralStats">
+      <i class="fa fa-spinner fa-spin"></i> <b><i>Loading General Statistics from index...</i></b>
+    </div>
+    <div ng-if="GeneralStats">
+      <h3>Index Statistics for Items Updated Recently (Last 3 Days):</h2>
+      <div id="GridRecentItemsInLeague" ui-grid="{ data: RecentGeneralStats, enableHorizontalScrollbar:0 }" style="width:100%;height:152px"></div>
+      <p/>
+      <h3>Overall Current Index Statistics:</h2>
+      <div id="GridItemsInLeague" ui-grid="{ data: GeneralStats, enableHorizontalScrollbar:0 }" style="width:100%;height:212px"></div>
+    </div>
   </div>
 
 <p/><hr width=100% size=1 />
 
 <div ng-controller="RunStatsHisto1">
-  <!-- I can probably do this with div aligns but I'm too lazy to look it up right now -->
-  <table width=100% cellspacing=0 cellpadding=0>
-  <tr><td width=70% valign=top>
-  <div id="GraphShopPagesFetched" style="height: 400px; min-width: 310px"></div>
-  </td><td width=30% valign=top>
-  <div style="padding:20px">
-</p>
-
-
-</div>
-  </td></tr></table>
-
-  </p><hr width=100% size=1 />
-
-  <table width=100% cellspacing=0 cellpadding=0>
-  <tr><td width=70% valign=top>
-    <div id="GraphTotalTransferMB" style="height: 400px; min-width: 310px"></div>
-  </td><td width=30% valign=top>
-    <div style="padding:20px">
-    <p><b><font size=5>{{TotalMB | number : 2}}MB</font></b> of compressed data has been transferred from pathofexile.com since this index was created at {{FirstDay}}.</p>
-    <p><b><font size=5>{{TotalMBProcessed | number : 2}}MB</font></b> of uncompressed data has been processed.</p>
+  <div class="row">
+    <div class="col-md-9">
+      <div id="GraphShopPagesFetched" style="height: 400px; min-width: 310px"></div>
     </div>
-  </td></tr></table>
+    <div class="col-md-3">
+      <p><b><font size=5>{{Hours | number : 2}} Hours</font></b> have been spent fetching and processing this data.</p>
+    </div>
+  </div>
+  <p><hr width=100% size=1 />
+  <div class="row">
+    <div class="col-md-9">
+      <div id="GraphTotalTransferMB" style="height: 400px; min-width: 310px"></div>
+    </div>
+    <div class="col-md-3">
+      <p><b><font size=5>{{TotalMB | number : 2}}MB</font></b> of compressed data has been transferred from pathofexile.com since {{FirstDay}}.</p>
+      <p><b><font size=5>{{TotalMBProcessed | number : 2}}MB</font></b> of uncompressed data has been processed.</p>
+    </div>
+  </div>
 </div>
 
 

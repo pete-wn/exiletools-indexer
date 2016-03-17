@@ -502,6 +502,7 @@ sub formatJSON {
       $itemStatus = "Modified";
       &sv("i  Modified: $item{shop}{sellerAccount} | $item{info}{fullName} | $item{uuid} | $item{shop}{amount} $item{shop}{currency}\n");
     }
+    $item{shop}{shelfLife} += $item{shop}{updated} - $item{shop}{added};
     $item{shop}{updated} = time() * 1000;
     $item{shop}{added} = $itemInES->{shop}->{added};
   } else {

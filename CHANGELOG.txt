@@ -37,6 +37,8 @@
 
 * poe-watch-stash-tab-river.pl will now check for HTTP success codes and sleep for 2min due to an error
 
+* A new field `shop.shelfLife` has been added which contains the number of seconds between the item being first added to the index and the last time it was updated
+  * https://github.com/trackpete/exiletools-indexer/issues/122
 
 
 # OLDER CHANGES

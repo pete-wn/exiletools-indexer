@@ -73,7 +73,6 @@ EsConnector.controller('GeneralLeagueStats', function($scope, es) {
   }
 
   }).then(function (response) {
-console.log(response);
 
     // see https://github.com/trackpete/exiletools-reporting/issues/4 for more thoughts/info
   
@@ -144,7 +143,7 @@ EsConnector.controller('RunStatsHisto1', function($scope, es) {
       "Histogram": {
         "date_histogram": {
           "field": "runTime",
-          "interval": "hour"
+          "interval": "4h"
         },
         "aggs" : {
           "totalStashes" : {
@@ -234,7 +233,7 @@ EsConnector.controller('RunStatsHisto1', function($scope, es) {
     $scope.TotalStashes = TotalStashes;
     $scope.TotalItems = TotalItems;
     $scope.TotalSeconds = TotalSeconds;
-console.log($scope.TotalSeconds);
+    $scope.Hours = TotalSeconds / 60 / 60;
     // Get the date of the first day
     var FirstDay = new Date(response.aggregations.Histogram.buckets[0].key);
     $scope.FirstDay = FirstDay;
@@ -364,7 +363,7 @@ EsConnector.controller('StashTabHeadlineStats', function($scope, es) {
     "aggs": {
       "stashTabCount": {
         "cardinality": {
-          "field": "stashID"
+          "field": "stashId"
         }
       },
       "sellercount": {
