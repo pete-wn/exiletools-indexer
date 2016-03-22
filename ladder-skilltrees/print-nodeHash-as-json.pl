@@ -20,8 +20,10 @@ use Search::Elasticsearch;
 # Create the %nodeHash lookup table for node information
 &createNodeHash;
 
-my $jsonOut = JSON::XS->new->utf8->pretty->encode(\%nodeHash);
-print "$jsonOut\n";
+unless ($ARGV[0]) {
+  my $jsonOut = JSON::XS->new->utf8->pretty->encode(\%nodeHash);
+  print "$jsonOut\n";
+}
 
 
 sub createNodeHash {

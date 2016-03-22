@@ -1,0 +1,206 @@
+rank,ascendancy,nodename,count,percentage
+1,"Ascendant","Passive Point",2579,4.86%
+2,"Champion","Armour and Evasion, Fortify Effect",1601,3.02%
+3,"Saboteur","Elemental Damage, Trap and Mine Placement Speed",1508,2.84%
+4,"Assassin","Critical Strike Chance, Power Charge Duration",1396,2.63%
+5,"Berserker","Physical Attack Damage, Attack Speed",1092,2.06%
+6,"Inquisitor","Elemental Damage, Critical Strike Multiplier",1005,1.89%
+7,"Ascendant","Strength",966,1.82%
+8,"Ascendant","Dexterity",947,1.79%
+9,"Deadeye","Projectile Damage, Attack Speed",926,1.75%
+10,"Trickster","Attack and Cast Speed, Evasion and Energy Shield",884,1.67%
+11,"Chieftain","Life Regeneration, Totem Placement Speed",831,1.57%
+12,"Champion","Unstoppable Hero",829,1.56%
+13,"Ascendant","Berserker",781,1.47%
+14,"Raider","Evasion, Frenzy Charge Duration",775,1.46%
+15,"Saboteur","Bomb Specialist",774,1.46%
+16,"Champion","Fortitude",772,1.46%
+17,"Assassin","Unstable Infusion",746,1.41%
+18,"Saboteur","Chain Reaction",700,1.32%
+19,"Deadeye","Projectile Damage, Accuracy",659,1.24%
+20,"Assassin","Deadly Infusion",647,1.22%
+21,"Champion","Armour and Evasion, Aura Effect",619,1.17%
+22,"Champion","Inspirational",619,1.17%
+23,"Occultist","Energy Shield, Energy Shield Recharge Rate",617,1.16%
+24,"Deadeye","Fast and Deadly",583,1.10%
+25,"Berserker","Crave the Slaughter",574,1.08%
+26,"Assassin","Critical Strike Chance and Multiplier",561,1.06%
+27,"Trickster","Attack and Cast Speed, Maximum Mana",546,1.03%
+28,"Ascendant","Deadeye",544,1.03%
+29,"Saboteur","Elemental Damage and Resistances",362,0.68%
+29,"Inquisitor","Elemental Damage and Resistances",133,0.25%
+29,"Elementalist","Elemental Damage and Resistances",49,0.09%
+30,"Inquisitor","Righteous Providence",534,1.01%
+31,"Gladiator","One Handed Speed, Block Chance",517,0.97%
+32,"Berserker","Aspect of Carnage",516,0.97%
+33,"Necromancer","Minion Damage, Cast Speed",494,0.93%
+34,"Trickster","Walk the Aether",490,0.92%
+35,"Trickster","Ghost Dance",488,0.92%
+36,"Occultist","Energy Shield, Curse Duration",477,0.90%
+37,"Raider","Evasion, Attack Speed",474,0.89%
+38,"Assassin","Ambush",472,0.89%
+39,"Inquisitor","Inevitable Judgement",467,0.88%
+40,"Deadeye","Far Shot",465,0.88%
+41,"Raider","Way of the Poacher",443,0.84%
+42,"Inquisitor","Elemental Damage, Attack and Cast Speed",269,0.51%
+42,"Elementalist","Elemental Damage, Attack and Cast Speed",172,0.32%
+43,"Chieftain","Arohongui, Moon's Presence",428,0.81%
+44,"Ascendant","Dexterity and Intelligence",422,0.80%
+45,"Chieftain","Life Regeneration, Fire Damage",411,0.77%
+46,"Necromancer","Minion Damage, Skill Duration",407,0.77%
+47,"Necromancer","Mistress of Sacrifice",407,0.77%
+48,"Chieftain","Tukohama, War's Herald",402,0.76%
+49,"Trickster","Shade Form",395,0.74%
+50,"Occultist","Wicked Ward",383,0.72%
+51,"Raider","Rapid Assault",378,0.71%
+52,"Chieftain","Life Regeneration, Strength",370,0.70%
+53,"Chieftain","Tawhoa, Forest's Strength",368,0.69%
+54,"Saboteur","Explosives Expert",348,0.66%
+55,"Deadeye","Ricochet",339,0.64%
+56,"Ascendant","Assassin",337,0.64%
+57,"Pathfinder","Flask Effect and Duration",334,0.63%
+58,"Raider","Avatar of the Slaughter",332,0.63%
+59,"Juggernaut","Armour, Attack Damage",327,0.62%
+60,"Occultist","Profane Bloom",296,0.56%
+61,"Ascendant","Intelligence",292,0.55%
+62,"Elementalist","Elemental Damage, Status Ailment Duration",268,0.51%
+63,"Necromancer","Spirit Eater",267,0.50%
+64,"Inquisitor","Instruments of Virtue",265,0.50%
+65,"Necromancer","Minion Damage and Life",256,0.48%
+66,"Occultist","Energy Shield, Critical Strike Chance",245,0.46%
+67,"Occultist","Forbidden Power",241,0.45%
+68,"Gladiator","Painforged",239,0.45%
+69,"Hierophant","Mana Regeneration, Totem Placement Speed",234,0.44%
+70,"Occultist","Vile Bastion",234,0.44%
+71,"Slayer","Two Handed Damage, Life Leech",224,0.42%
+72,"Chieftain","Ngamahu, Flame's Advance",215,0.41%
+73,"Gladiator","Versatile Combatant",214,0.40%
+74,"Hierophant","Mana Regeneration, Mana",212,0.40%
+75,"Guardian","Armour and Energy Shield, Aura Effect",210,0.40%
+76,"Necromancer","Commander of Darkness",209,0.39%
+77,"Juggernaut","Unflinching",201,0.38%
+78,"Gladiator","One Handed Speed, Physical Damage",200,0.38%
+79,"Ascendant","Raider",200,0.38%
+80,"Berserker","Physical Attack Damage, Armour",199,0.38%
+81,"Berserker","Rite of Ruin",194,0.37%
+82,"Deadeye","Endless Munitions",192,0.36%
+83,"Assassin","Critical Strike Chance, Damage Over Time",187,0.35%
+84,"Pathfinder","Nature's Adrenaline",183,0.34%
+85,"Deadeye","Projectile Damage, Critical Strike Chance",181,0.34%
+86,"Occultist","Malediction",179,0.34%
+87,"Hierophant","Mana Regeneration, Area Damage",178,0.34%
+88,"Hierophant","Illuminated Devotion",174,0.33%
+89,"Elementalist","Shaper of Desolation",174,0.33%
+90,"Occultist","Energy Shield, Chaos Damage",169,0.32%
+91,"Occultist","Void Beacon",167,0.31%
+92,"Assassin","Toxic Delivery",166,0.31%
+93,"Hierophant","Divine Guidance",164,0.31%
+94,"Berserker","Physical Attack Damage, Life Leeched per Second",155,0.29%
+95,"Gladiator","Gratuitous Violence",151,0.28%
+96,"Ascendant","Occultist",150,0.28%
+97,"Pathfinder","Master Surgeon",149,0.28%
+98,"Necromancer","Flesh Binder",143,0.27%
+99,"Pathfinder","Flask Effect, Damage Over Time",138,0.26%
+100,"Pathfinder","Master Herbalist",137,0.26%
+101,"Elementalist","Pendulum of Destruction",135,0.25%
+102,"Inquisitor","Augury of Penitence",132,0.25%
+103,"Slayer","Brutal Fervor",132,0.25%
+104,"Hierophant","Pursuit of Faith",132,0.25%
+105,"Berserker","Pain Reaver",130,0.25%
+106,"Saboteur","Elemental Damage, Movement Speed",129,0.24%
+107,"Berserker","Physical Attack Damage, Warcry Duration",128,0.24%
+108,"Berserker","War Bringer",128,0.24%
+109,"Trickster","Attack and Cast Speed, Frenzy Charge Duration",126,0.24%
+110,"Trickster","Swift Killer",125,0.24%
+111,"Slayer","Two Handed Damage, Attack Speed",125,0.24%
+112,"Juggernaut","Unrelenting",125,0.24%
+113,"Elementalist","Elemental Damage, Status Ailment Chance",121,0.23%
+114,"Elementalist","Liege of the Primordial",121,0.23%
+115,"Raider","Evasion, Movement Speed",117,0.22%
+116,"Guardian","Radiant Faith",116,0.22%
+117,"Saboteur","Blinding Assault",113,0.21%
+118,"Ascendant","Strength and Dexterity",113,0.21%
+119,"Juggernaut","Armour, Stun Duration",109,0.21%
+120,"Juggernaut","Unbreakable",109,0.21%
+121,"Chieftain","Hinekora, Death's Fury",107,0.20%
+122,"Juggernaut","Armour, Movement Speed",106,0.20%
+123,"Juggernaut","Unstoppable",106,0.20%
+124,"Necromancer","Soul Weaver",101,0.19%
+125,"Ascendant","Pathfinder",99,0.19%
+126,"Hierophant","Ritual of Awakening",99,0.19%
+127,"Trickster","Attack and Cast Speed, Damage Over Time",98,0.18%
+128,"Trickster","Patient Reaper",98,0.18%
+129,"Raider","Avatar of the Chase",96,0.18%
+130,"Deadeye","Powerful Precision",95,0.18%
+131,"Guardian","Unwavering Faith",94,0.18%
+132,"Raider","Quartz Infusion",93,0.18%
+133,"Juggernaut","Armour, Life Regeneration",92,0.17%
+134,"Slayer","Endless Hunger",92,0.17%
+135,"Juggernaut","Unyielding",92,0.17%
+136,"Elementalist","Beacon of Ruin",91,0.17%
+137,"Ascendant","Strength and Intelligence",91,0.17%
+138,"Inquisitor","Elemental Damage, Life Regeneration",83,0.16%
+139,"Chieftain","Ramako, Sun's Light",82,0.15%
+140,"Slayer","Headsman",79,0.15%
+141,"Assassin","Assassinate",77,0.15%
+142,"Champion","Armour and Evasion, Attack Speed",76,0.14%
+143,"Juggernaut","Armour, Attack Speed",76,0.14%
+144,"Champion","First to Strike, Last to Fall",76,0.14%
+145,"Deadeye","Sharp and Venomous",76,0.14%
+146,"Juggernaut","Undeniable",75,0.14%
+147,"Slayer","Impact",70,0.13%
+148,"Slayer","Two Handed Damage, Area of Effect Radius",70,0.13%
+149,"Ascendant","Slayer",63,0.12%
+150,"Ascendant","Elementalist",62,0.12%
+151,"Gladiator","Violent Retaliation",59,0.11%
+152,"Hierophant","Mana Regeneration, Power and Endurance Charge Duration",58,0.11%
+153,"Hierophant","Conviction of Power",57,0.11%
+154,"Gladiator","One Handed Speed and Damage",56,0.11%
+155,"Trickster","Weave the Arcane",56,0.11%
+156,"Necromancer","Minion Damage, Chaos Resistance",55,0.10%
+157,"Inquisitor","Sanctify",55,0.10%
+158,"Pathfinder","Flask Effect, Elemental Resistances",52,0.10%
+159,"Gladiator","Outmatch and Outlast",51,0.10%
+160,"Gladiator","Blood in the Eyes",47,0.09%
+161,"Hierophant","Sanctuary of Thought",47,0.09%
+162,"Slayer","Bane of Legends",46,0.09%
+163,"Necromancer","Beacon of Corruption",45,0.08%
+164,"Elementalist","Paragon of Calamity",44,0.08%
+165,"Guardian","Armour and Energy Shield, Charge Duration",42,0.08%
+166,"Guardian","Harmony of Purpose",42,0.08%
+167,"Guardian","Armour and Energy Shield, Warcry Duration",37,0.07%
+168,"Guardian","Prayer of Glory",37,0.07%
+169,"Pathfinder","Nature's Boon",34,0.06%
+170,"Ascendant","Inquisitor",30,0.06%
+171,"Elementalist","Mastermind of Discord",30,0.06%
+172,"Ascendant","Juggernaut",27,0.05%
+173,"Inquisitor","Pious Path",27,0.05%
+174,"Ascendant","Chieftain",26,0.05%
+175,"Pathfinder","Flask Effect, Attack Damage",26,0.05%
+176,"Raider","Avatar of the Veil",24,0.05%
+177,"Ascendant","Hierophant",24,0.05%
+178,"Pathfinder","Veteran Bowyer",24,0.05%
+179,"Saboteur","Demolitions Specialist",23,0.04%
+180,"Slayer","Overwhelm",23,0.04%
+181,"Slayer","Two Handed Damage, Reduced Enemy Stun Threshold",23,0.04%
+182,"Berserker","Cloaked in Savagery",20,0.04%
+183,"Pathfinder","Master Alchemist",18,0.03%
+184,"Ascendant","Champion",16,0.03%
+185,"Ascendant","Necromancer",16,0.03%
+186,"Ascendant","Trickster",15,0.03%
+187,"Champion","Armour and Evasion, Taunt Duration",12,0.02%
+188,"Ascendant","Path of the Ranger",12,0.02%
+189,"Guardian","Armour and Energy Shield, Block Chance",11,0.02%
+190,"Guardian","Bastion of Hope",11,0.02%
+191,"Ascendant","Guardian",11,0.02%
+192,"Assassin","Noxious Strike",10,0.02%
+193,"Ascendant","Gladiator",9,0.02%
+194,"Champion","Conqueror",7,0.01%
+195,"Ascendant","Path of the Shadow",6,0.01%
+196,"Ascendant","Saboteur",6,0.01%
+197,"Guardian","Armour and Energy Shield, Life Regeneration",5,0.01%
+198,"Guardian","Time of Need",5,0.01%
+199,"Champion","Worthy Foe",5,0.01%
+200,"Ascendant","Path of the Marauder",4,0.01%
+201,"Ascendant","Path of the Duelist",2,0.00%
+202,"Saboteur","Born in the Shadows",1,0.00%

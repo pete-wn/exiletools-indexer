@@ -1,0 +1,94 @@
+rank,ascendancy,nodename,count,percentage
+1,"Ascendant","Passive Point",2579,8.45%
+2,"Champion","Armour and Evasion, Fortify Effect",1601,5.24%
+3,"Saboteur","Elemental Damage, Trap and Mine Placement Speed",1508,4.94%
+4,"Assassin","Critical Strike Chance, Power Charge Duration",1396,4.57%
+5,"Berserker","Physical Attack Damage, Attack Speed",1092,3.58%
+6,"Inquisitor","Elemental Damage, Critical Strike Multiplier",1005,3.29%
+7,"Ascendant","Strength",966,3.16%
+8,"Ascendant","Dexterity",947,3.10%
+9,"Deadeye","Projectile Damage, Attack Speed",926,3.03%
+10,"Trickster","Attack and Cast Speed, Evasion and Energy Shield",884,2.90%
+11,"Chieftain","Life Regeneration, Totem Placement Speed",831,2.72%
+12,"Ascendant","Berserker",781,2.56%
+13,"Raider","Evasion, Frenzy Charge Duration",775,2.54%
+14,"Deadeye","Projectile Damage, Accuracy",659,2.16%
+15,"Champion","Armour and Evasion, Aura Effect",619,2.03%
+16,"Occultist","Energy Shield, Energy Shield Recharge Rate",617,2.02%
+17,"Assassin","Critical Strike Chance and Multiplier",561,1.84%
+18,"Trickster","Attack and Cast Speed, Maximum Mana",546,1.79%
+19,"Ascendant","Deadeye",544,1.78%
+20,"Saboteur","Elemental Damage and Resistances",362,1.19%
+20,"Inquisitor","Elemental Damage and Resistances",133,0.44%
+20,"Elementalist","Elemental Damage and Resistances",49,0.16%
+21,"Gladiator","One Handed Speed, Block Chance",517,1.69%
+22,"Necromancer","Minion Damage, Cast Speed",494,1.62%
+23,"Occultist","Energy Shield, Curse Duration",477,1.56%
+24,"Raider","Evasion, Attack Speed",474,1.55%
+25,"Inquisitor","Elemental Damage, Attack and Cast Speed",269,0.88%
+25,"Elementalist","Elemental Damage, Attack and Cast Speed",172,0.56%
+26,"Ascendant","Dexterity and Intelligence",422,1.38%
+27,"Chieftain","Life Regeneration, Fire Damage",411,1.35%
+28,"Necromancer","Minion Damage, Skill Duration",407,1.33%
+29,"Chieftain","Life Regeneration, Strength",370,1.21%
+30,"Ascendant","Assassin",337,1.10%
+31,"Pathfinder","Flask Effect and Duration",334,1.09%
+32,"Juggernaut","Armour, Attack Damage",327,1.07%
+33,"Ascendant","Intelligence",292,0.96%
+34,"Elementalist","Elemental Damage, Status Ailment Duration",268,0.88%
+35,"Necromancer","Minion Damage and Life",256,0.84%
+36,"Occultist","Energy Shield, Critical Strike Chance",245,0.80%
+37,"Hierophant","Mana Regeneration, Totem Placement Speed",234,0.77%
+38,"Slayer","Two Handed Damage, Life Leech",224,0.73%
+39,"Hierophant","Mana Regeneration, Mana",212,0.69%
+40,"Guardian","Armour and Energy Shield, Aura Effect",210,0.69%
+41,"Gladiator","One Handed Speed, Physical Damage",200,0.66%
+42,"Ascendant","Raider",200,0.66%
+43,"Berserker","Physical Attack Damage, Armour",199,0.65%
+44,"Assassin","Critical Strike Chance, Damage Over Time",187,0.61%
+45,"Deadeye","Projectile Damage, Critical Strike Chance",181,0.59%
+46,"Hierophant","Mana Regeneration, Area Damage",178,0.58%
+47,"Occultist","Energy Shield, Chaos Damage",169,0.55%
+48,"Berserker","Physical Attack Damage, Life Leeched per Second",155,0.51%
+49,"Ascendant","Occultist",150,0.49%
+50,"Pathfinder","Flask Effect, Damage Over Time",138,0.45%
+51,"Saboteur","Elemental Damage, Movement Speed",129,0.42%
+52,"Berserker","Physical Attack Damage, Warcry Duration",128,0.42%
+53,"Trickster","Attack and Cast Speed, Frenzy Charge Duration",126,0.41%
+54,"Slayer","Two Handed Damage, Attack Speed",125,0.41%
+55,"Elementalist","Elemental Damage, Status Ailment Chance",121,0.40%
+56,"Raider","Evasion, Movement Speed",117,0.38%
+57,"Ascendant","Strength and Dexterity",113,0.37%
+58,"Juggernaut","Armour, Stun Duration",109,0.36%
+59,"Juggernaut","Armour, Movement Speed",106,0.35%
+60,"Ascendant","Pathfinder",99,0.32%
+61,"Trickster","Attack and Cast Speed, Damage Over Time",98,0.32%
+62,"Juggernaut","Armour, Life Regeneration",92,0.30%
+63,"Ascendant","Strength and Intelligence",91,0.30%
+64,"Inquisitor","Elemental Damage, Life Regeneration",83,0.27%
+65,"Champion","Armour and Evasion, Attack Speed",76,0.25%
+66,"Juggernaut","Armour, Attack Speed",76,0.25%
+67,"Slayer","Two Handed Damage, Area of Effect Radius",70,0.23%
+68,"Ascendant","Slayer",63,0.21%
+69,"Ascendant","Elementalist",62,0.20%
+70,"Hierophant","Mana Regeneration, Power and Endurance Charge Duration",58,0.19%
+71,"Gladiator","One Handed Speed and Damage",56,0.18%
+72,"Necromancer","Minion Damage, Chaos Resistance",55,0.18%
+73,"Pathfinder","Flask Effect, Elemental Resistances",52,0.17%
+74,"Guardian","Armour and Energy Shield, Charge Duration",42,0.14%
+75,"Guardian","Armour and Energy Shield, Warcry Duration",37,0.12%
+76,"Ascendant","Inquisitor",30,0.10%
+77,"Ascendant","Juggernaut",27,0.09%
+78,"Ascendant","Chieftain",26,0.09%
+79,"Pathfinder","Flask Effect, Attack Damage",26,0.09%
+80,"Ascendant","Hierophant",24,0.08%
+81,"Slayer","Two Handed Damage, Reduced Enemy Stun Threshold",23,0.08%
+82,"Ascendant","Champion",16,0.05%
+83,"Ascendant","Necromancer",16,0.05%
+84,"Ascendant","Trickster",15,0.05%
+85,"Champion","Armour and Evasion, Taunt Duration",12,0.04%
+86,"Guardian","Armour and Energy Shield, Block Chance",11,0.04%
+87,"Ascendant","Guardian",11,0.04%
+88,"Ascendant","Gladiator",9,0.03%
+89,"Ascendant","Saboteur",6,0.02%
+90,"Guardian","Armour and Energy Shield, Life Regeneration",5,0.02%

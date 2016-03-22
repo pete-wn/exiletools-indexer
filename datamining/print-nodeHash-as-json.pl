@@ -73,10 +73,12 @@ sub createNodeHash {
         } else {
           # Change periods to commas
           $bonus =~ s/\./\,/g;
-          $bonus =~ s/\\n/ /g;
+          $bonus =~ s/\n/ /g;
           push @bonuses, $bonus;
         }
       } else {
+        $bonus =~ s/\./\,/g;
+        $bonus =~ s/\n/ /g;
         push @bonuses, $bonus;
       }
     }
@@ -90,5 +92,6 @@ sub createNodeHash {
     $nodeHash{$id}{isAscendancyStart} = $node->{isAscendancyStart} if ($node->{isAscendancyStart});
     $nodeHash{$id}{ascendancyName} = $node->{ascendancyName} if ($node->{ascendancyName});
     $nodeHash{$id}{isMultipleChoiceOption} = $node->{isMultipleChoiceOption} if ($node->{isMultipleChoiceOption});
+    $nodeHash{$id}{isMultipleChoice} = $node->{isMultipleChoice} if ($node->{isMultipleChoice});
   }
 }

@@ -1,0 +1,757 @@
+rank,nodename,count,percentage
+1,Intelligence,116077,10.20%
+2,Life,97939,8.61%
+3,Dexterity,97229,8.55%
+4,Strength,80207,7.05%
+5,Jewel Socket,25598,2.25%
+6,Life and Energy Shield,18519,1.63%
+7,Critical Strike Chance,16601,1.46%
+8,Elemental Damage,16538,1.45%
+9,Energy Shield,15787,1.39%
+10,Area of Effect Radius,14808,1.30%
+11,Projectile Damage,12350,1.09%
+12,Life and Armour,11246,0.99%
+13,Evasion and Life,10750,0.94%
+14,Spell Critical Strike Chance,10744,0.94%
+15,Spell Damage,9389,0.83%
+16,Two Handed Melee Damage,9203,0.81%
+17,Mana and Life,7116,0.63%
+18,Evasion and Energy Shield,6872,0.60%
+19,Mana Regeneration and Life,6362,0.56%
+20,Life and Chaos Resistance,6332,0.56%
+21,Acrobatics Improvement,5958,0.52%
+22,Mana,5826,0.51%
+23,Trickery,5782,0.51%
+24,Retribution,5737,0.50%
+25,Coldhearted Calculation,5695,0.50%
+26,Attack Speed,5495,0.48%
+27,Discipline and Training,5436,0.48%
+28,Fire Damage,5394,0.47%
+29,Blood Siphon,5371,0.47%
+30,Physical and Chaos Damage,5276,0.46%
+31,Coordination,5138,0.45%
+32,Skill Duration,4722,0.41%
+33,Assassination,4649,0.41%
+34,Constitution,4628,0.41%
+35,Power Charge Duration,4593,0.40%
+36,Stun Avoidance and Movement Speed,4520,0.40%
+37,Physical Damage,4458,0.39%
+38,Amplify,4457,0.39%
+39,Melee Damage,4441,0.39%
+40,Art of the Gladiator,4394,0.39%
+41,Reduced Mana Reservation,4372,0.38%
+42,Bravery,4365,0.38%
+43,Golem's Blood,4246,0.37%
+44,Nullification,4225,0.37%
+45,Written in Blood,4202,0.37%
+46,Sanctity,4198,0.37%
+47,Frenzy Charge Duration,4169,0.37%
+48,Life and Elemental Resistances,4154,0.37%
+49,Blood Drinker,4121,0.36%
+50,Deep Wisdom,3964,0.35%
+51,Armour,3884,0.34%
+52,Cruel Preparation,3772,0.33%
+53,Area of Effect Damage,3599,0.32%
+54,Herbalism,3555,0.31%
+55,Elementalist,3527,0.31%
+56,Blast Radius,3435,0.30%
+57,Fangs of the Viper,3401,0.30%
+58,Trap and Mine Damage,3365,0.30%
+59,Devotion,3362,0.30%
+60,Cast Speed,3348,0.29%
+61,Life Leech,3271,0.29%
+62,Life Regeneration,3269,0.29%
+63,Mace Damage,3103,0.27%
+64,Chaos Damage,3100,0.27%
+65,Master of the Arena,3054,0.27%
+66,Armour, Evasion and Life,3039,0.27%
+67,Acrobatics,3018,0.27%
+68,Finesse,2976,0.26%
+69,Occultist's Dominion,2893,0.25%
+70,Quick Recovery,2875,0.25%
+71,Heart of the Warrior,2852,0.25%
+72,Warrior's Blood,2844,0.25%
+73,Harrier,2811,0.25%
+74,Heart of Oak,2796,0.25%
+75,Bow Damage and Critical Strike Chance,2722,0.24%
+76,Lightning Damage,2608,0.23%
+77,Damage Over Time,2596,0.23%
+78,Spell Critical Strike Multiplier,2585,0.23%
+79,Passive Point,2579,0.23%
+80,Heart and Soul,2528,0.22%
+81,Totem Damage,2510,0.22%
+82,Shaper,2450,0.22%
+83,Bow Critical Strike Chance and Multiplier,2421,0.21%
+84,Purity of Flesh,2392,0.21%
+85,Barbarism,2350,0.21%
+86,Born to Fight,2300,0.20%
+87,Annihilation,2298,0.20%
+88,Ballistic Mastery,2276,0.20%
+89,Mana Leech,2204,0.19%
+90,Endurance Charge Duration,2141,0.19%
+91,Vaal Pact,2141,0.19%
+92,Aura Area of Effect,2139,0.19%
+93,Sentinel,2138,0.19%
+94,Instability,2135,0.19%
+95,Heartseeker,2116,0.19%
+96,Curse Effect,2100,0.18%
+97,Energy Shield and Recovery,2059,0.18%
+98,Life and Reduced Mana Cost,2053,0.18%
+99,Life and Life on Kill,2051,0.18%
+100,Fury Bolts,2049,0.18%
+101,Melding,2033,0.18%
+102,Doom Cast,2029,0.18%
+103,Bow Damage and Attack Speed,2027,0.18%
+104,Dagger Damage and Critical Strike Chance,2017,0.18%
+105,Savagery,2005,0.18%
+106,Light of Divinity,1964,0.17%
+107,Phase Acrobatics,1907,0.17%
+108,Fervor,1862,0.16%
+109,Evasion Per Frenzy Charge,1854,0.16%
+110,Bow Critical Strike Chance,1832,0.16%
+111,Trap and Mine Damage and Laying Speed,1802,0.16%
+112,Resolute Technique,1750,0.15%
+113,Frenetic,1732,0.15%
+114,Juggernaut,1724,0.15%
+115,Life and Mana Leech,1686,0.15%
+116,Will of Blades,1677,0.15%
+117,Arcane Focus,1671,0.15%
+118,True Strike,1670,0.15%
+119,Two Handed Melee Damage and Attack Speed,1665,0.15%
+120,Thick Skin,1620,0.14%
+121,Axe Damage,1616,0.14%
+122,Trap Damage,1616,0.14%
+123,Foresight,1611,0.14%
+124,Spell Damage per Power Charge,1609,0.14%
+125,Infused,1607,0.14%
+126,Armour and Evasion, Fortify Effect,1601,0.14%
+127,Mace Damage and Attack Speed,1567,0.14%
+128,Elemental Overload,1556,0.14%
+129,Flask Effect,1536,0.13%
+130,Aura Effect,1529,0.13%
+131,Elemental Damage and Energy Shield,1520,0.13%
+132,Elemental Damage, Trap and Mine Placement Speed,1508,0.13%
+133,Weapon Elemental Damage,1454,0.13%
+134,Critical Strike Multiplier,1440,0.13%
+135,Mana and Life Regeneration,1439,0.13%
+136,Potency of Will,1429,0.13%
+137,Minion Damage,1412,0.12%
+138,Destroyer,1407,0.12%
+139,Critical Strike Chance, Power Charge Duration,1396,0.12%
+140,Sniper,1389,0.12%
+141,King of the Hill,1348,0.12%
+142,Physical Attack Damage,1335,0.12%
+143,Dual Wield Damage,1327,0.12%
+144,Dagger Damage,1317,0.12%
+145,Lethality,1310,0.12%
+146,Ghost Reaver,1298,0.11%
+147,Minion Life,1296,0.11%
+148,Bow Damage,1290,0.11%
+149,Butchery,1286,0.11%
+150,Deep Thoughts,1280,0.11%
+151,Bow Attack Speed and Critical Strike Chance,1261,0.11%
+152,Trap Damage and Trigger Radius,1260,0.11%
+153,Life and Flasks,1216,0.11%
+154,Curse Duration,1165,0.10%
+155,Avoid Interruption while Casting,1151,0.10%
+156,Physical and Chaos Damage and Life,1134,0.10%
+157,Vitality Void,1108,0.10%
+158,Physical Attack Damage, Attack Speed,1092,0.10%
+159,One Handed Melee Damage,1078,0.09%
+160,Primal Spirit,1065,0.09%
+161,Aspect of the Lynx,1053,0.09%
+162,Elemental Focus,1051,0.09%
+163,Whispers of Doom,1018,0.09%
+164,Evasion,1012,0.09%
+165,Elemental Damage, Critical Strike Multiplier,1005,0.09%
+166,Energy Shield and Mana Regeneration,1004,0.09%
+167,Dagger Critical Strike Chance and Multiplier,986,0.09%
+168,Hired Killer,981,0.09%
+169,Physical Attack Damage and Life,978,0.09%
+170,Bone Breaker,977,0.09%
+171,Charisma,976,0.09%
+172,Endurance,970,0.09%
+173,Combat Stamina,961,0.08%
+174,Bloodless,958,0.08%
+175,Wisdom of the Glade,950,0.08%
+176,Sovereignty,939,0.08%
+177,Agility,932,0.08%
+178,Armour and Life Regeneration,932,0.08%
+179,Projectile Damage, Attack Speed,926,0.08%
+180,Lightning Resistance,915,0.08%
+181,Exceptional Performance,913,0.08%
+182,Accuracy and Critical Strike Chance,909,0.08%
+183,Totem Placement Speed,909,0.08%
+184,Clever Construction,905,0.08%
+185,Skull Cracking,904,0.08%
+186,Armour and Evasion,898,0.08%
+187,Staff and Mace Damage,889,0.08%
+188,Elemental Equilibrium,888,0.08%
+189,Mana and Mana Regeneration,885,0.08%
+190,Attack and Cast Speed, Evasion and Energy Shield,884,0.08%
+191,Saboteur,884,0.08%
+192,Ancestral Bond,879,0.08%
+193,Overcharge,876,0.08%
+194,Axe Damage and Attack Speed,855,0.08%
+195,Cold Resistance,853,0.07%
+196,Physique,851,0.07%
+197,Stamina,845,0.07%
+198,Mind Over Matter,844,0.07%
+199,Melee Damage with Shield,835,0.07%
+200,Trap Damage and Cooldown Recovery,834,0.07%
+201,Hasty Reconstruction,833,0.07%
+202,Life Regeneration, Totem Placement Speed,831,0.07%
+203,Staff and Mace Attack Speed and Armour,829,0.07%
+204,Unstoppable Hero,829,0.07%
+205,Burning Damage,825,0.07%
+206,Path of the Warrior,823,0.07%
+207,Wrecking Ball,823,0.07%
+208,Armour and Energy Shield,789,0.07%
+209,Mace Damage and Reduced Enemy Stun Threshold,789,0.07%
+210,Executioner,785,0.07%
+211,Berserker,781,0.07%
+212,Blunt Instrument,777,0.07%
+213,Evasion, Frenzy Charge Duration,775,0.07%
+214,Aspect of the Eagle,774,0.07%
+215,Bomb Specialist,774,0.07%
+216,Fortitude,772,0.07%
+217,Melee Critical Strike Chance,766,0.07%
+218,Projectile Damage and Speed,766,0.07%
+219,Nightstalker,763,0.07%
+220,Dagger Damage and Attack Speed,762,0.07%
+221,Cloth and Chain,761,0.07%
+222,Projectile Damage and Attack Speed,746,0.07%
+223,Unstable Infusion,746,0.07%
+224,Armour Mastery,745,0.07%
+225,Minion Attack and Cast Speed,740,0.07%
+226,Vigour,740,0.07%
+227,Chaos Inoculation,732,0.06%
+228,Alchemist,728,0.06%
+229,Alacrity,727,0.06%
+230,Infused Shield,718,0.06%
+231,Chain Reaction,700,0.06%
+232,Explosive Impact,699,0.06%
+233,Dual Wield Critical Strike Chance,695,0.06%
+234,High Explosives,680,0.06%
+235,Mana and Reduced Mana Cost,671,0.06%
+236,Diamond Skin,668,0.06%
+237,Celestial Judgement,663,0.06%
+238,Tireless,661,0.06%
+239,Projectile Damage, Accuracy,659,0.06%
+240,Unnatural Calm,659,0.06%
+241,Master Sapper,657,0.06%
+242,Spell Damage and Intelligence,655,0.06%
+243,Expertise,654,0.06%
+244,Catalyse,649,0.06%
+245,Totemic Mastery,648,0.06%
+246,Deadly Infusion,647,0.06%
+247,Practical Application,647,0.06%
+248,Life Regeneration per Endurance Charge,645,0.06%
+249,Entropy,644,0.06%
+250,Faith and Steel,637,0.06%
+251,Chaos Resistance and Chaos Damage,630,0.06%
+252,Attack and Movement Speed,628,0.06%
+253,Armour and Evasion, Aura Effect,619,0.05%
+254,Inspirational,619,0.05%
+255,Energy Shield, Energy Shield Recharge Rate,617,0.05%
+256,Throatseeker,596,0.05%
+257,Arcane Potency,595,0.05%
+258,Fire Resistance,590,0.05%
+259,Profane Chemistry,586,0.05%
+260,Attack Speed and Accuracy,584,0.05%
+261,Fast and Deadly,583,0.05%
+262,Method to the Madness,582,0.05%
+263,Shield Defences,582,0.05%
+264,Melee Damage and Life,577,0.05%
+265,Crave the Slaughter,574,0.05%
+266,Shield Block and Shield Defences,569,0.05%
+267,Critical Strike Chance and Multiplier,561,0.05%
+268,Projectile Damage and Dexterity,555,0.05%
+269,Totem Life and Elemental Resistances,553,0.05%
+270,Weapon Artistry,551,0.05%
+271,Attack and Cast Speed, Maximum Mana,546,0.05%
+272,Influence,546,0.05%
+273,Deadeye,544,0.05%
+274,Elemental Damage and Resistances,544,0.05%
+275,Projectile Damage and Pierce,543,0.05%
+276,Damage Over Time and Life Regeneration,537,0.05%
+277,Righteous Providence,534,0.05%
+278,Shield Block and Block Recovery,534,0.05%
+279,Wand Damage,533,0.05%
+280,Cold Damage,530,0.05%
+281,Melee Damage while Fortified,526,0.05%
+282,Growth and Decay,519,0.05%
+283,Ancestral Knowledge,517,0.05%
+284,One Handed Speed, Block Chance,517,0.05%
+285,Aspect of Carnage,516,0.05%
+286,Curse Cast Speed,512,0.04%
+287,Arsonist,511,0.04%
+288,Sword Critical Strike Chance,511,0.04%
+289,Atrophy,506,0.04%
+290,Totem Attack, Cast Speed and Damage,505,0.04%
+291,Revenge of the Hunted,503,0.04%
+292,Arrow Dancing,500,0.04%
+293,Blood Magic,499,0.04%
+294,Attack Speed and Dexterity,496,0.04%
+295,Shield Block,496,0.04%
+296,Minion Damage, Cast Speed,494,0.04%
+297,Mortal Conviction,490,0.04%
+298,Walk the Aether,490,0.04%
+299,Ghost Dance,488,0.04%
+300,Nimbleness,488,0.04%
+301,Path of the Savant,486,0.04%
+302,Totem Life and Resistances,484,0.04%
+303,Energy Shield, Curse Duration,477,0.04%
+304,Pierce,476,0.04%
+305,Totem Life and Physical Damage Reduction,476,0.04%
+306,Evasion, Attack Speed,474,0.04%
+307,Ambush,472,0.04%
+308,Shamanistic Fury,471,0.04%
+309,Iron Reflexes,470,0.04%
+310,Inevitable Judgement,467,0.04%
+311,Far Shot,465,0.04%
+312,Mana Regeneration and Intelligence,464,0.04%
+313,Piercing Shots,464,0.04%
+314,Physical Attack Damage with Shield,455,0.04%
+315,Lord of the Dead,446,0.04%
+316,Way of the Poacher,443,0.04%
+317,Bow Damage and Accuracy,442,0.04%
+318,Elemental Damage, Attack and Cast Speed,441,0.04%
+319,Reflexes,441,0.04%
+320,Arcane Vision,440,0.04%
+321,Pain Attunement,431,0.04%
+322,Arohongui, Moon's Presence,428,0.04%
+323,Celestial Punishment,426,0.04%
+324,Dexterity and Intelligence,422,0.04%
+325,Force Shaper,421,0.04%
+326,Mental Rapidity,417,0.04%
+327,Eldritch Battery,416,0.04%
+328,Druidic Rite,411,0.04%
+329,Leadership,411,0.04%
+330,Life Regeneration, Fire Damage,411,0.04%
+331,Wand Critical Strike Chance and Multiplier,410,0.04%
+332,Attack and Cast Speed, Accuracy,407,0.04%
+333,Minion Damage, Skill Duration,407,0.04%
+334,Mistress of Sacrifice,407,0.04%
+335,Deadly Draw,405,0.04%
+336,Tukohama, War's Herald,402,0.04%
+337,Evasion and Elemental Resistances,401,0.04%
+338,Shade Form,395,0.03%
+339,Depth Perception,393,0.03%
+340,Gravepact,392,0.03%
+341,Essence Sap,391,0.03%
+342,Wicked Ward,383,0.03%
+343,Righteous Decree,380,0.03%
+344,Totem Damage, Attack and Cast Speed,379,0.03%
+345,Rapid Assault,378,0.03%
+346,Soul Siphon,378,0.03%
+347,Holy Fire,376,0.03%
+348,Quickstep,375,0.03%
+349,Fire Walker,373,0.03%
+350,Adder's Touch,370,0.03%
+351,Life Regeneration, Strength,370,0.03%
+352,Two Handed Attack Speed,370,0.03%
+353,Tawhoa, Forest's Strength,368,0.03%
+354,Defiance,360,0.03%
+355,Dervish,359,0.03%
+356,Unwavering Stance,355,0.03%
+357,Staff Damage and Critical Strike Chance,354,0.03%
+358,Accuracy and Attack Speed,348,0.03%
+359,Explosives Expert,348,0.03%
+360,Sword Critical Strike Multiplier,346,0.03%
+361,Twin Terrors,344,0.03%
+362,Cold and Lightning Damage,343,0.03%
+363,Trap Throw Speed and Damage,343,0.03%
+364,Heavy Draw,339,0.03%
+365,Ricochet,339,0.03%
+366,Assassin,337,0.03%
+367,Melee Damage and Attack Speed with Shield,337,0.03%
+368,Precision,335,0.03%
+369,Storm Weaver,335,0.03%
+370,Zealot's Oath,335,0.03%
+371,Flask Effect and Duration,334,0.03%
+372,Avatar of the Slaughter,332,0.03%
+373,Lightning Walker,331,0.03%
+374,Melee Damage and Strength,330,0.03%
+375,Skittering Runes,330,0.03%
+376,Armour, Attack Damage,327,0.03%
+377,Crackling Speed,322,0.03%
+378,Staff Damage,320,0.03%
+379,Weapon Lightning Damage,319,0.03%
+380,Mana Flows,317,0.03%
+381,Minion Life Regeneration,317,0.03%
+382,Might,314,0.03%
+383,Spirit Void,310,0.03%
+384,Block Chance and Melee Damage with Shield,309,0.03%
+385,Hard Knocks,308,0.03%
+386,Sword Damage and Attack Speed,307,0.03%
+387,Minion Damage and Life Leech,303,0.03%
+388,Profane Bloom,296,0.03%
+389,Accuracy and Reduced Mana Cost,295,0.03%
+390,Forces of Nature,295,0.03%
+391,Solidity,294,0.03%
+392,Heart of Flame,293,0.03%
+393,Cleaving,292,0.03%
+394,Staff Critical Strike Chance and Damage,290,0.03%
+395,Mana and Flasks,286,0.03%
+396,Trap and Mine Critical Strike Chance,284,0.02%
+397,Claw, Dagger and Sword Attack Speed,279,0.02%
+398,Versatility,276,0.02%
+399,Sword Damage,275,0.02%
+400,Testudo,275,0.02%
+401,Berserking,273,0.02%
+402,Elemental Damage, Status Ailment Duration,268,0.02%
+403,Slaughter,268,0.02%
+404,Dreamer,267,0.02%
+405,Spirit Eater,267,0.02%
+406,Instruments of Virtue,265,0.02%
+407,Fatal Blade,264,0.02%
+408,Death Attunement,263,0.02%
+409,Dual Wield Damage and Attack Speed,263,0.02%
+410,Arcane Chemistry,259,0.02%
+411,Life and Strength,259,0.02%
+412,Fortify Effect and Duration,258,0.02%
+413,Rampart,258,0.02%
+414,Martial Experience,257,0.02%
+415,Minion Damage and Life,256,0.02%
+416,Indomitable,255,0.02%
+417,Sleight of Hand,255,0.02%
+418,Thief's Craft,255,0.02%
+419,Disemboweling,254,0.02%
+420,Precise Interception,252,0.02%
+421,Splitting Strikes,250,0.02%
+422,Flaying,248,0.02%
+423,Aspect of the Panther,245,0.02%
+424,Energy Shield, Critical Strike Chance,245,0.02%
+425,Dual Wield Attack and Cast Speed,241,0.02%
+426,Forbidden Power,241,0.02%
+427,Hematophagy,241,0.02%
+428,Dual Wield Attack Speed,239,0.02%
+429,Painforged,239,0.02%
+430,Mana Regeneration, Totem Placement Speed,234,0.02%
+431,Vile Bastion,234,0.02%
+432,Beef,231,0.02%
+433,Dirty Techniques,230,0.02%
+434,Herd the Flock,230,0.02%
+435,Retaliation,230,0.02%
+436,Energy Shield Recharge Rate,227,0.02%
+437,Totem Damage and Critical Strike Chance,224,0.02%
+438,Two Handed Damage, Life Leech,224,0.02%
+439,Fire and Cold Damage,223,0.02%
+440,Skill Duration, and Damage Over Time,221,0.02%
+441,Heart of Thunder,220,0.02%
+442,Shaman's Dominion,219,0.02%
+443,Strong Arm,218,0.02%
+444,Snowforged,217,0.02%
+445,Poison Damage,216,0.02%
+446,Ngamahu, Flame's Advance,215,0.02%
+447,Versatile Combatant,214,0.02%
+448,Mana Regeneration, Mana,212,0.02%
+449,Totem Attack and Cast Speed,211,0.02%
+450,Armour and Energy Shield, Aura Effect,210,0.02%
+451,Commander of Darkness,209,0.02%
+452,Axe and Sword Attack Speed,207,0.02%
+453,Sword Damage and Accuracy,205,0.02%
+454,Totem Duration, Attack and Cast Speed,205,0.02%
+455,Chance to Poison,204,0.02%
+456,Defences with Shield,204,0.02%
+457,Bloody Bludgeon,202,0.02%
+458,Totemic Zeal,202,0.02%
+459,Prowess,201,0.02%
+460,Unflinching,201,0.02%
+461,Fatal Toxins,200,0.02%
+462,One Handed Speed, Physical Damage,200,0.02%
+463,Raider,200,0.02%
+464,Trap Throwing Speed and Trigger Radius,200,0.02%
+465,Physical Attack Damage, Armour,199,0.02%
+466,Totem Placement Speed and Duration,199,0.02%
+467,Weapon Fire Damage,199,0.02%
+468,Corruption,198,0.02%
+469,Survivalist,198,0.02%
+470,Command of Steel,195,0.02%
+471,Dagger Damage and Critical Strike Multiplier,194,0.02%
+472,Rite of Ruin,194,0.02%
+473,Totem Critical Strike Multiplier,194,0.02%
+474,Endless Munitions,192,0.02%
+475,Claw, Dagger and Sword Damage,191,0.02%
+476,Sanctuary,190,0.02%
+477,Critical Strike Chance, Damage Over Time,187,0.02%
+478,Deadly Dilettante,186,0.02%
+479,Totem Life and Placement Speed,186,0.02%
+480,Nature's Adrenaline,183,0.02%
+481,Ironwood,181,0.02%
+482,Proficiency,181,0.02%
+483,Projectile Damage, Critical Strike Chance,181,0.02%
+484,Blast Cascade,179,0.02%
+485,Malediction,179,0.02%
+486,Mana Regeneration, Area Damage,178,0.02%
+487,Wand Attack Speed and Accuracy,177,0.02%
+488,Illuminated Devotion,174,0.02%
+489,Shaper of Desolation,174,0.02%
+490,Serpent Stance,173,0.02%
+491,Claw Damage,171,0.02%
+492,Energy Shield, Chaos Damage,169,0.01%
+493,Acuity,167,0.01%
+494,Void Beacon,167,0.01%
+495,Toxic Delivery,166,0.01%
+496,Divine Guidance,164,0.01%
+497,Soul of Steel,164,0.01%
+498,Totem Critical Strike Chance,162,0.01%
+499,Dagger Damage and Accuracy,160,0.01%
+500,Dual Wield Damage and Block,158,0.01%
+501,Arcing Blows,157,0.01%
+502,Puppet Master,156,0.01%
+503,Physical Attack Damage, Life Leeched per Second,155,0.01%
+504,Axe Damage and Life Leech Rate,153,0.01%
+505,Frost Walker,153,0.01%
+506,Gratuitous Violence,151,0.01%
+507,Occultist,150,0.01%
+508,Master Surgeon,149,0.01%
+509,Smashing Strikes,146,0.01%
+510,Axe and Sword Damage,145,0.01%
+511,Mace Damage and Life Leech Rate,145,0.01%
+512,Dynamo,144,0.01%
+513,Flesh Binder,143,0.01%
+514,Flask Effect, Damage Over Time,138,0.01%
+515,Master Herbalist,137,0.01%
+516,Pendulum of Destruction,135,0.01%
+517,Augury of Penitence,132,0.01%
+518,Brutal Fervor,132,0.01%
+519,Pursuit of Faith,132,0.01%
+520,Pain Reaver,130,0.01%
+521,Elemental Damage, Movement Speed,129,0.01%
+522,Conduit,128,0.01%
+523,Physical Attack Damage, Warcry Duration,128,0.01%
+524,War Bringer,128,0.01%
+525,Attack and Cast Speed, Frenzy Charge Duration,126,0.01%
+526,Fusillade,126,0.01%
+527,Swift Killer,125,0.01%
+528,Two Handed Damage, Attack Speed,125,0.01%
+529,Unrelenting,125,0.01%
+530,Hex Master,124,0.01%
+531,Minion Life and Life Regeneration,124,0.01%
+532,Mind Drinker,123,0.01%
+533,Elemental Damage, Status Ailment Chance,121,0.01%
+534,Liege of the Primordial,121,0.01%
+535,Void Barrier,119,0.01%
+536,Blunt Trauma,118,0.01%
+537,Evasion, Movement Speed,117,0.01%
+538,Radiant Faith,116,0.01%
+539,Axe Damage and Life Leech,115,0.01%
+540,From the Shadows,114,0.01%
+541,Mace Critical Strike Chance and Multiplier,114,0.01%
+542,Unstable Munitions,114,0.01%
+543,Blinding Assault,113,0.01%
+544,By The Blade,113,0.01%
+545,Strength and Dexterity,113,0.01%
+546,Tempest Blast,113,0.01%
+547,Essence Surge,111,0.01%
+548,Armour, Stun Duration,109,0.01%
+549,Unbreakable,109,0.01%
+550,Ambidexterity,108,0.01%
+551,Avatar of Fire,108,0.01%
+552,Minion Life Leech,108,0.01%
+553,Hinekora, Death's Fury,107,0.01%
+554,Armour, Movement Speed,106,0.01%
+555,Unstoppable,106,0.01%
+556,Trap and Mine Critical Strike Multiplier,103,0.01%
+557,Claw, Dagger and Sword Critical Strike Chance,101,0.01%
+558,Soul Weaver,101,0.01%
+559,Life Gain on Hit and Life Leeched per Second,100,0.01%
+560,Minion Life and Chaos Resistance,99,0.01%
+561,Pathfinder,99,0.01%
+562,Ritual of Awakening,99,0.01%
+563,Attack and Cast Speed, Damage Over Time,98,0.01%
+564,Expeditious Munitions,98,0.01%
+565,Grave Intentions,98,0.01%
+566,Lava Lash,98,0.01%
+567,Patient Reaper,98,0.01%
+568,Whirling Barrier,98,0.01%
+569,Mine Damage,97,0.01%
+570,Avatar of the Chase,96,0.01%
+571,Powerful Precision,95,0.01%
+572,Unwavering Faith,94,0.01%
+573,Charge on Kill,93,0.01%
+574,Quartz Infusion,93,0.01%
+575,Armour, Life Regeneration,92,0.01%
+576,Endless Hunger,92,0.01%
+577,Unyielding,92,0.01%
+578,Beacon of Ruin,91,0.01%
+579,Strength and Intelligence,91,0.01%
+580,Dual Wield Accuracy,90,0.01%
+581,Claw Critical Strike Chance and Multiplier,87,0.01%
+582,Wand Damage and Accuracy,87,0.01%
+583,Wand Physical Damage,84,0.01%
+584,Champion of the Cause,83,0.01%
+585,Elemental Damage, Life Regeneration,83,0.01%
+586,Ramako, Sun's Light,82,0.01%
+587,Wandslinger,81,0.01%
+588,Dark Arts,80,0.01%
+589,Headsman,79,0.01%
+590,Assassinate,77,0.01%
+591,Blade Barrier,77,0.01%
+592,Bow Damage and Movement Speed,77,0.01%
+593,Armour and Evasion, Attack Speed,76,0.01%
+594,Armour, Attack Speed,76,0.01%
+595,Brutal Blade,76,0.01%
+596,First to Strike, Last to Fall,76,0.01%
+597,Sharp and Venomous,76,0.01%
+598,Undeniable,75,0.01%
+599,Elemental Resistance with Shields,73,0.01%
+600,Staff Block,73,0.01%
+601,Claw Damage and Attack Speed,72,0.01%
+602,Staff Damage and Accuracy,72,0.01%
+603,Block Recovery,70,0.01%
+604,Impact,70,0.01%
+605,Trap Trigger Radius and Mine Detonation Radius,70,0.01%
+606,Trap and Mine Laying Speed,70,0.01%
+607,Two Handed Damage, Area of Effect Radius,70,0.01%
+608,Deflection,69,0.01%
+609,One Handed Attack Speed,68,0.01%
+610,Claw Damage and Critical Strike Chance,67,0.01%
+611,Shield Spell Block,65,0.01%
+612,Revelry,64,0.01%
+613,Slayer,63,0.01%
+614,Point Blank,62,0.01%
+615,Slashing Comeback,61,0.01%
+616,Galvanic Hammer,59,0.01%
+617,Two Handed Melee Damage and Accuracy,59,0.01%
+618,Violent Retaliation,59,0.01%
+619,Elder Power,58,0.01%
+620,Energy Shield on Shield,58,0.01%
+621,Graceful Assault,58,0.01%
+622,Mana Regeneration, Power and Endurance Charge Duration,58,0.01%
+623,Conviction of Power,57,0.01%
+624,Movement Speed and Evasion,57,0.01%
+625,One Handed Speed and Damage,56,0.00%
+626,Weave the Arcane,56,0.00%
+627,Iron Grip,55,0.00%
+628,Minion Damage, Chaos Resistance,55,0.00%
+629,Sanctify,55,0.00%
+630,Melee Critical Strike Multiplier,53,0.00%
+631,Staff Damage and Attack Speed,53,0.00%
+632,Flask Effect, Elemental Resistances,52,0.00%
+633,Ignite Chance,52,0.00%
+634,Eagle Eye,51,0.00%
+635,Outmatch and Outlast,51,0.00%
+636,Physical Damage Over Time,51,0.00%
+637,Stun Duration,51,0.00%
+638,Wand Cold Damage,51,0.00%
+639,Block and Block Recovery,50,0.00%
+640,Heart of Ice,50,0.00%
+641,Soul Raker,50,0.00%
+642,Wand Fire Damage,50,0.00%
+643,Necromantic Aegis,49,0.00%
+644,Overcharged,49,0.00%
+645,Lust for Carnage,48,0.00%
+646,Melee Chance to Bleed,48,0.00%
+647,Blood in the Eyes,47,0.00%
+648,Mine Laying Speed,47,0.00%
+649,Sanctuary of Thought,47,0.00%
+650,Volatile Mines,47,0.00%
+651,Bane of Legends,46,0.00%
+652,Claws of the Magpie,46,0.00%
+653,Dual Wield Block,46,0.00%
+654,Beacon of Corruption,45,0.00%
+655,Fencing,45,0.00%
+656,One Handed Critical Strike Chance,45,0.00%
+657,Accuracy and Elemental Resistances,44,0.00%
+658,Paragon of Calamity,44,0.00%
+659,Swagger,44,0.00%
+660,One Handed Accuracy,43,0.00%
+661,Armour and Energy Shield, Charge Duration,42,0.00%
+662,Harmony of Purpose,42,0.00%
+663,Knockback Distance,42,0.00%
+664,Fending,41,0.00%
+665,Knockback Chance,41,0.00%
+666,Armour and Energy Shield, Warcry Duration,37,0.00%
+667,Freeze Chance,37,0.00%
+668,Prayer of Glory,37,0.00%
+669,Razor's Edge,37,0.00%
+670,Avatar of the Hunt,36,0.00%
+671,Blade Master,36,0.00%
+672,Freeze and Chill Duration,36,0.00%
+673,Nature's Boon,34,0.00%
+674,Blade of Cunning,33,0.00%
+675,Bloodletting,33,0.00%
+676,Breath of Flames,33,0.00%
+677,Claws of the Falcon,33,0.00%
+678,Mind Barrier,32,0.00%
+679,Stun Mastery,32,0.00%
+680,Additional Mines,31,0.00%
+681,Melee Attack Speed,31,0.00%
+682,Inquisitor,30,0.00%
+683,Master Fletcher,30,0.00%
+684,Mastermind of Discord,30,0.00%
+685,Sword Damage and Life Leech,30,0.00%
+686,Stun Threshold Reduction,28,0.00%
+687,Celerity,27,0.00%
+688,Pious Path,27,0.00%
+689,Chieftain,26,0.00%
+690,Flask Effect, Attack Damage,26,0.00%
+691,Thrill Killer,25,0.00%
+692,Avatar of the Veil,24,0.00%
+693,Hierophant,24,0.00%
+694,Master of Force,24,0.00%
+695,Minion Instability,24,0.00%
+696,Veteran Bowyer,24,0.00%
+697,Block,23,0.00%
+698,Demolitions Specialist,23,0.00%
+699,Overwhelm,23,0.00%
+700,Shock Duration,23,0.00%
+701,Two Handed Damage, Reduced Enemy Stun Threshold,23,0.00%
+702,Melee Damage and Evasion,22,0.00%
+703,Duality,21,0.00%
+704,Mine Damage and Laying Speed,21,0.00%
+705,Weathered Hunter,21,0.00%
+706,Breath of Rime,20,0.00%
+707,Cloaked in Savagery,20,0.00%
+708,Destructive Apparatus,20,0.00%
+709,Mine Damage and Duration,19,0.00%
+710,Master Alchemist,18,0.00%
+711,Movement Speed,18,0.00%
+712,Weapon Cold Damage,18,0.00%
+713,Ash, Frost and Storm,16,0.00%
+714,Champion,16,0.00%
+715,Necromancer,16,0.00%
+716,Mana and Mana Gain on Killing Blow,15,0.00%
+717,Trickster,15,0.00%
+718,Armour and Evasion, Taunt Duration,12,0.00%
+719,Path of the Ranger,12,0.00%
+720,Armour and Energy Shield, Block Chance,11,0.00%
+721,Bastion of Hope,11,0.00%
+722,Fingers of Frost,11,0.00%
+723,Guardian,11,0.00%
+724,Hatchet Master,11,0.00%
+725,Mace Elemental Damage and Accuracy,11,0.00%
+726,Shock Chance,11,0.00%
+727,Shock Chance and Lightning Damage,11,0.00%
+728,Static Blows,11,0.00%
+729,Wand Elemental Damage,11,0.00%
+730,Breath of Lightning,10,0.00%
+731,Flash Freeze,10,0.00%
+732,Minion Block,10,0.00%
+733,Noxious Strike,10,0.00%
+734,Sword Attack Speed,10,0.00%
+735,Fangs of Frost,9,0.00%
+736,Gladiator,9,0.00%
+737,Studious Combatant,9,0.00%
+738,Chaos Resistance,8,0.00%
+739,Conqueror,7,0.00%
+740,Bow Accuracy,6,0.00%
+741,Gemini,6,0.00%
+742,Path of the Hunter,6,0.00%
+743,Path of the Shadow,6,0.00%
+744,Armour and Energy Shield, Life Regeneration,5,0.00%
+745,Battle Rouse,5,0.00%
+746,Decay Ward,5,0.00%
+747,Prism Weave,5,0.00%
+748,Time of Need,5,0.00%
+749,Worthy Foe,5,0.00%
+750,Axe and Sword Accuracy,4,0.00%
+751,Path of the Marauder,4,0.00%
+752,Wand Attack Speed,4,0.00%
+753,Path of the Duelist,2,0.00%
+754,Born in the Shadows,1,0.00%
+755,Claw Damage and Accuracy,1,0.00%
+756,Claws of the Pride,1,0.00%

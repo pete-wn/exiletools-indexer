@@ -1,0 +1,387 @@
+rank,nodename,count,percentage
+1,Trickery,5782,2.08%
+2,Retribution,5737,2.06%
+3,Coldhearted Calculation,5695,2.04%
+4,Discipline and Training,5436,1.95%
+5,Blood Siphon,5371,1.93%
+6,Coordination,5138,1.84%
+7,Assassination,4649,1.67%
+8,Constitution,4628,1.66%
+9,Amplify,4457,1.60%
+10,Art of the Gladiator,4394,1.58%
+11,Bravery,4365,1.57%
+12,Golem's Blood,4246,1.52%
+13,Nullification,4225,1.52%
+14,Written in Blood,4202,1.51%
+15,Sanctity,4198,1.51%
+16,Blood Drinker,4121,1.48%
+17,Deep Wisdom,3964,1.42%
+18,Cruel Preparation,3772,1.35%
+19,Herbalism,3555,1.28%
+20,Elementalist,3465,1.24%
+21,Blast Radius,3435,1.23%
+22,Fangs of the Viper,3401,1.22%
+23,Devotion,3362,1.21%
+24,Master of the Arena,3054,1.10%
+25,Finesse,2976,1.07%
+26,Occultist's Dominion,2893,1.04%
+27,Quick Recovery,2875,1.03%
+28,Heart of the Warrior,2852,1.02%
+29,Warrior's Blood,2844,1.02%
+30,Harrier,2811,1.01%
+31,Heart of Oak,2796,1.00%
+32,Heart and Soul,2528,0.91%
+33,Shaper,2450,0.88%
+34,Purity of Flesh,2392,0.86%
+35,Barbarism,2350,0.84%
+36,Born to Fight,2300,0.83%
+37,Annihilation,2298,0.83%
+38,Ballistic Mastery,2276,0.82%
+39,Sentinel,2138,0.77%
+40,Instability,2135,0.77%
+41,Heartseeker,2116,0.76%
+42,Fury Bolts,2049,0.74%
+43,Melding,2033,0.73%
+44,Doom Cast,2029,0.73%
+45,Savagery,2005,0.72%
+46,Light of Divinity,1964,0.71%
+47,Fervor,1862,0.67%
+48,Frenetic,1732,0.62%
+49,Juggernaut,1697,0.61%
+50,Will of Blades,1677,0.60%
+51,Arcane Focus,1671,0.60%
+52,True Strike,1670,0.60%
+53,Thick Skin,1620,0.58%
+54,Foresight,1611,0.58%
+55,Infused,1607,0.58%
+56,Potency of Will,1429,0.51%
+57,Destroyer,1407,0.51%
+58,Sniper,1389,0.50%
+59,King of the Hill,1348,0.48%
+60,Lethality,1310,0.47%
+61,Butchery,1286,0.46%
+62,Deep Thoughts,1280,0.46%
+63,Vitality Void,1108,0.40%
+64,Primal Spirit,1065,0.38%
+65,Aspect of the Lynx,1053,0.38%
+66,Elemental Focus,1051,0.38%
+67,Whispers of Doom,1018,0.37%
+68,Hired Killer,981,0.35%
+69,Bone Breaker,977,0.35%
+70,Charisma,976,0.35%
+71,Endurance,970,0.35%
+72,Combat Stamina,961,0.35%
+73,Bloodless,958,0.34%
+74,Wisdom of the Glade,950,0.34%
+75,Sovereignty,939,0.34%
+76,Agility,932,0.33%
+77,Exceptional Performance,913,0.33%
+78,Clever Construction,905,0.32%
+79,Skull Cracking,904,0.32%
+80,Saboteur,878,0.32%
+81,Overcharge,876,0.31%
+82,Physique,851,0.31%
+83,Stamina,845,0.30%
+84,Hasty Reconstruction,833,0.30%
+85,Unstoppable Hero,829,0.30%
+86,Path of the Warrior,823,0.30%
+87,Wrecking Ball,823,0.30%
+88,Executioner,785,0.28%
+89,Blunt Instrument,777,0.28%
+90,Aspect of the Eagle,774,0.28%
+91,Bomb Specialist,774,0.28%
+92,Fortitude,772,0.28%
+93,Nightstalker,763,0.27%
+94,Cloth and Chain,761,0.27%
+95,Unstable Infusion,746,0.27%
+96,Armour Mastery,745,0.27%
+97,Vigour,740,0.27%
+98,Alchemist,728,0.26%
+99,Alacrity,727,0.26%
+100,Infused Shield,718,0.26%
+101,Chain Reaction,700,0.25%
+102,Explosive Impact,699,0.25%
+103,High Explosives,680,0.24%
+104,Diamond Skin,668,0.24%
+105,Celestial Judgement,663,0.24%
+106,Tireless,661,0.24%
+107,Unnatural Calm,659,0.24%
+108,Master Sapper,657,0.24%
+109,Expertise,654,0.23%
+110,Catalyse,649,0.23%
+111,Totemic Mastery,648,0.23%
+112,Deadly Infusion,647,0.23%
+113,Practical Application,647,0.23%
+114,Entropy,644,0.23%
+115,Faith and Steel,637,0.23%
+116,Inspirational,619,0.22%
+117,Throatseeker,596,0.21%
+118,Arcane Potency,595,0.21%
+119,Profane Chemistry,586,0.21%
+120,Fast and Deadly,583,0.21%
+121,Method to the Madness,582,0.21%
+122,Crave the Slaughter,574,0.21%
+123,Weapon Artistry,551,0.20%
+124,Influence,546,0.20%
+125,Righteous Providence,534,0.19%
+126,Growth and Decay,519,0.19%
+127,Ancestral Knowledge,517,0.19%
+128,Aspect of Carnage,516,0.19%
+129,Arsonist,511,0.18%
+130,Atrophy,506,0.18%
+131,Revenge of the Hunted,503,0.18%
+132,Mortal Conviction,490,0.18%
+133,Walk the Aether,490,0.18%
+134,Ghost Dance,488,0.18%
+135,Nimbleness,488,0.18%
+136,Path of the Savant,486,0.17%
+137,Ambush,472,0.17%
+138,Shamanistic Fury,471,0.17%
+139,Inevitable Judgement,467,0.17%
+140,Far Shot,465,0.17%
+141,Piercing Shots,464,0.17%
+142,Lord of the Dead,446,0.16%
+143,Way of the Poacher,443,0.16%
+144,Reflexes,441,0.16%
+145,Arcane Vision,440,0.16%
+146,Arohongui, Moon's Presence,428,0.15%
+147,Celestial Punishment,426,0.15%
+148,Force Shaper,421,0.15%
+149,Mental Rapidity,417,0.15%
+150,Druidic Rite,411,0.15%
+151,Leadership,411,0.15%
+152,Mistress of Sacrifice,407,0.15%
+153,Deadly Draw,405,0.15%
+154,Tukohama, War's Herald,402,0.14%
+155,Shade Form,395,0.14%
+156,Depth Perception,393,0.14%
+157,Gravepact,392,0.14%
+158,Essence Sap,391,0.14%
+159,Wicked Ward,383,0.14%
+160,Righteous Decree,380,0.14%
+161,Rapid Assault,378,0.14%
+162,Soul Siphon,378,0.14%
+163,Holy Fire,376,0.14%
+164,Quickstep,375,0.13%
+165,Fire Walker,373,0.13%
+166,Adder's Touch,370,0.13%
+167,Tawhoa, Forest's Strength,368,0.13%
+168,Defiance,360,0.13%
+169,Dervish,359,0.13%
+170,Explosives Expert,348,0.12%
+171,Twin Terrors,344,0.12%
+172,Heavy Draw,339,0.12%
+173,Ricochet,339,0.12%
+174,Precision,335,0.12%
+175,Storm Weaver,335,0.12%
+176,Avatar of the Slaughter,332,0.12%
+177,Lightning Walker,331,0.12%
+178,Skittering Runes,330,0.12%
+179,Crackling Speed,322,0.12%
+180,Mana Flows,317,0.11%
+181,Might,314,0.11%
+182,Spirit Void,310,0.11%
+183,Hard Knocks,308,0.11%
+184,Profane Bloom,296,0.11%
+185,Forces of Nature,295,0.11%
+186,Solidity,294,0.11%
+187,Heart of Flame,293,0.11%
+188,Cleaving,292,0.10%
+189,Versatility,276,0.10%
+190,Testudo,275,0.10%
+191,Berserking,273,0.10%
+192,Slaughter,268,0.10%
+193,Dreamer,267,0.10%
+194,Spirit Eater,267,0.10%
+195,Instruments of Virtue,265,0.10%
+196,Fatal Blade,264,0.09%
+197,Death Attunement,263,0.09%
+198,Arcane Chemistry,259,0.09%
+199,Rampart,258,0.09%
+200,Martial Experience,257,0.09%
+201,Indomitable,255,0.09%
+202,Sleight of Hand,255,0.09%
+203,Thief's Craft,255,0.09%
+204,Disemboweling,254,0.09%
+205,Precise Interception,252,0.09%
+206,Splitting Strikes,250,0.09%
+207,Flaying,248,0.09%
+208,Aspect of the Panther,245,0.09%
+209,Forbidden Power,241,0.09%
+210,Hematophagy,241,0.09%
+211,Painforged,239,0.09%
+212,Vile Bastion,234,0.08%
+213,Beef,231,0.08%
+214,Dirty Techniques,230,0.08%
+215,Herd the Flock,230,0.08%
+216,Retaliation,230,0.08%
+217,Heart of Thunder,220,0.08%
+218,Shaman's Dominion,219,0.08%
+219,Strong Arm,218,0.08%
+220,Snowforged,217,0.08%
+221,Ngamahu, Flame's Advance,215,0.08%
+222,Versatile Combatant,214,0.08%
+223,Commander of Darkness,209,0.08%
+224,Bloody Bludgeon,202,0.07%
+225,Totemic Zeal,202,0.07%
+226,Prowess,201,0.07%
+227,Unflinching,201,0.07%
+228,Fatal Toxins,200,0.07%
+229,Corruption,198,0.07%
+230,Survivalist,198,0.07%
+231,Command of Steel,195,0.07%
+232,Rite of Ruin,194,0.07%
+233,Endless Munitions,192,0.07%
+234,Sanctuary,190,0.07%
+235,Deadly Dilettante,186,0.07%
+236,Nature's Adrenaline,183,0.07%
+237,Ironwood,181,0.06%
+238,Proficiency,181,0.06%
+239,Blast Cascade,179,0.06%
+240,Malediction,179,0.06%
+241,Illuminated Devotion,174,0.06%
+242,Shaper of Desolation,174,0.06%
+243,Serpent Stance,173,0.06%
+244,Acuity,167,0.06%
+245,Void Beacon,167,0.06%
+246,Toxic Delivery,166,0.06%
+247,Divine Guidance,164,0.06%
+248,Soul of Steel,164,0.06%
+249,Arcing Blows,157,0.06%
+250,Puppet Master,156,0.06%
+251,Frost Walker,153,0.05%
+252,Gratuitous Violence,151,0.05%
+253,Master Surgeon,149,0.05%
+254,Smashing Strikes,146,0.05%
+255,Dynamo,144,0.05%
+256,Flesh Binder,143,0.05%
+257,Master Herbalist,137,0.05%
+258,Pendulum of Destruction,135,0.05%
+259,Augury of Penitence,132,0.05%
+260,Brutal Fervor,132,0.05%
+261,Pursuit of Faith,132,0.05%
+262,Pain Reaver,130,0.05%
+263,War Bringer,128,0.05%
+264,Fusillade,126,0.05%
+265,Swift Killer,125,0.04%
+266,Unrelenting,125,0.04%
+267,Hex Master,124,0.04%
+268,Mind Drinker,123,0.04%
+269,Liege of the Primordial,121,0.04%
+270,Void Barrier,119,0.04%
+271,Blunt Trauma,118,0.04%
+272,Radiant Faith,116,0.04%
+273,From the Shadows,114,0.04%
+274,Unstable Munitions,114,0.04%
+275,Blinding Assault,113,0.04%
+276,By The Blade,113,0.04%
+277,Tempest Blast,113,0.04%
+278,Essence Surge,111,0.04%
+279,Unbreakable,109,0.04%
+280,Ambidexterity,108,0.04%
+281,Hinekora, Death's Fury,107,0.04%
+282,Unstoppable,106,0.04%
+283,Soul Weaver,101,0.04%
+284,Ritual of Awakening,99,0.04%
+285,Expeditious Munitions,98,0.04%
+286,Grave Intentions,98,0.04%
+287,Lava Lash,98,0.04%
+288,Patient Reaper,98,0.04%
+289,Whirling Barrier,98,0.04%
+290,Avatar of the Chase,96,0.03%
+291,Powerful Precision,95,0.03%
+292,Unwavering Faith,94,0.03%
+293,Quartz Infusion,93,0.03%
+294,Endless Hunger,92,0.03%
+295,Unyielding,92,0.03%
+296,Beacon of Ruin,91,0.03%
+297,Champion of the Cause,83,0.03%
+298,Ramako, Sun's Light,82,0.03%
+299,Wandslinger,81,0.03%
+300,Dark Arts,80,0.03%
+301,Headsman,79,0.03%
+302,Assassinate,77,0.03%
+303,Blade Barrier,77,0.03%
+304,Brutal Blade,76,0.03%
+305,First to Strike, Last to Fall,76,0.03%
+306,Sharp and Venomous,76,0.03%
+307,Undeniable,75,0.03%
+308,Impact,70,0.03%
+309,Deflection,69,0.02%
+310,Revelry,64,0.02%
+311,Slashing Comeback,61,0.02%
+312,Galvanic Hammer,59,0.02%
+313,Violent Retaliation,59,0.02%
+314,Elder Power,58,0.02%
+315,Graceful Assault,58,0.02%
+316,Conviction of Power,57,0.02%
+317,Weave the Arcane,56,0.02%
+318,Sanctify,55,0.02%
+319,Eagle Eye,51,0.02%
+320,Outmatch and Outlast,51,0.02%
+321,Heart of Ice,50,0.02%
+322,Soul Raker,50,0.02%
+323,Overcharged,49,0.02%
+324,Lust for Carnage,48,0.02%
+325,Blood in the Eyes,47,0.02%
+326,Sanctuary of Thought,47,0.02%
+327,Volatile Mines,47,0.02%
+328,Bane of Legends,46,0.02%
+329,Claws of the Magpie,46,0.02%
+330,Beacon of Corruption,45,0.02%
+331,Fencing,45,0.02%
+332,Paragon of Calamity,44,0.02%
+333,Swagger,44,0.02%
+334,Harmony of Purpose,42,0.02%
+335,Fending,41,0.01%
+336,Prayer of Glory,37,0.01%
+337,Razor's Edge,37,0.01%
+338,Avatar of the Hunt,36,0.01%
+339,Blade Master,36,0.01%
+340,Nature's Boon,34,0.01%
+341,Blade of Cunning,33,0.01%
+342,Bloodletting,33,0.01%
+343,Breath of Flames,33,0.01%
+344,Claws of the Falcon,33,0.01%
+345,Mind Barrier,32,0.01%
+346,Stun Mastery,32,0.01%
+347,Master Fletcher,30,0.01%
+348,Mastermind of Discord,30,0.01%
+349,Celerity,27,0.01%
+350,Pious Path,27,0.01%
+351,Thrill Killer,25,0.01%
+352,Avatar of the Veil,24,0.01%
+353,Master of Force,24,0.01%
+354,Veteran Bowyer,24,0.01%
+355,Demolitions Specialist,23,0.01%
+356,Overwhelm,23,0.01%
+357,Duality,21,0.01%
+358,Weathered Hunter,21,0.01%
+359,Breath of Rime,20,0.01%
+360,Cloaked in Savagery,20,0.01%
+361,Destructive Apparatus,20,0.01%
+362,Master Alchemist,18,0.01%
+363,Ash, Frost and Storm,16,0.01%
+364,Path of the Ranger,12,0.00%
+365,Bastion of Hope,11,0.00%
+366,Fingers of Frost,11,0.00%
+367,Hatchet Master,11,0.00%
+368,Static Blows,11,0.00%
+369,Breath of Lightning,10,0.00%
+370,Flash Freeze,10,0.00%
+371,Noxious Strike,10,0.00%
+372,Fangs of Frost,9,0.00%
+373,Studious Combatant,9,0.00%
+374,Conqueror,7,0.00%
+375,Gemini,6,0.00%
+376,Path of the Hunter,6,0.00%
+377,Path of the Shadow,6,0.00%
+378,Battle Rouse,5,0.00%
+379,Decay Ward,5,0.00%
+380,Prism Weave,5,0.00%
+381,Time of Need,5,0.00%
+382,Worthy Foe,5,0.00%
+383,Path of the Marauder,4,0.00%
+384,Path of the Duelist,2,0.00%
+385,Born in the Shadows,1,0.00%
+386,Claws of the Pride,1,0.00%
