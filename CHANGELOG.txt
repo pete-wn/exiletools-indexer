@@ -1,3 +1,8 @@
+# Version 3.2
+
+* Fixed mods with period separated numbers from being zeroed out to avoid periods in mappings
+  * https://github.com/trackpete/exiletools-indexer/issues/127
+
 # Version 3.1
 
 * Added support for the `id` tag to set item `uuid` in version 2.2 of Path of Exile

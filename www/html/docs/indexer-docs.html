@@ -105,6 +105,7 @@
   <tr><td><code>shop.added</code></td><td>The epoch (millis) time the item was first added to the index.</td></tr>
   <tr><td><code>shop.updated</code></td><td>The epoch (millis) time the item was last updated in the index whether or not a change was made (usually the time it was last verified)</td></tr>
   <tr><td><code>shop.modified</code></td><td>The epoch (millis) time the item was last modified (requires a change, such as verification status, price, etc.)</td></tr>
+  <tr><td><code>shop.shelfLife</code></td><td>The number of seconds between the item first being added to the index and last being updated.</td></tr>
   <tr><td><code>shop.verified</code></td><td>
     <p>Verification status in not_analyzed string.</p>
     <dl class="dl-horizontal">
@@ -202,6 +203,7 @@
   
   <p>An example boolean query to find all <kbd>Two Handed Maces</kbd> using both <code>equipType</code> and <code>itemType</code> matches <a href="https://gist.github.com/trackpete/bddb205ae3cc4e96b02f">is available here.</a></p>
   </td></tr>
+  <tr><td><code>attributes.baseItemName</code></td><td>Contains the item's derived base item name (i.e. <code>Rustic Sash</code> etc.)</td></tr>
   <tr><td><code>attributes.league</code></td><td><i>[original:league]</i> The league name attached to the item in GGG's notation</td></tr>
   <tr><td><code>attributes.rarity</code></td><td><p>The determined rarity of the item, based on the <i>original:frameType</i> value. As of this update, rarity can be one of the following:</p>
     <ul class="list-unstyled" style="margin-left:25px">
@@ -365,6 +367,7 @@
   <tr><td><code>propertiesPseudo.Armour.estimatedQ20.Armour</code></td><td>The projected armour stat of the item with +20% Quality</td></tr>
   <tr><td><code>propertiesPseudo.Armour.estimatedQ20.Energy Shield</code></td><td>The projected energy shield stat of the item with +20% Quality</td></tr>
   <tr><td><code>propertiesPseudo.Weapon.estimatedQ20.Physical DPS</code></td><td>The projected total physical DPS of the item with +20% Quality</td></tr>
+  <tr><td><code>propertiesPseudo.Weapon.estimatedQ20.Total DPS</code></td><td>The projected total DPS of the item with +20% Quality</td></tr>
 
   </td></tr>
 
