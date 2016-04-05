@@ -805,7 +805,7 @@ sub parseExtendedMods {
   foreach my $modLine ( @{$data{"$modTypeJSON"}} ) {
     # Remove any apostrophes or periods
     $modLine =~ s/\'//g;
-    $modLine =~ s/\.//g;
+    $modLine =~ s/\. //g;
     $modLine =~ s/\n/ /g;
     $modLine =~ s/\\n/ /g;
 
