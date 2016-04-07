@@ -1,3 +1,7 @@
+# Version 4
+
+* This is a branch that uses an entirely different pipeline method
+
 # Version 3.2
 
 * Fixed mods with period separated numbers from being zeroed out to avoid periods in mappings
