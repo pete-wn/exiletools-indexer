@@ -2,7 +2,7 @@
 dbHost:localhost
 
 # A flat file with database credentials (user/pass/database name)
-dbCreds:.dbcreds
+dbCreds:../.dbcreds
 # Here is an example .dbcreds file: (these aren't my credientials :p )
 #
 # dbUser:mariadb
@@ -27,3 +27,8 @@ esItemType:item
 
 # The Elastic Search stats index for thread/indexing stats
 esStatsIndex:dev-indexing-stats
+
+# Kafka configuration
+# Note, you must make sure to create the topics in a way that matches
+kafkaTopicNameIncoming:incoming
+kafkaTopicPartitionsIncoming:1
