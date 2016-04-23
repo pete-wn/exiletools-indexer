@@ -10,7 +10,7 @@ If all you're looking for is direct access to an index, check out the free Elast
 
 http://api.exiletools.com/info/indexer.html
 
-You can get up and running in literally seconds with Elastic Search queries against live Stash Tab data. For hundreds of example queries to get you started, check out http://gists.github.com/trackpete or look at some of the AngularJS code in the front ends included in this project! The indexer page above also contains very detailed explanations of the Elastic Search mapping.
+You can get up and running in literally seconds with Elastic Search queries against live Stash Tab data. For hundreds of example queries to get you started, check out http://gist.github.com/trackpete or look at some of the AngularJS code in the front ends included in this project! The indexer page above also contains very detailed explanations of the Elastic Search mapping.
 
 # What the Stash Tab Indexer Does
 
