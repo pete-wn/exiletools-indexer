@@ -1,5 +1,17 @@
 #!/usr/bin/perl
 
+# This script reads the stash tab stream from Kafka and converts the items into a 
+# better JSON format that is optimized for ElasticSearch.
+#
+# It writes that data out to a single kafka partition that can be used by other 
+# future applications for processing and bulk indexes the current data to ElasticSearch.
+#
+# NOTE 2016/05/05 - Kafka production for processed data is currently disabled for
+# IO/speed reasons, since I'm not using it I'm not bothering to do it. If you want to
+# use this code, uncomment out the appropriate sections.
+
+$|=1;
+
 use JSON::XS;
 use Encode;
 use utf8::all;
@@ -8,32 +20,40 @@ use Text::Unidecode;
 use Search::Elasticsearch;
 use Data::Dumper;
 use File::Slurp;
-
-use Scalar::Util qw(
-    blessed
-);
+use Scalar::Util qw( blessed);
 use Try::Tiny;
- 
-use Kafka qw(
-    $BITS64
-    $DEFAULT_MAX_BYTES
-    $DEFAULT_MAX_NUMBER_OF_OFFSETS
-    $RECEIVE_EARLIEST_OFFSETS
-);
+use Kafka qw( $BITS64 $DEFAULT_MAX_BYTES $DEFAULT_MAX_NUMBER_OF_OFFSETS $RECEIVE_EARLIEST_OFFSETS $DEFAULT_MAX_WAIT_TIME);
 use Kafka::Connection;
 use Kafka::Producer;
 use Kafka::Consumer;
 
+# This ensures we capture a ^c and exit gracefully
+$SIG{INT} = \&catch_int;
+sub catch_int {
+  &d("!!! [$$] Caught SIGINT, exiting...\n");
+  undef $consumer;
+  undef $producer;
+  undef $connection;
+  &ExitProcess;
+  exit 3;
+}
+
+# Pull in external subroutines
 require("subs/all.subroutines.pl");
 require("subs/sub.formatJSON.pl");
+
+# Initiate the process
 &StartProcess; 
+
 unless ($args{partition} =~ /^\d+$/) {
   &d("ERROR: You must specify a kafka partition for processing! i.e. \"-partition 0\"\n");
   exit 3;
 }
 
 &d("Partition: $args{partition}\n");
-$offsetLog = "$logDir/convert-incoming-offset-$args{partition}.log";
+
+# Prepare the offset log
+$offsetLog = "$logDir/offset/convert-incoming-offset-$args{partition}.log";
 &d("Offset processing data will be saved to: $offsetLog\n");
 if (-f "$offsetLog") {
   $lastOffset = read_file("$offsetLog");
@@ -45,13 +65,12 @@ if ($lastOffset > 0) {
   $lastOffset = 0;
 }
  
- 
-my ( $connection, $consumer );
+# Connect to Kafka 
+my ( $connection, $consumer, $producer );
 try {
-  #-- Connect to local cluster
   $connection = Kafka::Connection->new( host => 'localhost' );
-  #-- Consumer
   $consumer = Kafka::Consumer->new( Connection  => $connection );
+#  $producer = Kafka::Producer->new( Connection => $connection );
 } catch {
   my $error = $_;
   if ( blessed( $error ) && $error->isa( 'Kafka::Exception' ) ) {
@@ -62,11 +81,20 @@ try {
   }
 };
 
+# Connect to Elasticsearch
+&connectElastic;
 
+# Prepare this to run forever
+$keepRunning = 1;
+
+# BEGIN DAEMON LOOP
+# Note, I'm not indenting this section
+while($keepRunning) {
+
+# Start a timer
 $tk0 = [Time::HiRes::gettimeofday];
 
-
-# Consuming messages
+# Consume a chunk of messages
 my $messages = $consumer->fetch(
     $conf{kafkaTopicNameIncoming},
     $args{partition},     
@@ -74,14 +102,21 @@ my $messages = $consumer->fetch(
     24857600
 );
 
+
+my $tk1 = [Time::HiRes::gettimeofday];
+my $processedCount = 0;
+my $totalItemCount = 0;
+my $totalKafkaProductionTime = 0;
+
+# Check to see if we got any messages
+if (@$messages < 1) {
+  &sv("! No additional messages consumed from partition $args{partition} offset $lastOffset, waiting 1s\n");
+  sleep 1;
+  next;
+}
+
 $interval = Time::HiRes::tv_interval ( $tk0, [Time::HiRes::gettimeofday]);
-&d("Loaded incoming payload from Kafka in $interval seconds\n");
-
-&connectElastic;
-
-$tk1 = [Time::HiRes::gettimeofday];
-$processedCount = 0;
-$totalItemCount = 0;
+&sv("? Loaded incoming payload from Kafka from offset $lastOffset in $interval seconds\n");
 
 foreach my $message ( @$messages ) {
     if ( $message->valid ) {
@@ -95,25 +130,27 @@ foreach my $message ( @$messages ) {
         print "WARNING: Error decoding a payload ($error)\n";
         next;
       };
+
       # Fetch a current list of items in this stash in the index
       # set it to local to the formatJSON subroutine can see it
       local $currentStashData = $e->search(
-        index => "poe",
+        index => "poedev",
         type => "item",
         body => {
+#          "_source" => [ "shop.stash.stashID", "shop.stash.stashName", "shop.verified", "shop.note", "shop.modified", "shop.update", "shop.added", "uuid" ],
           query => {
             bool => {
-              must => [
+              filter => [
                 { term => { "shop.stash.stashID" => $stash{id} } },
                 { term => { "shop.verified" => "YES" } }
               ]
-  
             }
           },
           size => 500
         }
       );
       $itemSearchTime += $currentStashData->{took};
+      &sv("$stash{id} $currentStashData->{hits}->{total} $currentStashData->{took}ms\n") if ($currentStashData->{took} > 20);
 
       my %localChangeStats;
       $localChangeStats{Stashes}++;                                                
@@ -122,6 +159,8 @@ foreach my $message ( @$messages ) {
       $itemStats{Added} = 0;                                                       
       $itemStats{Unchanged} = 0;                                                   
       $itemStats{Modified} = 0;  
+
+      my @kafkaMessages;
 
       foreach $data (@{$stash{items}}) {
         $localChangeStats{TotalItems}++;
@@ -144,7 +183,7 @@ foreach my $message ( @$messages ) {
         $item{attributes}{league} = $data->{league};
         $item{attributes}{identified} = $data->{identified};
         $item{attributes}{corrupted} = $data->{corrupted};
-        $item{attributes}{support} = $data->{support};
+        $item{attributes}{support} = $data->{support} if ($data->{support});
         $item{attributes}{ilvl} = $data->{ilvl};
         $item{attributes}{frameType} = $data->{frameType};
         # Set the item rarity based on frameType digit
@@ -410,9 +449,9 @@ foreach my $message ( @$messages ) {
         my $p = "0";
         # Find each hash in the array under requirements and do stuff with it
         foreach my $pval (@{$data->{'requirements'}}) {
-          if ($data->{requirements}[$p]{name}) {
+          if ($data->{requirements}->[$p]->{name}) {
             # Set the local requirement name, which is a fixed value in the hash
-            my $requirement = $data->{requirements}[$p]{name};
+            my $requirement = $data->{requirements}->[$p]->{name};
       
             # Standardize some of the attributes stuff - for some reason, some items have Int and other have Intelligence, etc.
             $requirement = "Int" if ($requirement eq "Intelligence");
@@ -424,7 +463,7 @@ foreach my $message ( @$messages ) {
             # At the time of writing, the actual value is always the first element in the first nested array in the JSON
             # data. I don't know why it's laid out like this, i.e.
             # requirements : [ { values : [ [ "20", 0 ] ] } ]
-            my $value = $data->{requirements}[$p]{values}[0][0];
+            my $value = $data->{requirements}->[$p]->{values}->[0]->[0];
       
             # Add this information to the hash. We use += to ensure it's added as a number and avoid any weird situations
             # where an item has two requirements of the same type causing the value to get lost
@@ -441,11 +480,30 @@ foreach my $message ( @$messages ) {
         my $p = "0";
         foreach my $pval ( @{$data->{'properties'}} ) {
       #    last unless ($p); # This isn't strictly necessary, but this loop can hang due to corrupted JSON otherwise
-          if ($data->{properties}[$p]{name}) {
-            my $property = $data->{properties}[$p]{name};
-            my $value = $data->{properties}[$p]{values}[0][0];
-            $value =~ tr/\%//;
-        
+          if ($data->{properties}->[$p]->{name}) {
+            my $property = $data->{properties}->[$p]->{name};
+            my $value = $data->{properties}->[$p]->{values}->[0]->[0];
+
+
+            # Remove percentages from values
+            $value =~ s/\%//o;
+
+            # Remove " sec" from cast times and cooldown times for gems
+            if (($item{attributes}{baseItemType} eq "Gem") && ($value =~ /^\d+(\.\d{1,2}) sec/)) {
+              $value =~ s/ sec.*$//o;
+            }
+
+            # If the property contains (MAX) (for gems) just remove that portion so it's numeric
+            if ($value =~ / \(MAX\)/i) {
+              $value =~ s/ \(MAX\)//ig;
+            }
+            # Clean up some flask properties
+            if ($property =~ /\%\d/) {
+              $property =~ s/\%0/#/g;
+              $property =~ s/\%1/#/g;
+            }
+
+            # Check to see if this is a boolean
             my $isboolean = 0; 
             # Make sure a numeric value of 0 is assigned if the string is 0
             if ($value eq "0") {
@@ -458,21 +516,13 @@ foreach my $message ( @$messages ) {
               }
             }
       
-            # If the property contains (MAX) (for gems) just remove that portion so it's numeric
-            if ($value =~ / \(MAX\)/) {
-              $value =~ s/ \(MAX\)//ig;
-            }
-            if ($property =~ /\%\d/) {
-              $property =~ s/\%0/#/g;
-              $property =~ s/\%1/#/g;
-            }
       
             # Detection for elemental damage types
             # see https://github.com/trackpete/exiletools-indexer/issues/62
             if ($property eq "Elemental Damage") {
               &CreateElementalDamageTypeHash unless (%elementalDamageType);
               my $elep = "0";
-              foreach my $eleparr ( @{$data->{properties}[$p]{values}} ) {
+              foreach my $eleparr ( @{$data->{properties}->[$p]->{values}} ) {
                 my ($min, $max) = split(/\-/, $$eleparr[0]);
                 $item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{min} += $min;
                 $item{properties}{$item{attributes}{baseItemType}}{"$elementalDamageType{$$eleparr[1]}"}{max} += $max;
@@ -497,8 +547,8 @@ foreach my $message ( @$messages ) {
             } elsif ($property =~ /^(.*?) \%0 (.*?) \%1 (.*?)$/) {
               # If there are some weird parameters here, put them into a subsection for the item type
               # This is pretty much exclusive to flasks
-              $item{properties}{$item{attributes}{baseItemType}}{$property}{x} += $data->{properties}[$p]{values}[0][0];
-              $item{properties}{$item{attributes}{baseItemType}}{$property}{y} += $data->{properties}[$p]{values}[1][0];
+              $item{properties}{$item{attributes}{baseItemType}}{$property}{x} += $data->{properties}->[$p]->{values}->[0]->[0];
+              $item{properties}{$item{attributes}{baseItemType}}{$property}{y} += $data->{properties}->[$p]->{values}->[1]->[0];
             } elsif ($value =~ /(\d+)-(\d+)/) {
               my $min = $1;
               my $max = $2;
@@ -538,19 +588,15 @@ foreach my $message ( @$messages ) {
               $item{properties}{stackSize}{max} += $2;
             } else {
               # Use a string if it's a string, number of it's a number                                                                                                                      
-              # Remove " sec" from cast times and cooldown times for gems
-              if (($item{attributes}{baseItemType} eq "Gem") && ($property =~ /^\d+(\.\d{1,2}) sec$/)) {
-                $property =~ s/ sec$//o;
-              }
               if (($value =~ /^\d+$/) || ($value =~ /^\d+(\.\d{1,2})?$/)) {                                                   
-                $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;                                                                 
-              } else {                                                                                                                                  
-                $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;                                                                             
+                $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
+              } else {                              
+                $item{properties}{$item{attributes}{baseItemType}}{$property} = $value;
               }                                                                                                                                                      
             }
-          } elsif (($data->{properties}[$p]{values}[0][0]) && ($data->{properties}[$p]{values}[0][1])) {
-            my $property = $data->{properties}[$p]{values}[0][0];
-            my $value = $data->{properties}[$p]{values}[0][1];
+          } elsif (($data->{properties}->[$p]->{values}->[0]->[0]) && ($data->{properties}->[$p]->{values}->[0]->[1])) {
+            my $property = $data->{properties}->[$p]->{values}->[0]->[0];
+            my $value = $data->{properties}->[$p]->{values}->[0]->[1];
             # Use a string if it's a string, number of it's a number
             if (($value =~ /^\d+$/) || ($value =~ /^\d+(\.\d{1,2})?$/)) {                                                   
               $item{properties}{$item{attributes}{baseItemType}}{$property} += $value;
@@ -562,8 +608,8 @@ foreach my $message ( @$messages ) {
         }
       
         # If the item is a gem, it may have an additionalProperties for experience, let's log that
-        if ($item{attributes}{baseItemType} eq "Gem" && $data{additionalProperties}[0]{values}[0][0] =~ /^\d+\/\d+$/) {
-          my ($xpCurrent, $xpGoal) = split(/\//, $data{additionalProperties}[0]{values}[0][0]);
+        if ($item{attributes}{baseItemType} eq "Gem" && $data{additionalProperties}->[0]->{values}->[0]->[0] =~ /^\d+\/\d+$/) {
+          my ($xpCurrent, $xpGoal) = split(/\//, $data{additionalProperties}->[0]->{values}->[0]->[0]);
           $item{properties}{$item{attributes}{baseItemType}}{Experience}{Current} += $xpCurrent;
           $item{properties}{$item{attributes}{baseItemType}}{Experience}{NextLevel} += $xpGoal;
           $item{properties}{$item{attributes}{baseItemType}}{Experience}{PercentLeveled} += int($xpCurrent / $xpGoal * 100);
@@ -688,7 +734,15 @@ foreach my $message ( @$messages ) {
       
         # Create a default message
         if ($item{shop}{amount} && $item{shop}{currency}) {
-          $item{shop}{defaultMessage} = "\@$item{shop}{lastCharacterName} I would like to buy your $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
+          if ($item{attributes}{baseItemType} eq "Gem") {
+            if ($item{properties}{Quality}) {
+              $item{shop}{defaultMessage} = "\@$item{shop}{lastCharacterName} I would like to buy your level $item{properties}{Gem}{Level} $item{properties}{Quality}% $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
+            } else {
+              $item{shop}{defaultMessage} = "\@$item{shop}{lastCharacterName} I would like to buy your level $item{properties}{Gem}{Level} $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
+            }
+          } else {
+            $item{shop}{defaultMessage} = "\@$item{shop}{lastCharacterName} I would like to buy your $item{info}{fullName} listed for $item{shop}{amount} $item{shop}{currency} (League:$item{attributes}{league}, Stash Tab:\"$item{shop}{stash}{stashName}\" [x$item{shop}{stash}{xLocation},y$item{shop}{stash}{yLocation}])";
+          }
         }
 
 
@@ -718,43 +772,81 @@ foreach my $message ( @$messages ) {
         }
         # === END JSON FORMAT PARSING =====
 
-        # Encode the resulting item data into JSON
-        my $jsonout = JSON::XS->new->utf8->pretty->encode(\%item);
+        # Prepare the resulting data to go to the processed topic
+        # my $jsonout = JSON::XS->new->utf8->pretty->encode(\%item);
+        if ($args{debugjson}) {
+          my $prettyout = JSON::XS->new->utf8->pretty->encode(\%item);
+          if ($args{debugjson} eq "all") {
+            print "========================================\n$prettyout\n=============================================\n";
+          } elsif ($item{attributes}{baseItemType} eq $args{debugjson}) {
+            print "========================================\n$prettyout\n=============================================\n";
+          }
+        } else { 
+          my $jsonout = JSON::XS->new->utf8->encode(\%item);
+          $itemBulk->index({ id => "$item{uuid}", source => "$jsonout"});
+#          push @kafkaMessages, $jsonout;
+        }
 
         $localChangeStats{"$itemStatus"}++;                                        
         $itemStats{"$itemStatus"}++;                                               
       }
       $totalItemCount += $itemCount;
 
-      if ($processedCount % 50 == 0) {
+      # Compare the current stash information to the previous stash information to determine what has been removed
+      foreach $scanItem (@{$currentStashData->{hits}->{hits}}) {
+        if ($scanItem->{_source}->{uuid}) {
+          my $item = $scanItem->{_source};
+          $item->{shop}->{modified} = time() * 1000;
+          $item->{shop}->{updated} = time() * 1000;
+          $item->{shop}->{shelfLife} += $item->{shop}->{updated} - $item->{shop}->{added};
+          $item->{shop}->{verified} = "GONE";
+          if ($args{debugjson} == 1) {
+            my $prettyout = JSON::XS->new->utf8->pretty->encode(\%item);
+            print "========================================\n$prettyout\n=============================================\n";
+          } else { 
+            my $jsonout = JSON::XS->new->utf8->encode(\%item);
+            $itemBulk->index({ id => "$item{uuid}", source => "$jsonout"});
+#            push @kafkaMessages, $jsonout;
+          }
+          &sv("i  Gone: $item->{shop}->{sellerAccount} | $item->{info}->{fullName} | $item->{uuid} | $item->{shop}->{amount} $item->{shop}->{currency}\n");
+        }
+      }
+
+      # Send to kafka
+      my $kpr0 = [Time::HiRes::gettimeofday];
+#      $producer->send(
+#        $conf{kafkaTopicNameProcessed},
+#        0,
+#        [ @kafkaMessages ]
+#      );
+      my $kprInterval = Time::HiRes::tv_interval ( $kpr0, [Time::HiRes::gettimeofday]);
+      $totalKafkaProductionTime += $kprInterval;
+
+      if ($processedCount % 200 == 0) {
         $interval = Time::HiRes::tv_interval ( $tk1, [Time::HiRes::gettimeofday]);
-        &d("Consumed $processedCount stashtabs ($totalItemCount items) in $interval seconds (".($processedCount / $interval)." tab/s, ".($totalItemCount / $interval)." items/s).\n");
+        &d("* Consumed $processedCount stashtabs ($totalItemCount items) in ".sprintf("%.2f", $interval)."s (".sprintf("%.2f", $processedCount / $interval)." tab/s, ".sprintf("%.2f", $totalItemCount / $interval)." items/s) (".sprintf("%.2f", $totalKafkaProductionTime)."s kafka production time).\n");
         open(my $OFFSETLOG, ">", $offsetLog) || die "FATAL: Unable to open $offsetLog - $!\n";
         print $OFFSETLOG $message->next_offset;
         close($OFFSETLOG);
-
-
-
-
       }
-#        print 'payload    : ', $message->payload;
-#        print 'key        : ', $message->key;
-#        print 'offset     : ', $message->offset;
-#        print 'next_offset: ', $message->next_offset;
-      $finalOffset = $message->next_offset;         
+      $finalOffset = $message->next_offset;
     } else {
         print 'error      : ', $message->error;
     }
+    $itemBulk->flush;
     open(my $OFFSETLOG, ">", $offsetLog) || die "FATAL: Unable to open $offsetLog - $!\n";
     print $OFFSETLOG $message->next_offset;
     close($OFFSETLOG);
+    $lastOffset = $message->next_offset;
 }
 
 
+
 $interval = Time::HiRes::tv_interval ( $tk1, [Time::HiRes::gettimeofday]);
-&d("Consumed $processedCount stashtabs in $interval seconds (".($processedCount / $interval)." tab/s).\n");
+&d("* Consumed $processedCount stashtabs ($totalItemCount items) in ".sprintf("%.2f", $interval)."s (".sprintf("%.2f", $processedCount / $interval)." tab/s, ".sprintf("%.2f", $totalItemCount / $interval)." items/s) (".sprintf("%.2f", $totalKafkaProductionTime)."s kafka production time).\n");
 
-
+}
+# END DAEMON LOOP
 
 
 
@@ -782,9 +874,7 @@ sub connectElastic {
     cxn_pool => 'Sniff',
     cxn => 'Hijk',
     nodes =>  [
-      "$conf{esHost}:9200",
-      "$conf{esHost2}:9200",
-      "$conf{esHost3}:9200"
+      "$conf{esHost}:9200"
     ],
     # enable this for debug but BE CAREFUL it will create huge log files super fast
   #   trace_to => ['File','/tmp/eslog.txt'],
@@ -793,20 +883,11 @@ sub connectElastic {
     request_timeout => 180
   );
 
-#  our $itemBulk = $e->bulk_helper(
-#    index => "$conf{esItemIndex}",
-#    max_count => '5000',
-#    max_size => '15000000',
-#    max_time => '60',
-#    type => "$conf{esItemType}",
-#  );
-#
-#  our $stashTabStatsBulk = $e->bulk_helper(
-#    index => "$conf{esStatsIndex}",
-#    max_count => '500',
-#    max_size => '1000000',
-#    max_time => '60',
-#    type => "stashtab",
-#  );
-
+  our $itemBulk = $e->bulk_helper(
+    index => "$conf{esItemIndex}",
+    max_count => '25000',
+    max_time => '20',
+    max_size => 0,
+    type => "$conf{esItemType}",
+  );
 }

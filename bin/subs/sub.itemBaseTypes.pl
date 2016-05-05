@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+use utf8::all;
+
+
 sub identifyBaseItemTypeFromName {
   my $itemName = $_[0];
 
@@ -248,7 +251,7 @@ $gearBaseType{"Moon Staff"} = "Staff";
 $gearBaseType{"Primordial Staff"} = "Staff";
 $gearBaseType{"Lathi"} = "Staff";
 $gearBaseType{"Ezomyte Staff"} = "Staff";
-$gearBaseType{"Maelströtaff"} = "Staff";
+$gearBaseType{"Maelström Staff"} = "Staff";
 $gearBaseType{"Imperial Staff"} = "Staff";
 $gearBaseType{"Judgement Staff"} = "Staff";
 $gearBaseType{"Eclipse Staff"} = "Staff";

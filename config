@@ -9,8 +9,10 @@ dbCreds:../.dbcreds
 # dbPass:totallysecurepassword
 # dbName:indexer
 
-# NOTE: baseDir is not fully implemented, you must run programs from the root path!
-baseDir:/pwxdata/poe/dev
+# NOTE: This is the location to store logs ($baseDir/logs) and other stuff
+# The subroutines for this program and various other bits must be run directly
+# out of bin regardless of this setting
+baseDir:/eti/dev/indexer
 
 # The primary elasticsearch host
 esHost:elasticsearch
@@ -31,4 +33,9 @@ esStatsIndex:dev-indexing-stats
 # Kafka configuration
 # Note, you must make sure to create the topics in a way that matches
 kafkaTopicNameIncoming:incoming
-kafkaTopicPartitionsIncoming:1
+kafkaTopicPartitionsIncoming:4
+kafkaTopicNameProcessed:processed
+
+# BerkeleyDB configuration
+# This is just the path to the BerkeleyDB file (fully qualified)
+berkeleyDB:/eti/bdb/items.db

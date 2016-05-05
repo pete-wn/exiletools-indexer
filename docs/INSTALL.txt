@@ -7,7 +7,6 @@ To get this up and running:
 5. mkdir -p the basedir and basedir/logs
 6. Edit poe-watch-stash-tab-river and make sure the JSONLOG section is commented out if you don't want this
 7. Install perl, cpanminus, and all required perl modules (see below)
-   # cpanm LWP::UserAgent JSON JSON::XS Encode utf8::all Date::Parse Time::HiRes Search::Elasticsearch Text::Unidecode Data::Dumper 
 8. put "elasticsearch" as an alias in /etc/hosts for your localhost
 9. Remove the two extra eshost lines from poe-watch-stash-tab-river if they're in there (and the , on the line above)
 10. run ./poe-watch-stash-tab-river and away it goes!
@@ -25,6 +24,22 @@ though you will need to change the URL's in them to your local install of elasti
 
 * Notes on installing stuff on centos 6 for my own machines:
 
-** Supervisord
+** Perl
+cpanm TODDR/IO-1.36_01.tar.gz LWP::UserAgent JSON JSON::XS Encode utf8::all Date::Parse Time::HiRes Search::Elasticsearch Text::Unidecode Data::Dumper Storable File::Slurp Try::Tiny Scalar::Util Kafka String::Random Hijk
 
-1. install pip and pip install supervisor, then uninstall meld3 and install via yum
+** Kafka
+
+Create topics:
+
+/eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 4 --topic incoming
+/eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic processed
+
+
+Delete topics (kafka has to be configured for this):
+
+/eti/kafka/current/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic incoming
+/eti/kafka/current/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic processed
+
+List topics:
+
+/eti/kafka/current/bin/kafka-topics.sh --zookeeper localhost:2181 --list

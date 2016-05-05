@@ -9,8 +9,8 @@ $config = '
     "aliases" : { },
     "settings" : {
       "index" : {
-        "refresh_interval" : "10s",
-        "number_of_shards" : "3",
+        "refresh_interval" : "3s",
+        "number_of_shards" : "1",
         "number_of_replicas" : "1"
       }
     },
@@ -24,15 +24,15 @@ $template = '
   "template" : "dev-indexing-stats*",
   "settings" : {
     "index" : {
-      "refresh_interval" : "10s",
-      "number_of_shards" : "3",
+      "refresh_interval" : "3s",
+      "number_of_shards" : "1",
       "number_of_replicas" : "1"
     }
   },
   "mappings" : {
     "_default_" : {
       "_all" : {
-        "enabled" : true
+        "enabled" : false
       },
       "dynamic_templates" : [ 
       {

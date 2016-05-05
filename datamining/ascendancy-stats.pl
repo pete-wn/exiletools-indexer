@@ -8,7 +8,7 @@
 #
 # Output will be formatted for reddit
 
-open(IN, "character-list.csv") || die "ERROR: Unable to open character-list.csv! $!\n";
+open(IN, "$ARGV[0]") || die "ERROR: Unable to open $ARGV[0] -  $!\n";
 while(<IN>) {
   chomp;
   my @line = split(/\,/, $_);
@@ -22,5 +22,8 @@ print "|Ascendancy|Count|Percent|\n";
 print "|--|--|--|\n";
 foreach $k (sort {$a{$b} <=> $a{$a}} keys %a) {
   print "|$k|$a{$k}|".sprintf("%.2f", ($a{$k}/$total*100))."|\n";
+  $totalCount = $totalCount + $a{$k};
 
 }
+
+print "$totalCount\n";

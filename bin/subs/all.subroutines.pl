@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+use utf8::all;
+
 require("subs/sub.readConfig.pl");
 require("subs/sub.currencyNames.pl");
 require("subs/sub.currencyValues.pl");

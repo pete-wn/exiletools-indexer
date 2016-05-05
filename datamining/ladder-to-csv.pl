@@ -91,8 +91,8 @@ sub GetURL {
       my $onlineTime;
       my $lastOnline;
 # Change this to whatever format you want
-      print OUT "$accountName\n";
-#      print OUT "$league,$rank,$online,$accountName,$charName,$class,$level,$experience,$challenges\n";
+#      print OUT "$accountName\n";
+      print OUT "$league,$rank,$online,$accountName,$charName,$class,$level,$experience,$challenges\n";
 #      print "$league,$data->{entries}->[$entry]->{rank},$data->{entries}->[$entry]->{account}->{name},$data->{entries}->[$entry]->{character}->{name},$data->{entries}->[$entry]->{online}\n";
     }
   }
