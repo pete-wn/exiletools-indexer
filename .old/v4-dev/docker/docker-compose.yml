@@ -1,0 +1,61 @@
+version: '2'
+
+services:
+  es1:
+    image: elasticsearch
+    container_name: es1
+    volumes:
+      - /eti/elastic/es1/base:/elastic
+      - /eti/elastic/es1/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /eti/elastic/es1/base/plugins:/usr/share/elasticsearch/plugins
+    restart: always
+    environment:
+      - ES_CLUSTERNAME=exiletools
+      - ES_HEAP_SIZE=30g
+      - MAX_OPEN_FILES=220000
+    command: elasticsearch
+    privileged: true
+    ports: 
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      elastic-net:
+        ipv4_address: 172.19.0.21
+    ulimits:
+      nproc: 16384
+      nofile: 252000
+      memlock:
+        soft: 9999999999999999
+        hard: 9999999999999999
+  es2:
+    image: elasticsearch
+    container_name: es2
+    volumes:
+      - /eti/elastic/es2/base:/elastic
+      - /eti/elastic/es2/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /eti/elastic/es2/base/plugins:/usr/share/elasticsearch/plugins
+    restart: always
+    environment:
+      - ES_CLUSTERNAME=exiletools
+      - ES_HEAP_SIZE=30g
+      - MAX_OPEN_FILES=220000
+    command: elasticsearch
+    networks:
+      elastic-net:
+        ipv4_address: 172.19.0.22
+    privileged: true
+    ulimits:
+      nproc: 16384
+      nofile: 252000
+      memlock:
+        soft: 9999999999999999
+        hard: 9999999999999999
+
+networks:
+  elastic-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.19.0.0/24
+        gateway: 172.19.0.1

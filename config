@@ -1,23 +1,35 @@
 # Hostname to connect to mysql/mariadb
-dbHost:localhost
+# NOTE: This is not used as of ExileTools v3 and is no longer necessary
+# dbHost:localhost
 
 # A flat file with database credentials (user/pass/database name)
-dbCreds:.dbcreds
+# NOTE: This is not used as of ExileTools v3 and is no longer necessary
+# dbCreds:../.dbcreds
 # Here is an example .dbcreds file: (these aren't my credientials :p )
 #
 # dbUser:mariadb
 # dbPass:totallysecurepassword
 # dbName:indexer
 
-# NOTE: baseDir is not fully implemented, you must run programs from the root path!
-baseDir:/pwxdata/poe/dev
+# This is the location to store logs ($baseDir/logs) and other stuff
+# The subroutines for this program and various other bits must be run directly
+# out of bin regardless of this setting, for example:
+#
+# % cd /eti/dev/indexer/bin
+# % tools/build-unique-item-hash.pl
+#
+# Otherwise the basedir is used for logs and other such things, though you
+# will need to create the appropriate directories (see docs/INSTALL.txt)
+baseDir:/eti/dev/indexer
 
 # The primary elasticsearch host
 esHost:elasticsearch
 
 # The secondary elasticsearch host (if any)
-esHost2:elasticsearch2
-esHost3:elasticsearch3
+# Multiple hosts are not supported by default in v4, you will need to add
+# them into the code manually
+#esHost2:elasticsearch2
+#esHost3:elasticsearch3
 
 # The main Elastic Search Index (recommended: 'poe')
 esItemIndex:poedev
@@ -27,3 +39,10 @@ esItemType:item
 
 # The Elastic Search stats index for thread/indexing stats
 esStatsIndex:dev-indexing-stats
+
+# Kafka configuration
+# Note, you must make sure to create the topics in a way that matches
+kafkaTopicNameIncoming:incoming
+kafkaTopicPartitionsIncoming:4
+kafkaTopicNameProcessed:processed
+# The processed topic will always be 1 partition

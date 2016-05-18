@@ -9,9 +9,9 @@ $config = '
     "aliases" : { },
     "settings" : {
       "index" : {
-        "refresh_interval" : "3s",
-        "number_of_shards" : "3",
-        "number_of_replicas" : "1",
+        "refresh_interval" : "10s",
+        "number_of_shards" : "1",
+        "number_of_replicas" : "0",
         "requests.cache.enable" : true
       }
     },
@@ -25,9 +25,9 @@ $template = '
   "template" : "poedev*",
   "settings" : {
     "index" : {
-      "refresh_interval" : "3s",
-      "number_of_shards" : "3",
-      "number_of_replicas" : "1",
+      "refresh_interval" : "10s",
+      "number_of_shards" : "1",
+      "number_of_replicas" : "0",
       "requests.cache.enable" : true
     },
     "analysis" : {
@@ -53,7 +53,10 @@ $template = '
   "mappings" : {
     "_default_" : {
       "_all" : {
-        "enabled" : true
+        "enabled" : false
+      },
+      "_source" : {
+        "enabled" : false
       },
       "dynamic_templates" : [ 
       {

@@ -1,0 +1,52 @@
+This is not intended to be a complete walkthrough. Setting up the Indexer Core and getting it running will
+require some experimentation and systems knowledge.
+
+The production and development versions run on CentOS7, but have also been installed with ease on Ubuntu. 
+No testing has been done on Windows/etc.
+
+To get this up and running:
+
+1. Install, configure and start Elasticsearch
+2. Edit the bin/tools/setup/es-recreate* files with a proper index name, then run them
+3. Edit the config file in the root directory and set a proper basedir and index names that match step 2, as well as kafka topics
+4. mkdir -p the basedir and basedir/logs/offset
+5. Install Apache Kafka and get it up and running, create the appropriate topics and partitions
+6. Install perl, cpanminus, and all required perl modules (see below)
+7. Start by running incoming-monitor-ggg-stashtab-api.pl and make sure it works and that information is going into Kafka
+8. Run process-reformat-ggg-to-pwx.pl -partition 0 first and make sure it's working. It may be slow to index at first as the
+   ElasticSearch mappings are dynamically created.
+9. Once everything is confirmed to be working, activate the other threads for processing and/or put it into supervisor and go
+
+Good luck. :o
+
+You can use the example supervisord configuration file to set this to be run automatically.
+
+The first few runs may be slow as Elasticsearch builds the proper mappings, but everything should speed up before too long.
+
+You can also copy everything in www/html to your nginx or apache root directory and get access to the dashboard/etc. stuff,
+though you will need to change the URL's in them to your local install of elasticsearch for everything to work.
+
+
+      -Pete
+
+
+* Notes on installing stuff on centos for my own machines:
+
+** Perl
+cpanm TODDR/IO-1.36_01.tar.gz LWP::UserAgent JSON JSON::XS Encode utf8::all Date::Parse Time::HiRes Search::Elasticsearch Text::Unidecode Data::Dumper Storable File::Slurp Try::Tiny Scalar::Util Kafka String::Random Hijk
+
+** Kafka
+
+Create topics:
+
+/eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 4 --topic incoming
+/eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic processed
+
+Delete topics (kafka has to be configured for this):
+
+/eti/kafka/current/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic incoming
+/eti/kafka/current/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic processed
+
+List topics:
+
+/eti/kafka/current/bin/kafka-topics.sh --zookeeper localhost:2181 --list

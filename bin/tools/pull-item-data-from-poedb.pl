@@ -18,9 +18,6 @@ use Data::Dumper;
 $baseurl = "http://poedb.tw/us/item.php";
 
 # Hash of types to convert - the key is the poedb title, the value is the baseItemType we will use
-$h{"Flask"} = "Flask";
-$h{"Maps"} = "Map";
-$h{"Map Fragments"} = "Vaal Fragment";
 $h{"Claws"} = "Claw";
 $h{"Daggers"} = "Dagger";
 $h{"Wands"} = "Wand";
@@ -28,33 +25,44 @@ $h{"One Hand Swords"} = "Sword";
 $h{"Thrusting One Hand Swords"} = "Sword";
 $h{"One Hand Axes"} = "Axe";
 $h{"One Hand Maces"} = "Mace";
+$h{"Sceptres"} = "Sceptre";
 $h{"Bows"} = "Bow";
 $h{"Staves"} = "Staff";
 $h{"Two Hand Swords"} = "Sword";
 $h{"Two Hand Axes"} = "Axe";
 $h{"Two Hand Maces"} = "Mace";
-$h{"Sceptres"} = "Sceptre";
 $h{"Fishing Rods"} = "Fishing Rod";
+
 $h{"Gloves"} = "Gloves";
 $h{"Boots"} = "Boots";
-$h{"Helmets"} = "Helmet";
 $h{"Body Armours"} = "Body";
+$h{"Helmets"} = "Helmet";
 $h{"Shields"} = "Shield";
+
 $h{"Amulets"} = "Amulet";
 $h{"Rings"} = "Ring";
 $h{"Quivers"} = "Quiver";
 $h{"Belts"} = "Belt";
 $h{"Jewel"} = "Jewel";
+
+$h{"Life Flasks"} = "Flask";
+$h{"Mana Flasks"} = "Flask";
+$h{"Hybrid Flasks"} = "Flask";
+$h{"Utility Flasks"} = "Flask";
+$h{"Maps"} = "Map";
+$h{"Map Fragments"} = "Vaal Fragment";
+
 $h{"Divination Card"} = "Card";
 
 
 my @content = split(/\n/, GetURL("$baseurl"));
 foreach $line (@content) {
-  if ($line =~ /<li><a  href=\'\?c=(\d+)\'>(.*?)<\/a>/) {
+  if ($line =~ /<li><a  href=\'item.php\?cn=(\S+)\'>(.*?)<\/a>/) {
     my $endurl = $1;
     my $dbtype = $2;
     next unless ($h{"$dbtype"});
-    &ProcessURL("$baseurl\?c=$endurl", $h{"$dbtype"});
+#    print "$baseurl\?c=$endurl $h{$dbtype}\n";
+    &ProcessURL("$baseurl\?cn=$endurl", $h{"$dbtype"});
   }
 
 }

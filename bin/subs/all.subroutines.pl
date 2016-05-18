@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+use utf8::all;
+
 require("subs/sub.readConfig.pl");
 require("subs/sub.currencyNames.pl");
 require("subs/sub.currencyValues.pl");
@@ -52,6 +54,8 @@ sub StartProcess {
     }
   }
 
+  $logDir = "$conf{baseDir}/logs";
+
   &d("* $process started\n");
 }
 
@@ -63,5 +67,21 @@ sub ExitProcess {
   close(LOG);
   exit;
 }
+
+our %frameTypeHash;
+$frameTypeHash{"0"} = "Normal";
+$frameTypeHash{"1"} = "Magic";
+$frameTypeHash{"2"} = "Rare";
+$frameTypeHash{"3"} = "Unique";
+$frameTypeHash{"4"} = "Gem";
+$frameTypeHash{"5"} = "Currency";
+$frameTypeHash{"6"} = "Divination Card";
+$frameTypeHash{"7"} = "Quest Item";
+
+
+
+
+
+
 
 return true;
