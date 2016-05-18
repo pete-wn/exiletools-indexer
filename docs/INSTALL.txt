@@ -1,15 +1,23 @@
+This is not intended to be a complete walkthrough. Setting up the Indexer Core and getting it running will
+require some experimentation and systems knowledge.
+
+The production and development versions run on CentOS7, but have also been installed with ease on Ubuntu. 
+No testing has been done on Windows/etc.
+
 To get this up and running:
 
 1. Install, configure and start Elasticsearch
-2. Edit the tools/setup/es-recreate* files with a proper index name, then run them
-3. Touch .dbcreds in root directory (it does not need anything in it, current legacy)
-4. Edit the config file in the root directory and set a proper basedir and index names that match step 2
-5. mkdir -p the basedir and basedir/logs
-6. Edit poe-watch-stash-tab-river and make sure the JSONLOG section is commented out if you don't want this
-7. Install perl, cpanminus, and all required perl modules (see below)
-8. put "elasticsearch" as an alias in /etc/hosts for your localhost
-9. Remove the two extra eshost lines from poe-watch-stash-tab-river if they're in there (and the , on the line above)
-10. run ./poe-watch-stash-tab-river and away it goes!
+2. Edit the bin/tools/setup/es-recreate* files with a proper index name, then run them
+3. Edit the config file in the root directory and set a proper basedir and index names that match step 2, as well as kafka topics
+4. mkdir -p the basedir and basedir/logs/offset
+5. Install Apache Kafka and get it up and running, create the appropriate topics and partitions
+6. Install perl, cpanminus, and all required perl modules (see below)
+7. Start by running incoming-monitor-ggg-stashtab-api.pl and make sure it works and that information is going into Kafka
+8. Run process-reformat-ggg-to-pwx.pl -partition 0 first and make sure it's working. It may be slow to index at first as the
+   ElasticSearch mappings are dynamically created.
+9. Once everything is confirmed to be working, activate the other threads for processing and/or put it into supervisor and go
+
+Good luck. :o
 
 You can use the example supervisord configuration file to set this to be run automatically.
 
@@ -22,7 +30,7 @@ though you will need to change the URL's in them to your local install of elasti
       -Pete
 
 
-* Notes on installing stuff on centos 6 for my own machines:
+* Notes on installing stuff on centos for my own machines:
 
 ** Perl
 cpanm TODDR/IO-1.36_01.tar.gz LWP::UserAgent JSON JSON::XS Encode utf8::all Date::Parse Time::HiRes Search::Elasticsearch Text::Unidecode Data::Dumper Storable File::Slurp Try::Tiny Scalar::Util Kafka String::Random Hijk
@@ -33,7 +41,6 @@ Create topics:
 
 /eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 4 --topic incoming
 /eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic processed
-
 
 Delete topics (kafka has to be configured for this):
 

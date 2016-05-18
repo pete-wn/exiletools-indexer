@@ -1,48 +1,11 @@
 #!/usr/bin/perl
 
+# IMPORTANT NOTE:
+# This subroutine used to handle ALL of the JSON processing, however the
+# main part of this was moved into the processing core program for performance
+# reasons.
+
 require('subs/sub.uniqueItemInfoHash.pl');
-
-sub ItemSockets {
-  my %sockets;
-  my %sortGroup;
-
-  for (my $socketprop=0;$socketprop <= 10;$socketprop++) {
-    my $group = $data{sockets}[$socketprop]{group};
-    $sockets{group}{$group} .= $data{sockets}[$socketprop]{attr} if ($data{sockets}[$socketprop]{attr})
-  }
-
-  my $socketcount;
-  my $allSockets;
-  my $allSocketsGGG;
-  foreach my $group (sort keys(%{$sockets{group}})) {
-#    print "[$threadid][$timestamp] $data[$activeFragment]->[1]{name} Group: $group | Sockets: $sockets{group}{$group} (".length($sockets{group}{$group}).")\n";
-    $sockets{maxLinks} = length($sockets{group}{$group}) if (length($sockets{group}{$group}) > $sockets{maxLinks});
-    $sockets{count} = $sockets{count} + length($sockets{group}{$group});
-  }
-
-
-  foreach my $group (sort keys(%{$sockets{group}})) {
-    $sockets{group}{$group} =~ s/G/W/g;
-    $sockets{group}{$group} =~ s/D/G/g;
-    $sockets{group}{$group} =~ s/S/R/g;
-    $sockets{group}{$group} =~ s/I/B/g;
-    $allSockets .= "-$sockets{group}{$group}";
-    my $gggGroup = join("-", (split(//, $sockets{group}{$group})));
-    $allSocketsGGG .= " $gggGroup";
-    my @sort = sort (split(//, $sockets{group}{$group}));
-    my $sorted = join("", @sort);
-    $sortGroup{$group} = "$sorted";
-  }
-  $allSockets =~ s/^\-//o;
-  $allSocketsGGG =~ s/^\s+//o;
-
-  my @sort = sort (split(//, $allSockets));
-  my $sorted = join("", @sort);
-  $sorted =~ s/\-//g;
-  return($sockets{maxLinks},$sockets{count},$allSockets,$sorted,$allSocketsGGG,%sortGroup);
-
-
-}
 
 sub setPseudoMods {
   my $modifier = $_[0];

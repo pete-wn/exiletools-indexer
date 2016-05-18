@@ -70,7 +70,7 @@ my ( $connection, $consumer, $producer );
 try {
   $connection = Kafka::Connection->new( host => 'localhost' );
   $consumer = Kafka::Consumer->new( Connection  => $connection );
-#  $producer = Kafka::Producer->new( Connection => $connection );
+  $producer = Kafka::Producer->new( Connection => $connection );
 } catch {
   my $error = $_;
   if ( blessed( $error ) && $error->isa( 'Kafka::Exception' ) ) {
@@ -134,8 +134,8 @@ foreach my $message ( @$messages ) {
       # Fetch a current list of items in this stash in the index
       # set it to local to the formatJSON subroutine can see it
       local $currentStashData = $e->search(
-        index => "poedev",
-        type => "item",
+        index => "$conf{esItemIndex}",
+        type => "$conf{esItemType}",
         body => {
 #          "_source" => [ "shop.stash.stashID", "shop.stash.stashName", "shop.verified", "shop.note", "shop.modified", "shop.update", "shop.added", "uuid" ],
           query => {
@@ -678,10 +678,10 @@ foreach my $message ( @$messages ) {
         }
       
         # ======= SOCKETS SOCKETS SOCKETS ==========================
-        if ($data{sockets}[0]{attr}) {
+        if ($data->{sockets}->[0]->{attr}) {
           # Kinda hacky
           # https://github.com/trackpete/exiletools-indexer/issues/106
-          foreach my $socket (@{$data{sockets}}) {
+          foreach my $socket (@{$data->{sockets}}) {
             if ($socket->{attr} eq "G") {
               $item{sockets}{totalWhite}++;
             } elsif ($socket->{attr} eq "D") {
@@ -694,10 +694,49 @@ foreach my $message ( @$messages ) {
           }
       
           my %sortGroup;
-          ($item{sockets}{largestLinkGroup}, $item{sockets}{socketCount}, $item{sockets}{allSockets}, $item{sockets}{allSocketsSorted}, $item{sockets}{allSocketsGGG}, %sortGroup) = &ItemSockets();
+          my %sockets;
+          my $socketcount;
+          my $allSockets;
+          my $allSocketsGGG;
+
+          for (my $socketprop=0;$socketprop <= 10;$socketprop++) {
+            my $group = $data->{sockets}->[$socketprop]->{group};
+            $sockets{group}{$group} .= $data->{sockets}->[$socketprop]->{attr} if ($data->{sockets}->[$socketprop]->{attr})
+          }
+
+          foreach my $group (sort keys(%{$sockets{group}})) {
+            $sockets{maxLinks} = length($sockets{group}{$group}) if (length($sockets{group}{$group}) > $sockets{maxLinks});
+            $sockets{count} = $sockets{count} + length($sockets{group}{$group});
+          }
+        
+          foreach my $group (sort keys(%{$sockets{group}})) {
+            $sockets{group}{$group} =~ s/G/W/g;
+            $sockets{group}{$group} =~ s/D/G/g;
+            $sockets{group}{$group} =~ s/S/R/g;
+            $sockets{group}{$group} =~ s/I/B/g;
+            $allSockets .= "-$sockets{group}{$group}";
+            my $gggGroup = join("-", (split(//, $sockets{group}{$group})));
+            $allSocketsGGG .= " $gggGroup";
+            my @sort = sort (split(//, $sockets{group}{$group}));
+            my $sorted = join("", @sort);
+            $sortGroup{$group} = "$sorted";
+          }
+          $allSockets =~ s/^\-//o;
+          $allSocketsGGG =~ s/^\s+//o;
+        
+          my @sort = sort (split(//, $allSockets));
+          my $sorted = join("", @sort);
+          $sorted =~ s/\-//g;
+          $item{sockets}{largestLinkGroup} = $sockets{maxLinks};
+          $item{sockets}{socketCount} = $sockets{count};
+          $item{sockets}{allSockets} = $allSockets;
+          $item{sockets}{allSocketsSorted} = $sorted;
+          $item{sockets}{allSocketsGGG} = $allSocketsGGG;
+
           foreach $sortGroup (keys(%sortGroup)) {
             $item{sockets}{sortedLinkGroup}{$sortGroup} = $sortGroup{$sortGroup};
           }
+#          print Dumper($item{sockets});
         }
       
         # ======= MODS MODS MODS =====================================
@@ -784,7 +823,11 @@ foreach my $message ( @$messages ) {
         } else { 
           my $jsonout = JSON::XS->new->utf8->encode(\%item);
           $itemBulk->index({ id => "$item{uuid}", source => "$jsonout"});
-#          push @kafkaMessages, $jsonout;
+          # Add modified and added items to Kafka Processed queue
+          if (($itemStatus eq "Modified") || ($itemStatus eq "Added")) {
+            push @kafkaMessages, $jsonout;
+            &sv("$item{uuid} was Added or Modified, adding to Processed Kafka queue\n");
+          }
         }
 
         $localChangeStats{"$itemStatus"}++;                                        
@@ -804,9 +847,11 @@ foreach my $message ( @$messages ) {
             my $prettyout = JSON::XS->new->utf8->pretty->encode(\%item);
             print "========================================\n$prettyout\n=============================================\n";
           } else { 
-            my $jsonout = JSON::XS->new->utf8->encode(\%item);
-            $itemBulk->index({ id => "$item{uuid}", source => "$jsonout"});
-#            push @kafkaMessages, $jsonout;
+            my $jsonout = JSON::XS->new->utf8->encode(\%{$item});
+            $itemBulk->index({ id => "$item->{uuid}", source => "$jsonout"});
+            # Add GONE items to kafka processed queue for notifications as well
+            &sv("$item->{uuid} is GONE, adding to processed kafka queue\n");
+            push @kafkaMessages, $jsonout;
           }
           &sv("i  Gone: $item->{shop}->{sellerAccount} | $item->{info}->{fullName} | $item->{uuid} | $item->{shop}->{amount} $item->{shop}->{currency}\n");
         }
@@ -814,17 +859,17 @@ foreach my $message ( @$messages ) {
 
       # Send to kafka
       my $kpr0 = [Time::HiRes::gettimeofday];
-#      $producer->send(
-#        $conf{kafkaTopicNameProcessed},
-#        0,
-#        [ @kafkaMessages ]
-#      );
+      $producer->send(
+        $conf{kafkaTopicNameProcessed},
+        0,
+        [ @kafkaMessages ]
+      );
       my $kprInterval = Time::HiRes::tv_interval ( $kpr0, [Time::HiRes::gettimeofday]);
       $totalKafkaProductionTime += $kprInterval;
 
       if ($processedCount % 200 == 0) {
         $interval = Time::HiRes::tv_interval ( $tk1, [Time::HiRes::gettimeofday]);
-        &d("* Consumed $processedCount stashtabs ($totalItemCount items) in ".sprintf("%.2f", $interval)."s (".sprintf("%.2f", $processedCount / $interval)." tab/s, ".sprintf("%.2f", $totalItemCount / $interval)." items/s) (".sprintf("%.2f", $totalKafkaProductionTime)."s kafka production time).\n");
+        &d("* Consumed $processedCount stashtabs ($totalItemCount items) in ".sprintf("%.2f", $interval)."s (".sprintf("%.2f", $processedCount / $interval)." tab/s, ".sprintf("%.2f", $totalItemCount / $interval)." items/s) (".sprintf("%.4f", $totalKafkaProductionTime)."s kafka production time).\n");
         open(my $OFFSETLOG, ">", $offsetLog) || die "FATAL: Unable to open $offsetLog - $!\n";
         print $OFFSETLOG $message->next_offset;
         close($OFFSETLOG);
@@ -843,7 +888,7 @@ foreach my $message ( @$messages ) {
 
 
 $interval = Time::HiRes::tv_interval ( $tk1, [Time::HiRes::gettimeofday]);
-&d("* Consumed $processedCount stashtabs ($totalItemCount items) in ".sprintf("%.2f", $interval)."s (".sprintf("%.2f", $processedCount / $interval)." tab/s, ".sprintf("%.2f", $totalItemCount / $interval)." items/s) (".sprintf("%.2f", $totalKafkaProductionTime)."s kafka production time).\n");
+&d("* Consumed $processedCount stashtabs ($totalItemCount items) in ".sprintf("%.2f", $interval)."s (".sprintf("%.2f", $processedCount / $interval)." tab/s, ".sprintf("%.2f", $totalItemCount / $interval)." items/s) (".sprintf("%.4f", $totalKafkaProductionTime)."s kafka production time).\n");
 
 }
 # END DAEMON LOOP

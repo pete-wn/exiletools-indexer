@@ -122,10 +122,10 @@ while($keepRunning) {
 
     # Sleep for 1 second then repeat
     #usleep 500000;
-    sleep 1;
+    sleep 3;
   } else {
-    &d("WARNING: RunRiver did not return a valid status! \"$status\" Re-trying with old change id in 30s!\n");
-    sleep 30;
+    &d("WARNING: RunRiver did not return a valid status! \"$status\" Re-trying with old change id in 5s!\n");
+    sleep 5;
   }
   $interval = Time::HiRes::tv_interval ( $kr0, [Time::HiRes::gettimeofday]);
   &d("\$ Full update consumed in $interval seconds\n");
@@ -192,6 +192,9 @@ sub RunRiver {
   my %riverData = %{JSON::XS->new->utf8->allow_nonref->decode($content)};
   # All done and loaded into a perl hash for processing. Booya.
 
+  if ($riverData{error}{message}) {
+    return("ERROR: API returned an error: \"$riverData{error}{message}\"");
+  }
 
   # Get a timestamp of this data that was fetched
   my $fetchTime = time();
@@ -253,15 +256,12 @@ sub RunRiver {
 
     $interval = Time::HiRes::tv_interval ( $t0, [Time::HiRes::gettimeofday]);
     &d(". [$change_id] Added $changeStats{Stashes} stashes to Kafka and indexed stats for $runuuid to Elasticsearch in $interval seconds\n");
-
-  } else {
-    &d("! No changes found this id! Will retry.\n");
   }
 
   if ($riverData{next_change_id}) {
     return("next_change_id:$riverData{next_change_id}");
   } else {
-    return("ERROR no next_change_id found!");
+    return("No next_change_id found!");
   }
 
 }

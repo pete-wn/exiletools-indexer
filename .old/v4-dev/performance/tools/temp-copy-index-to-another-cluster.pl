@@ -41,19 +41,20 @@ local $edst = Search::Elasticsearch->new(
 #   trace_to => ['File','/tmp/eslog.txt'],
 
   # Huge request timeout for bulk indexing
-  request_timeout => 60
+  request_timeout => 300
 );
 
 local $bulkdst = $edst->bulk_helper(
   index => 'poe20160505',
   type => 'item',
-  max_count => '20000',
+  max_count => '5000',
   max_time => '30'
 )
 -> reindex(
     source => {
       es => $e,
-      index => 'poe'
+      index => 'poe',
+      type => 'item'
     }
   );
 
