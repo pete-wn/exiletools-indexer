@@ -1,0 +1,18 @@
+{
+  "name": "node-monitor",
+  "version": "1.0.0",
+  "description": "Test Kafka Monitor",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "exiletools",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "lodash": "^4.12.0",
+    "no-kafka": "^2.5.0",
+    "socket.io": "^1.4.6"
+  }
+}

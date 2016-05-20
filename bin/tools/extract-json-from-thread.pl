@@ -20,6 +20,7 @@ use File::Path;
 use Text::Unidecode;
 require("subs/sub.formatJSON.pl");
 require("subs/sub.itemBaseTypes.pl");
+require("subs/localsub.extractedFormatJSON.pl");
 
 # Just null these out
 sub sv {
@@ -64,9 +65,9 @@ foreach my $itemx (@{$data}) {
   print "=============================================================\n";
   print "Item #".$itemx->[0]." RAW JSON:\n";
   print $jsonx->pretty->encode($itemx->[1])."\n";  
-  print "** Modified ES JSON: ****************************************\n";
-  my ($jsonout,$uuid,$itemStatus) = &formatJSON($itemx->[1]);
-  print $jsonx->pretty->encode($jsonx->decode($jsonout))."\n";
+#  print "** Modified ES JSON: ****************************************\n";
+#  my ($jsonout,$uuid,$itemStatus) = &formatJSON($itemx->[1]);
+#  print $jsonx->pretty->encode($jsonx->decode($jsonout))."\n";
 }
 
 
