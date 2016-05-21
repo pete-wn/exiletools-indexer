@@ -39,6 +39,7 @@ var disconnectedCount = 0;
 app.post('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
   filter = JSON.parse(req.body.filter);
+console.log(JSON.stringify(filter));
 
 });
 
@@ -93,50 +94,40 @@ var dataHandler = function (messageSet, topic, partition) {
       // matches this item. At some point we're going to spend more time
       // iterating the array and comparing than we are keeping up with the stream.
       socketIDs.forEach(function(id) {
-        var pass = 1;
         _.forEach(filterData[id], function(thisFilter) {
-          _.forEach(thisFilter.core, function checkCore (value, key) {
-            if (dt.get(item,key) == thisFilter.core[key]) {
-              console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.core[key]);
+          var pass = 1;
+          _.forEach(thisFilter.eq, function checkCore (value, key) {
+            if (dt.get(item,key) == thisFilter.eq[key]) {
+              // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.eq[key]);
               pass = 1;
             } else {
               pass = 0;
-//              console.log("this item failed a check, breaking");
               return false;
             }
           });
-          // Need to go back and see if I can return true if the foreach completes, but this
-          // works for now
-          if (pass == 0) {
-//            console.log("DEBUG: This item failed a check, returning");
-            return false;
+          // really need to find a better way to do this
+          if (pass == 1) {
+            _.forEach(thisFilter.gt, function checkGt(value, key) {
+              if (dt.get(item,key) > thisFilter.gt[key]) {
+                // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
+                pass = 1;
+              } else {
+                pass = 0;
+                return false;
+              }
+            });
           }
-          _.forEach(thisFilter.gt, function checkGt(value, key) {
-            if (dt.get(item,key) > thisFilter.gt[key]) {
-              console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
-              pass = 1;
-            } else {
-              pass = 0;
-//              console.log("this item failed a check, breaking");
-              return false;
-            }
-          });
-          // Need to go back and see if I can return true if the foreach completes, but this
-          // works for now
-          if (pass == 0) {
-//            console.log("DEBUG: This item failed a check, returning");
-            return false;
+          if (pass == 1) {
+            _.forEach(thisFilter.lt, function checkGt(value, key) {
+              if (dt.get(item,key) < thisFilter.lt[key]) {
+                // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
+                pass = 1;
+              } else {
+                pass = 0;
+                return false;
+              }
+            });
           }
-          _.forEach(thisFilter.lt, function checkGt(value, key) {
-            if (dt.get(item,key) < thisFilter.lt[key]) {
-              console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
-              pass = 1;
-            } else {
-              pass = 0;
-//              console.log("this item failed a check, breaking");
-              return false;
-            }
-          });
 
           if (pass == 1) {
             io.to(id).emit('item', item);

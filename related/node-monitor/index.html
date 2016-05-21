@@ -10,7 +10,21 @@
 
     socket.on("item", function(item) {
 //      console.log(item);
-      $('#itemsDiv').prepend("<b>Matching Item:</b>" + item.info.fullName + " added by " + item.shop.sellerAccount + " for price of " + item.shop.amount + " " + item.shop.currency + " at " + new Date(item.shop.modified) + "<br>");
+      var et = item.attributes.equipType;
+      console.log(et);
+      var outputString = "<table border=1 cellspacing=0 cellpadding=5 width=100%><tr><td valign=top width=200>" + item.info.fullName + "</td><td width=400>";
+      if (item.mods[et].implicit) {
+        jQuery.each(item.mods[et].implicit, function(key, value) {
+          outputString += ("<b>" + key + " : " + value + "</b><br>");
+        });
+      }
+      if (item.mods[et].explicit) {
+        jQuery.each(item.mods[et].explicit, function(key, value) {
+          outputString += (key + " : " + value + "<br>");
+        });
+      }
+
+      $('#itemsDiv').prepend(outputString + "</td><td width=100>" + item.shop.sellerAccount + "</td><td width=100>" + item.shop.amount + " " + item.shop.currency + "</td><td width=250>" + new Date(item.shop.modified) + "</td></tr></table>");
     });
 
     socket.on('error', console.error.bind(console));
