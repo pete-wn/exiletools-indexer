@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.1",
+    "dotty": "0.0.2",
     "express": "^4.13.4",
     "lodash": "^4.12.0",
     "no-kafka": "^2.5.0",

@@ -1,14 +1,17 @@
 // Include various modules
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var bodyParser = require('body-parser');
 var _ = require('lodash');
 var Kafka = require('no-kafka');
 var consumer = new Kafka.SimpleConsumer();
+var dt = require("dotty");
 
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use('/public', express.static(__dirname + '/public'));
 
 // filterData will contain an object with various filters to search against
 // It is updated by each new connection. This is really weird and maybe inefficient.
@@ -22,7 +25,7 @@ var socketIDs = new Array;
 // Make sure the filter variable is global so we can see it from get
 // I expect I will need to optimize this because if two users connect
 // in the same millisecond with different filters, what happens?
-var filter;
+var filter = new Array;
 
 // Keep track of some stats as globals
 var itemCount = 0;
@@ -30,21 +33,24 @@ var emittedItemCount = 0;
 var connectedCount = 0;
 var disconnectedCount = 0;
 
-// use express to send a simple web page and get the query filter
-// this is only for testing, ultimately we won't do this
-app.get('/', function(req, res){
+// Retrieve the GET data and send a simple output web page
+// we'll have to do this slightly differently for applications, this is
+// still POC phase
+app.post('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
-//  console.log('Got Filter: ' + req.query.filter);
-  filter = req.query.filter;
+  filter = JSON.parse(req.body.filter);
+
 });
 
 // when a socket is created, add the filter information and socket
 // to the appropriate arrays and objects, and make sure to delete
 // them when the user disconnects
 io.on('connection', function(socket){
-  filterData[socket.id] = filter;
   socketIDs.push(socket.id);
-  console.log('-->    CONNECTED: ' + socket.id + ' with Filter ' + filter);
+  filterData[socket.id] = filter;
+
+
+  console.log('-->    CONNECTED: ' + socket.id + ' with Filter ' + JSON.stringify(filter));
   connectedCount++; 
   socket.on("disconnect", function () {
     console.log('<-- DISCONNECTED: ' + socket.id);
@@ -87,10 +93,56 @@ var dataHandler = function (messageSet, topic, partition) {
       // matches this item. At some point we're going to spend more time
       // iterating the array and comparing than we are keeping up with the stream.
       socketIDs.forEach(function(id) {
-        if (item.attributes.baseItemType == filterData[id]) {
-          io.to(id).emit('item', item);
-          emittedItemCount++;
-        }
+        var pass = 1;
+        _.forEach(filterData[id], function(thisFilter) {
+          _.forEach(thisFilter.core, function checkCore (value, key) {
+            if (dt.get(item,key) == thisFilter.core[key]) {
+              console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.core[key]);
+              pass = 1;
+            } else {
+              pass = 0;
+//              console.log("this item failed a check, breaking");
+              return false;
+            }
+          });
+          // Need to go back and see if I can return true if the foreach completes, but this
+          // works for now
+          if (pass == 0) {
+//            console.log("DEBUG: This item failed a check, returning");
+            return false;
+          }
+          _.forEach(thisFilter.gt, function checkGt(value, key) {
+            if (dt.get(item,key) > thisFilter.gt[key]) {
+              console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
+              pass = 1;
+            } else {
+              pass = 0;
+//              console.log("this item failed a check, breaking");
+              return false;
+            }
+          });
+          // Need to go back and see if I can return true if the foreach completes, but this
+          // works for now
+          if (pass == 0) {
+//            console.log("DEBUG: This item failed a check, returning");
+            return false;
+          }
+          _.forEach(thisFilter.lt, function checkGt(value, key) {
+            if (dt.get(item,key) < thisFilter.lt[key]) {
+              console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
+              pass = 1;
+            } else {
+              pass = 0;
+//              console.log("this item failed a check, breaking");
+              return false;
+            }
+          });
+
+          if (pass == 1) {
+            io.to(id).emit('item', item);
+            emittedItemCount++;
+          }
+        });
       });
 
     });
