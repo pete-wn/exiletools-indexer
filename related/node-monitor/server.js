@@ -1,17 +1,12 @@
 // Include various modules
-var express = require('express');
-var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var app = require('http').createServer(handler)
+var io = require('socket.io')(app);
 var bodyParser = require('body-parser');
 var _ = require('lodash');
 var Kafka = require('no-kafka');
 var consumer = new Kafka.SimpleConsumer();
 var dt = require("dotty");
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use('/public', express.static(__dirname + '/public'));
+var prettyHrtime = require('pretty-hrtime');
 
 // filterData will contain an object with various filters to search against
 // It is updated by each new connection. This is really weird and maybe inefficient.
@@ -22,37 +17,49 @@ var filterData = new Object;
 // via an object
 var socketIDs = new Array;
 
-// Make sure the filter variable is global so we can see it from get
-// I expect I will need to optimize this because if two users connect
-// in the same millisecond with different filters, what happens?
-var filter = new Array;
-
 // Keep track of some stats as globals
 var itemCount = 0;
 var emittedItemCount = 0;
 var connectedCount = 0;
 var disconnectedCount = 0;
+var itemProcessTime = new Array;
 
-// Retrieve the GET data and send a simple output web page
-// we'll have to do this slightly differently for applications, this is
-// still POC phase
-app.post('/', function(req, res){
-  res.sendFile(__dirname + '/index.html');
-  filter = JSON.parse(req.body.filter);
-console.log(JSON.stringify(filter));
+// socket.io listens on argv2
+app.listen(process.argv[2]);
 
-});
+// this should ultimately just send a page with information, ignore the
+// current testing leftovers, we've moved to command line testing
+function handler (req, res) {
+  fs.readFile(__dirname + '/index.html',
+  function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end('Error loading index.html');
+    }
 
-// when a socket is created, add the filter information and socket
-// to the appropriate arrays and objects, and make sure to delete
-// them when the user disconnects
+    res.writeHead(200);
+    res.end(data);
+  });
+}
+
+// Receive the socket connection
 io.on('connection', function(socket){
+  console.log('-->    CONNECTED: ' + socket.id);
+  // Add the socket ID for the array to check for filters - we should probably do this
+  // after receiving a filter if the socketID isn't already in the array.
   socketIDs.push(socket.id);
-  filterData[socket.id] = filter;
-
-
-  console.log('-->    CONNECTED: ' + socket.id + ' with Filter ' + JSON.stringify(filter));
   connectedCount++; 
+
+  // If a filter is sent, update filterData with the filter
+  // we should probably add a response
+  socket.on('filter', function (filter) {
+    console.log('--> RECVD FILTER: ' + socket.id + ' ' + JSON.stringify(filter));
+    filterData[socket.id] = filter;
+  });
+
+
+  // If the socket disconnects, remove the information from the filterData object
+  // and the socketIDs array
   socket.on("disconnect", function () {
     console.log('<-- DISCONNECTED: ' + socket.id);
     delete filterData[socket.id];
@@ -61,22 +68,20 @@ io.on('connection', function(socket){
   });
 });
 
-// express web server
-http.listen(8777, function(){
-  console.log('listening on *:8777');
-});
-
 // This is a simple timer to print out some statistics every minute to the console log
 setInterval(function() {
   var time = new Date();
   console.log(time + " Active Clients Connected: " + socketIDs.length);
-  console.log(time + " " + itemCount + " Items Added/Modified in this interval");
+  console.log(time + " " + itemCount + " Items Added/Modified in this interval (" + itemCount / 60 + " items/s)");
   console.log(time + " " + emittedItemCount + " Items Emitted to Clients in this interval");
   console.log(time + " " + connectedCount + " Clients Connected | " + disconnectedCount + " Disconnected in this interval");
+  console.log(time + " Average Item Processing Time: " + _.mean(itemProcessTime) + " nanoseconds");
+
   itemCount = 0;
   connectedCount = 0;
   disconnectedCount = 0;
   emittedItemCount = 0;
+  itemProcessTime = [];
 
 }, 60000);
 
@@ -88,6 +93,9 @@ var dataHandler = function (messageSet, topic, partition) {
       // turn this into a JSON object named item so we can reference it
       var item = JSON.parse(m.message.value.toString('utf8'));
       itemCount++;
+
+      // Measure the time it takes to process the item by iteration/etc.
+      var itemProcessStart = process.hrtime();
 
       // This part probably could be done way better. My thought was, on each
       // item, iterate through every socket to see if they have a filter that
@@ -130,16 +138,21 @@ var dataHandler = function (messageSet, topic, partition) {
           }
 
           if (pass == 1) {
-            io.to(id).emit('item', item);
+            //io.to(id).emit('item', item);
             emittedItemCount++;
           }
         });
       });
+
+      var itemProcessEnd = process.hrtime(itemProcessStart);
+      itemProcessTime.push(itemProcessEnd[0] * 1e9 + itemProcessEnd[1]);
 
     });
 };
  
 return consumer.init().then(function () {
     // Subscribe partitons 0 and 1 in a topic: 
-    return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET}, dataHandler);
+//    return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
+    return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
+//    return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET}, dataHandler);
 });

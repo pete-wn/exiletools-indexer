@@ -10,10 +10,14 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.1",
+    "cluster": "^0.7.7",
     "dotty": "0.0.2",
     "express": "^4.13.4",
     "lodash": "^4.12.0",
     "no-kafka": "^2.5.0",
-    "socket.io": "^1.4.6"
+    "node-uuid": "^1.4.7",
+    "pretty-hrtime": "^1.0.2",
+    "socket.io": "^1.4.6",
+    "socket.io-redis": "^1.0.0"
   }
 }

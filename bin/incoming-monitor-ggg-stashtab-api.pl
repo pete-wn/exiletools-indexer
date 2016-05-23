@@ -91,6 +91,7 @@ if ($args{usefiles}) {
 
 # Create a user agent
 our $ua = LWP::UserAgent->new;
+$ua->timeout(60);
 # Make sure it accepts gzip
 our $can_accept = HTTP::Message::decodable;
 
@@ -122,7 +123,7 @@ while($keepRunning) {
 
     # Sleep for 1 second then repeat
     #usleep 500000;
-    sleep 3;
+    sleep 1;
   } else {
     &d("WARNING: RunRiver did not return a valid status! \"$status\" Re-trying with old change id in 5s!\n");
     sleep 5;
@@ -210,7 +211,7 @@ sub RunRiver {
     my $jsonout = JSON::XS->new->utf8->encode($stash);
 
     # Some random testing / debug stuff
-    if ($stash->{id} eq "cf9ac82d7e535c65e1842c84c4a0a9d46b8ced6ba1b558176712f1f14f2e3706") {
+    if ($stash->{accountName} eq "pwx") {
       print "----------\nMatching Stash Found:\n----------\n$jsonout\n----------\n";
     }
 
