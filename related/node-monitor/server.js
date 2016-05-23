@@ -77,6 +77,15 @@ setInterval(function() {
   console.log(time + " " + connectedCount + " Clients Connected | " + disconnectedCount + " Disconnected in this interval");
   console.log(time + " Average Item Processing Time: " + _.mean(itemProcessTime) + " nanoseconds");
 
+  var filterCount = 0;
+  // this might be crappy, is just for testing
+  _.forEach(filterData, function(thisFilter) {
+    filterCount += _.size(thisFilter);
+  });
+  console.log(time + " " + filterCount + " Filters in Queue right now");
+
+  io.emit('heartbeat', { status : itemCount + " Total Items Added/Modified in this interval and processed for your filter" });
+
   itemCount = 0;
   connectedCount = 0;
   disconnectedCount = 0;
@@ -104,18 +113,21 @@ var dataHandler = function (messageSet, topic, partition) {
       socketIDs.forEach(function(id) {
         _.forEach(filterData[id], function(thisFilter) {
           var pass = 1;
-          _.forEach(thisFilter.eq, function checkCore (value, key) {
-            if (dt.get(item,key) == thisFilter.eq[key]) {
-              // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.eq[key]);
-              pass = 1;
-            } else {
-              pass = 0;
-              return false;
-            }
-          });
-          // really need to find a better way to do this
+
           if (pass == 1) {
-            _.forEach(thisFilter.gt, function checkGt(value, key) {
+            for (key in thisFilter.eq) {
+              if (dt.get(item,key) == thisFilter.eq[key]) {
+                // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.eq[key]);
+                pass = 1;
+              } else {
+                pass = 0;
+                return false;
+              }
+            }
+          }
+
+          if (pass == 1) {
+            for (key in thisFilter.gt) {
               if (dt.get(item,key) > thisFilter.gt[key]) {
                 // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
                 pass = 1;
@@ -123,10 +135,11 @@ var dataHandler = function (messageSet, topic, partition) {
                 pass = 0;
                 return false;
               }
-            });
+            }
           }
+
           if (pass == 1) {
-            _.forEach(thisFilter.lt, function checkGt(value, key) {
+            for (key in thisFilter.lt) {
               if (dt.get(item,key) < thisFilter.lt[key]) {
                 // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
                 pass = 1;
@@ -134,11 +147,11 @@ var dataHandler = function (messageSet, topic, partition) {
                 pass = 0;
                 return false;
               }
-            });
+            }
           }
 
           if (pass == 1) {
-            //io.to(id).emit('item', item);
+            io.to(id).emit('item', item);
             emittedItemCount++;
           }
         });
@@ -152,7 +165,6 @@ var dataHandler = function (messageSet, topic, partition) {
  
 return consumer.init().then(function () {
     // Subscribe partitons 0 and 1 in a topic: 
-//    return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
-    return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
-//    return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET}, dataHandler);
+    return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
+//    return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
 });

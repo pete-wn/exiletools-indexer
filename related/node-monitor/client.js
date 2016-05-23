@@ -11,6 +11,7 @@ var filterText = '[ { "eq": { "attributes.baseItemType": "Jewelry", "attributes.
 
 var filter = JSON.parse(filterText);
 
+var filter = "hello";
 
 
 
@@ -25,6 +26,9 @@ socket.on('error', console.error.bind(console));
 
 socket.on("item", function(item) {
   console.log("Received an item: " + item.info.fullName);
+});
+socket.on("heartbeat", function(heartbeat) {
+  console.log("Received a heartbeat: " + heartbeat.status);
 });
 
 
