@@ -9,9 +9,9 @@ var uuid = require('node-uuid');
 // Connections REQUIRE a valid (and preferably unique) pwxid in order to be load balanced properly
 var pwxid = uuid.v4();
 
-// For remote / live testing, use the "real time stash" URL at rtstashio.exiletools.com
+// For remote / live testing, use the "real time stash" URL at rtstashapi.exiletools.com
 // The localhost option is for internal testing/debugging
-var socket = ioc.connect('http://rtstashio.exiletools.com', {query: 'pwxid=' + pwxid});
+var socket = ioc.connect('http://rtstashapi.exiletools.com', {query: 'pwxid=' + pwxid});
 //var socket = ioc.connect('http://localhost:6001', {query: 'pwxid=' + pwxid});
 
 // Specify the filters here in a text format, we'll convert them to JSON. You can do this
