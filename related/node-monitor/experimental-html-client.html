@@ -1,0 +1,47 @@
+<head>
+  <title>a streaming stash tab test</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>  
+  <script>  
+    var socket = io.connect();
+    socket.on("connect", function () {  
+      console.log("Connected!");
+    });
+
+    socket.on("item", function(item) {
+//      console.log(item);
+      var et = item.attributes.equipType;
+      console.log(et);
+      var outputString = "<table border=1 cellspacing=0 cellpadding=5 width=100%><tr><td valign=top width=200>" + item.info.fullName + "</td><td width=400>";
+      if (item.mods[et].implicit) {
+        jQuery.each(item.mods[et].implicit, function(key, value) {
+          outputString += ("<b>" + key + " : " + value + "</b><br>");
+        });
+      }
+      if (item.mods[et].explicit) {
+        jQuery.each(item.mods[et].explicit, function(key, value) {
+          outputString += (key + " : " + value + "<br>");
+        });
+      }
+
+      $('#itemsDiv').prepend(outputString + "</td><td width=100>" + item.shop.sellerAccount + "</td><td width=100>" + item.shop.amount + " " + item.shop.currency + "</td><td width=250>" + new Date(item.shop.modified) + "</td></tr></table>");
+    });
+
+    socket.on('error', console.error.bind(console));
+  </script>  
+</head>
+<body>
+
+<h1>A test interface to streaming socket data</h1>
+<p>There's nothing fancy here right now, it will just show a quick summary of every item modified
+in the Stash Tab API. It is purely a proof of concept to show selected information from a JSON
+object in a browser in real time.</p>
+
+
+<div id='itemsDiv'></div>
+
+
+
+
+
+</body>

@@ -7,6 +7,7 @@ var Kafka = require('no-kafka');
 var consumer = new Kafka.SimpleConsumer();
 var dt = require("dotty");
 var prettyHrtime = require('pretty-hrtime');
+const fs = require('fs');
 
 // filterData will contain an object with various filters to search against
 // It is updated by each new connection. This is really weird and maybe inefficient.
@@ -44,7 +45,7 @@ function handler (req, res) {
 
 // Receive the socket connection
 io.on('connection', function(socket){
-  console.log('-->    CONNECTED: ' + socket.id);
+  console.log('-->    CONNECTED: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
   // Add the socket ID for the array to check for filters - we should probably do this
   // after receiving a filter if the socketID isn't already in the array.
   socketIDs.push(socket.id);
@@ -53,15 +54,44 @@ io.on('connection', function(socket){
   // If a filter is sent, update filterData with the filter
   // we should probably add a response
   socket.on('filter', function (filter) {
-    console.log('--> RECVD FILTER: ' + socket.id + ' ' + JSON.stringify(filter));
-    filterData[socket.id] = filter;
+    console.log('--> RECVD FILTER: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ' + JSON.stringify(filter));
+
+    if (filter.length > 20) {
+      console.log('-->  FILTER FAIL: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
+      io.to(socket.id).emit('error', { error : "You are limited to 20 filters at a time! " + filter.length + " is too many!" });
+      return;
+    }
+
+    var filterOK = 0;
+    filter.forEach(function(filterCheck) {
+      if (filterCheck.eq["attributes.league"]) {
+        filterOK++;
+      }
+    });
+
+    if (filterOK == filter.length) {
+      console.log('-->  FILTER PASS: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
+      io.to(socket.id).emit('heartbeat', { status : filter.length + " Valid Filter(s) Accepted! Adding to monitoring queue." });
+      filterData[socket.id] = filter;
+      return;
+    } else {
+      console.log('-->  FILTER FAIL: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
+      io.to(socket.id).emit('error', { error : "All filters did not specify a valid league!" });
+      return;
+    }
+
   });
 
+  socket.on('error', function(err) {
+    console.log('!!!        ERROR: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ' + err);
+    io.to(socket.id).emit('error', { error : err.message });
+
+  });
 
   // If the socket disconnects, remove the information from the filterData object
   // and the socketIDs array
   socket.on("disconnect", function () {
-    console.log('<-- DISCONNECTED: ' + socket.id);
+    console.log('<-- DISCONNECTED: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
     delete filterData[socket.id];
     socketIDs = _.without(socketIDs, socket.id);
     disconnectedCount++;
@@ -79,8 +109,8 @@ setInterval(function() {
 
   var filterCount = 0;
   // this might be crappy, is just for testing
-  _.forEach(filterData, function(thisFilter) {
-    filterCount += _.size(thisFilter);
+  _.forEach(filterData, function(checkFilter) {
+    filterCount += _.size(checkFilter);
   });
   console.log(time + " " + filterCount + " Filters in Queue right now");
 
@@ -164,7 +194,8 @@ var dataHandler = function (messageSet, topic, partition) {
 };
  
 return consumer.init().then(function () {
-    // Subscribe partitons 0 and 1 in a topic: 
-    return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
-//    return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
+  // Subscribe to topic
+  return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 100}, dataHandler);
+  // This is for performance testing
+  // return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
 });
