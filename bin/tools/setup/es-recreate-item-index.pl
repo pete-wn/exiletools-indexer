@@ -10,8 +10,8 @@ $config = '
     "settings" : {
       "index" : {
         "refresh_interval" : "10s",
-        "number_of_shards" : "1",
-        "number_of_replicas" : "0",
+        "number_of_shards" : "2",
+        "number_of_replicas" : "1",
         "requests.cache.enable" : true
       }
     },
@@ -26,8 +26,8 @@ $template = '
   "settings" : {
     "index" : {
       "refresh_interval" : "10s",
-      "number_of_shards" : "1",
-      "number_of_replicas" : "0",
+      "number_of_shards" : "2",
+      "number_of_replicas" : "1",
       "requests.cache.enable" : true
     },
     "analysis" : {

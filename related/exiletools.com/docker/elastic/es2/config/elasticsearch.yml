@@ -1,0 +1,20 @@
+cluster.name: exiletools
+node.name: es2
+node.master: true
+node.data: true
+path.data: /elastic/data
+path.work: /elastic/work
+path.logs: /elastic/logs
+path.plugins: /elastic/plugins
+bootstrap.mlockall: true
+network.host: 0.0.0.0
+http.max_content_length: 40mb
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.compression: true
+index.store.type: mmapfs
+index.number_of_replicas: 1
+index.number_of_shards: 2
+
+http.port: 9200
+transport.tcp.port: 9300
