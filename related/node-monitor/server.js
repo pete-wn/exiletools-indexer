@@ -73,6 +73,10 @@ io.on('connection', function(socket){
       console.log('-->  FILTER PASS: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
       io.to(socket.id).emit('heartbeat', { status : filter.length + " Valid Filter(s) Accepted! Adding to monitoring queue." });
       filterData[socket.id] = filter;
+      // Some debug code
+      // _.forEach(filterData[socket.id], function(thisFilter) {
+      //   console.log('!! ' + JSON.stringify(thisFilter));
+      // });
       return;
     } else {
       console.log('-->  FILTER FAIL: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
@@ -142,47 +146,52 @@ var dataHandler = function (messageSet, topic, partition) {
       // iterating the array and comparing than we are keeping up with the stream.
       socketIDs.forEach(function(id) {
         _.forEach(filterData[id], function(thisFilter) {
+//          console.log(id + " : " + JSON.stringify(thisFilter));
           var pass = 1;
 
           if (pass == 1) {
             for (key in thisFilter.eq) {
               if (dt.get(item,key) == thisFilter.eq[key]) {
-                // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.eq[key]);
+                //console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.eq[key]);
                 pass = 1;
               } else {
+                //console.log("FAIL: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " matches " + thisFilter.eq[key]);
                 pass = 0;
-                return false;
+                break;
               }
             }
-          }
-
-          if (pass == 1) {
-            for (key in thisFilter.gt) {
-              if (dt.get(item,key) > thisFilter.gt[key]) {
-                // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
-                pass = 1;
-              } else {
-                pass = 0;
-                return false;
+            //console.log("After first check: " + pass);
+            if (pass == 1) {
+              for (key in thisFilter.gt) {
+                if (dt.get(item,key) > thisFilter.gt[key]) {
+                  //console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
+                  pass = 1;
+                } else {
+                  //console.log("FAIL: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is greater than " + thisFilter.gt[key]);
+                  pass = 0;
+                  break;
+                }
+              }
+              //console.log("After second check: " + pass);
+              if (pass == 1) {
+                for (key in thisFilter.lt) {
+                  if (dt.get(item,key) < thisFilter.lt[key]) {
+                    //console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
+                    pass = 1;
+                  } else {
+                    //console.log("FAIL: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
+                    pass = 0;
+                    break;
+                  }
+                }
+                //console.log("After third check: " + pass);
+              }
+              if (pass == 1) {
+                //console.log("EMIT: " + item.info.fullName + " matches pass is " + pass);
+                io.to(id).emit('item', item);
+                emittedItemCount++;
               }
             }
-          }
-
-          if (pass == 1) {
-            for (key in thisFilter.lt) {
-              if (dt.get(item,key) < thisFilter.lt[key]) {
-                // console.log("PASS: " + item.info.fullName + " " + key + " of " + dt.get(item,key) + " is less than " + thisFilter.lt[key]);
-                pass = 1;
-              } else {
-                pass = 0;
-                return false;
-              }
-            }
-          }
-
-          if (pass == 1) {
-            io.to(id).emit('item', item);
-            emittedItemCount++;
           }
         });
       });
@@ -195,7 +204,7 @@ var dataHandler = function (messageSet, topic, partition) {
  
 return consumer.init().then(function () {
   // Subscribe to topic
-  return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 100}, dataHandler);
+  //return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 100}, dataHandler);
   // This is for performance testing
-  // return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
+   return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
 });
