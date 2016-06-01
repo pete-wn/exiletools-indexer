@@ -5,10 +5,6 @@
 #
 # It writes that data out to a single kafka partition that can be used by other 
 # future applications for processing and bulk indexes the current data to ElasticSearch.
-#
-# NOTE 2016/05/05 - Kafka production for processed data is currently disabled for
-# IO/speed reasons, since I'm not using it I'm not bothering to do it. If you want to
-# use this code, uncomment out the appropriate sections.
 
 $|=1;
 
@@ -151,6 +147,7 @@ foreach my $message ( @$messages ) {
       );
       $itemSearchTime += $currentStashData->{took};
       &sv("$stash{id} $currentStashData->{hits}->{total} $currentStashData->{took}ms\n") if ($currentStashData->{took} > 20);
+#      print "$stash{id} $currentStashData->{hits}->{total} $currentStashData->{took}ms\n";
 
       my %localChangeStats;
       $localChangeStats{Stashes}++;                                                
@@ -227,6 +224,10 @@ foreach my $message ( @$messages ) {
         if ($data->{descrText}) {
           $item{info}{descrText} = $data->{descrText};
           $item{info}{tokenized}{descrText} = lc($data->{descrText});
+        }
+        if ($data->{prophecyText}) {
+          $item{info}{prophecyText} = $data->{prophecyText};
+          $item{info}{tokenized}{prophecyText} = lc($data->{prophecyText});
         }
       
         if ($data->{duplicated}) {
@@ -326,6 +327,7 @@ foreach my $message ( @$messages ) {
         } 
       
         # ===== ITEM IDENTIFICATION ================================
+        #
       
         if ($data->{frameType} < 4) {
           # normal, magic, rare, and unique items need to be extracted
@@ -363,9 +365,15 @@ foreach my $message ( @$messages ) {
             $item{attributes}{itemType} = $gearBaseType{"$data->{typeLine}"};
             $item{attributes}{baseItemType} = $gearBaseType{"$data->{typeLine}"};
             $item{attributes}{baseItemName} = $data->{typeLine};
+          } elsif ($data->{descrText} =~ /Can be used in the Eternal Laboratory or a personal Map Device/) {
+            # Prophecy Key Fragments, Vaal Fragments should get matched by the previous line
+            $item{attributes}{itemType} = "Map Key";
+            $item{attributes}{baseItemType} = "Map Key";
+            $item{attributes}{baseItemName} = $data->{typeLine};
           } else {
             # This is one of many items that for some reason has extra text in the typeLine, rendering that
             # line meaningless. This means we need to identify it.
+            
             foreach my $gearbase (@gearBaseTypeArrayGear) {
               if ($data->{typeLine} =~ /\b$gearbase\b/) {
                 $item{attributes}{itemType} = $gearBaseType{"$gearbase"};
@@ -389,6 +397,10 @@ foreach my $message ( @$messages ) {
         } elsif ($data->{frameType} == 7) {
           $item{attributes}{itemType} = "Quest Item";
           $item{attributes}{baseItemType} = "Quest Item";
+          $item{attributes}{baseItemName} = $item{info}{fullName};
+        } elsif ($data->{frameType} == 8) {
+          $item{attributes}{itemType} = "Prophecy";
+          $item{attributes}{baseItemType} = "Prophecy";
           $item{attributes}{baseItemName} = $item{info}{fullName};
         }
       
@@ -788,21 +800,21 @@ foreach my $message ( @$messages ) {
 
 # === END Item Processing Code Chunk (this tag is used to extract this into other subroutines)
 
-
         my $itemStatus;
         if ($itemInES->{uuid}) {
           # If the current note and the stash name are the same, then the item wasn't modified
           if (($itemInES->{shop}->{note} eq $item{shop}{note}) && ($itemInES->{shop}->{stash}->{stashName} eq $item{shop}{stash}{stashName})) {  
             $item{shop}{modified} = $itemInES->{shop}->{modified};
             $itemStatus = "Unchanged";
+            &sv("i  Unchanged: $item{shop}{sellerAccount} | $item{info}{fullName} | $item{uuid} | $item{shop}{amount} $item{shop}{currency}\n");
           } else {
             $item{shop}{modified} = time() * 1000;
             $itemStatus = "Modified";
             &sv("i  Modified: $item{shop}{sellerAccount} | $item{info}{fullName} | $item{uuid} | $item{shop}{amount} $item{shop}{currency}\n");
           }
-          $item{shop}{shelfLife} += $item{shop}{updated} - $item{shop}{added};
           $item{shop}{updated} = time() * 1000;
           $item{shop}{added} = $itemInES->{shop}->{added};
+          $item{shop}{shelfLife} += (($item{shop}{updated} - $item{shop}{added}) / 1000);
         } else {
           # It's new!
           $item{shop}{modified} = time() * 1000;
@@ -843,7 +855,7 @@ foreach my $message ( @$messages ) {
           my $item = $scanItem->{_source};
           $item->{shop}->{modified} = time() * 1000;
           $item->{shop}->{updated} = time() * 1000;
-          $item->{shop}->{shelfLife} += $item->{shop}->{updated} - $item->{shop}->{added};
+          $item->{shop}->{shelfLife} += (($item->{shop}->{updated} - $item->{shop}->{added}) / 1000);
           $item->{shop}->{verified} = "GONE";
           if ($args{debugjson} == 1) {
             my $prettyout = JSON::XS->new->utf8->pretty->encode(\%item);

@@ -12,13 +12,13 @@ var pwxid = uuid.v4();
 // For remote / live testing, use the "real time stash" URL at rtstashapi.exiletools.com
 // The localhost option is for internal testing/debugging
 //var socket = ioc.connect('http://rtstashapi.exiletools.com', {query: 'pwxid=' + pwxid});
-var socket = ioc.connect('http://localhost:5001', {query: 'pwxid=' + pwxid});
+var socket = ioc.connect('http://localhost:6001', {query: 'pwxid=' + pwxid});
 
 // Specify the filters here in a text format, we'll convert them to JSON. You can do this
 // however you'd like in your own app obviously.
 //var filterText = '[ { "eq": { "attributes.league": "Standard", "attributes.baseItemType": "Jewelry", "attributes.rarity": "Rare", "shop.hasPrice": true }, "gt": { "modsPseudo.+# Total to maximum Life": 30 }, "lt": { "shop.chaosEquiv": 10 } }, { "eq": { "attributes.league": "Standard", "attributes.baseItemType": "Armour", "attributes.rarity": "Rare", "shop.hasPrice": true }, "gt": { "modsPseudo.+# Total to maximum Life": 30 }, "lt": { "shop.chaosEquiv": 10 } } ]';
 
-var filterText = ' [ { "eq" : { "attributes.league" : "Perandus", "shop.hasPrice" : true, "sockets.socketCount" : 6 }, "lt" : { "shop.chaosEquiv" : 1 } }, { "eq" : { "attributes.league" : "Perandus", "attributes.rarity" : "Normalx", "shop.hasPrice" : true } } ]'
+var filterText = ' [ { "eq" : { "attributes.league" : "Standard" } } ]'
 //var filterText = ' [ { "eq" : { "attributes.league" : "Perandus", "attributes.rarity" : "Normal", "shop.hasPrice" : true } }, { "eq" : { "attributes.league" : "Perandus", "shop.hasPrice" : true, "sockets.socketCount" : 6 }, "lt" : { "shop.chaosEquiv" : 1 } } ]'
 
 // Convert the filter text to JSON
@@ -44,11 +44,7 @@ socket.on('error', function(error) {
 // Print out only the fullName from the received item JSON data when an item matches. This can
 // and should be highly customized.
 socket.on("item", function(item) {
-  if (item.sockets) {
-    console.log("Received an item: " + item.info.fullName + " sockets: " + item.sockets.socketCount + " rarity: " + item.attributes.rarity);
-  } else {
-    console.log("Received an item: " + item.info.fullName + " rarity: " + item.attributes.rarity);
-  }
+    console.log("\n" + JSON.stringify(item));
 });
 
 // Heartbeat messages are sent when the filter is accepted and roughly every 60 seconds

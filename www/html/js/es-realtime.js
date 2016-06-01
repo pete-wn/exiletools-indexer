@@ -151,6 +151,18 @@ EsConnector.controller('realtimeSearch', function($scope, $routeParams, es, $loc
 
   console.log($scope.league + " league selected");
 
+  $scope.selectUniqueItemNames = new Array;
+  $http.get('http://api.exiletools.com/endpoints/list-field-values?output=array&field=info.fullName&filters=attributes.rarity:Unique,attributes.league:' + $scope.league).then(
+    function (response) {
+      $scope.selectUniqueItemNames = response.data;
+      $scope.selectUniqueItemNames.sort();
+      console.log("Got field value data for selectUniqueItemNames");
+    },
+    function () {
+      console.log('ERROR: Something went wrong trying to fetch the list of unique items!');
+    }
+  );
+
   $scope.selectBaseItemType = new Array;
   $http.get('http://api.exiletools.com/endpoints/list-field-values?field=attributes.baseItemType&output=array').then(
     function (response) {

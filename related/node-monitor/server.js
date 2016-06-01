@@ -204,7 +204,7 @@ var dataHandler = function (messageSet, topic, partition) {
  
 return consumer.init().then(function () {
   // Subscribe to topic
-  //return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 100}, dataHandler);
+  return consumer.subscribe('processed', 0, {time: Kafka.LATEST_OFFSET, maxBytes: 20971520, maxWaitTime: 100}, dataHandler);
   // This is for performance testing
-   return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
+  // return consumer.subscribe('processed', 0, {time: Kafka.EARLIEST_OFFSET, maxBytes: 20971520, maxWaitTime: 20}, dataHandler);
 });

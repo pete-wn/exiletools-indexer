@@ -42,7 +42,7 @@ esStatsIndex:dev-indexing-stats
 
 # Kafka configuration
 # Note, you must make sure to create the topics in a way that matches
-kafkaTopicNameIncoming:incoming
-kafkaTopicPartitionsIncoming:4
-kafkaTopicNameProcessed:processed
+kafkaTopicNameIncoming:devincoming
+kafkaTopicPartitionsIncoming:1
+kafkaTopicNameProcessed:devprocessed
 # The processed topic will always be 1 partition
