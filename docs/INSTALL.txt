@@ -50,3 +50,9 @@ Delete topics (kafka has to be configured for this):
 List topics:
 
 /eti/kafka/current/bin/kafka-topics.sh --zookeeper localhost:2181 --list
+
+Development topics:
+/eti/kafka/current/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic devincoming
+/eti/kafka/current/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic devprocessed
+/eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic devincoming
+/eti/kafka/current/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic devprocessed

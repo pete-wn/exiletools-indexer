@@ -639,51 +639,6 @@ foreach my $message ( @$messages ) {
           }
         }
       
-        # Time to try out some quality calculations
-        # See https://github.com/trackpete/exiletools-indexer/issues/25
-        if ($item{attributes}{baseItemType} eq "Armour") {
-          # If this is already 20, we don't have to change anything
-          if ($item{properties}{Quality} == 20) {
-            foreach my $prop (keys(%{$item{properties}{Armour}})) {
-              next if $prop eq "Chance to Block";
-              $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} += $item{properties}{Armour}{"$prop"};
-            }
-          } else {
-            # Crap, we have to try to estimate the Q20 values
-            foreach my $prop (keys(%{$item{properties}{Armour}})) {
-              next if $prop eq "Chance to Block";
-              # Does this item have an increased mod?
-              if ($item{modsPseudo}{"#% Total increased $prop"} > 0) {
-                $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} += int($item{properties}{Armour}{"$prop"} / (1 + ($item{modsPseudo}{"#% Total increased $prop"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsPseudo}{"#% Total increased $prop"} + 20) / 100)));
-              } else {
-                $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} = int(($item{properties}{Armour}{"$prop"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
-              }
-            }
-          }
-        } elsif ($item{attributes}{baseItemType} eq "Weapon") {
-          # only process items with more than 0 physical dps
-          if ($item{properties}{Weapon}{"Physical DPS"} > 0) {
-            # If this is already 20, we don't have to change anything
-            if ($item{properties}{Quality} == 20) {
-              $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += $item{properties}{Weapon}{"Physical DPS"};
-            } else {
-              # Crap, we have to try to estimate the Q20 values
-              # Does this item have an increased mod?
-              if ($item{modsTotal}{"#% increased Physical Damage"} > 0) {
-                $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} += int($item{properties}{Weapon}{"Physical DPS"} / (1 + ($item{modsTotal}{"#% increased Physical Damage"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsTotal}{"#% increased Physical Damage"} + 20) / 100)));
-              } else {
-                $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = int(($item{properties}{Weapon}{"Physical DPS"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
-              }
-            }
-            # Update Total DPS per Issue #114
-            if ($item{properties}{Weapon}{"Elemental DPS"}) {
-              $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Total DPS"} += $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} + $item{properties}{Weapon}{"Elemental DPS"};
-            } else {
-              $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Total DPS"} += $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"};
-            }
-          }
-        }
-      
         # If there is a properties.Weapon.type set, extract the first one and set attributes.weaponType
         if ($item{properties} && $item{properties}{Weapon}) {
           my @types = keys(%{$item{properties}{Weapon}{type}});
@@ -778,6 +733,55 @@ foreach my $message ( @$messages ) {
           foreach $elekey (keys (%{$item{modsPseudo}})) {
             $item{modsPseudo}{"# of Elemental Resistances"}++ if ($elekey =~ /(Cold|Fire|Lightning)/);
             $item{modsPseudo}{"# of Resistances"}++ if ($elekey =~ /(Cold|Fire|Lightning|Chaos)/);
+          }
+        }
+
+        # ====== Q20 CALCULATIONS ===========================
+        # This section will calculate some pseudo properties, it must be AFTER both
+        # properties and mods determination
+
+        # Time to try out some quality calculations
+        # See https://github.com/trackpete/exiletools-indexer/issues/25
+        if ($item{attributes}{baseItemType} eq "Armour") {
+          # If this is already 20, we don't have to change anything
+          if ($item{properties}{Quality} == 20) {
+            foreach my $prop (keys(%{$item{properties}{Armour}})) {
+              next if $prop eq "Chance to Block";
+              $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} += $item{properties}{Armour}{"$prop"};
+            }
+          } else {
+            # Crap, we have to try to estimate the Q20 values
+            foreach my $prop (keys(%{$item{properties}{Armour}})) {
+              next if $prop eq "Chance to Block";
+              # Does this item have an increased mod?
+              if ($item{modsPseudo}{"#% Total increased $prop"} > 0) {
+                $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} += int($item{properties}{Armour}{"$prop"} / (1 + ($item{modsPseudo}{"#% Total increased $prop"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsPseudo}{"#% Total increased $prop"} + 20) / 100)));
+              } else {
+                $item{propertiesPseudo}{Armour}{estimatedQ20}{"$prop"} = int(($item{properties}{Armour}{"$prop"} / (1 + $item{properties}{Quality} / 100)) * 1.20);
+              }
+            }
+          }
+        } elsif ($item{attributes}{baseItemType} eq "Weapon") {
+          # only process items with more than 0 physical dps
+          if ($item{properties}{Weapon}{"Physical DPS"} > 0) {
+            # If this is already 20, we don't have to change anything
+            if ($item{properties}{Quality} == 20) {
+              $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = ($item{properties}{Weapon}{"Physical DPS"} * 1);
+            } else {
+              # Crap, we have to try to estimate the Q20 values
+              # Does this item have an increased mod?
+              if ($item{modsTotal}{"#% increased Physical Damage"} > 0) {
+                $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = (int($item{properties}{Weapon}{"Physical DPS"} / (1 + ($item{modsTotal}{"#% increased Physical Damage"} + $item{properties}{Quality}) / 100) * (1 + (($item{modsTotal}{"#% increased Physical Damage"} + 20) / 100))) * 1);
+              } else {
+                $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} = (int(($item{properties}{Weapon}{"Physical DPS"} / (1 + $item{properties}{Quality} / 100)) * 1.20) * 1);
+              }
+            }
+            # Update Total DPS per Issue #114
+            if ($item{properties}{Weapon}{"Elemental DPS"}) {
+              $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Total DPS"} += $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"} + $item{properties}{Weapon}{"Elemental DPS"};
+            } else {
+              $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Total DPS"} += $item{propertiesPseudo}{Weapon}{estimatedQ20}{"Physical DPS"};
+            }
           }
         }
       
