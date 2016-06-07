@@ -1,0 +1,19 @@
+{
+  "name": "text-to-json",
+  "version": "1.0.0",
+  "description": "Converts clipboard text to ElasticSearch JSON",
+  "main": "server.js",
+  "scripts": {
+    "test": "jasmine-node spec"
+  },
+  "author": "exiletools.com",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "lodash": "^4.13.1"
+  },
+  "devDependencies": {
+    "frisby": "^0.8.5"
+  }
+}

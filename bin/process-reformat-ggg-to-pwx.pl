@@ -367,8 +367,8 @@ foreach my $message ( @$messages ) {
             $item{attributes}{baseItemName} = $data->{typeLine};
           } elsif ($data->{descrText} =~ /Can be used in the Eternal Laboratory or a personal Map Device/) {
             # Prophecy Key Fragments, Vaal Fragments should get matched by the previous line
-            $item{attributes}{itemType} = "Map Key";
-            $item{attributes}{baseItemType} = "Map Key";
+            $item{attributes}{itemType} = "Map Fragment";
+            $item{attributes}{baseItemType} = "Map Fragment";
             $item{attributes}{baseItemName} = $data->{typeLine};
           } else {
             # This is one of many items that for some reason has extra text in the typeLine, rendering that
