@@ -12,7 +12,9 @@ $config = '
         "refresh_interval" : "10s",
         "number_of_shards" : "1",
         "number_of_replicas" : "0",
-        "requests.cache.enable" : true
+        "requests.cache.enable" : true,
+        "translog.durability" : "async",
+        "translog.sync_interval": "5s"
       }
     },
     "warmers" : { }
@@ -28,7 +30,9 @@ $template = '
       "refresh_interval" : "10s",
       "number_of_shards" : "1",
       "number_of_replicas" : "0",
-      "requests.cache.enable" : true
+      "requests.cache.enable" : true,
+      "translog.durability" : "async",
+      "translog.sync_interval": "5s"
     },
     "analysis" : {
       "analyzer" : {

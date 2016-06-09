@@ -148,6 +148,18 @@ function parseItem(text, league) {
     }
 
     return(item);
+
+  // Map / Vaal Fragments
+  // If the item is Normal rarity and says "Can be used in the Eternal Laboratory or a personal Map Device."
+  // it is probably a map fragment or vaal fragment
+  } else if (item.attributes.rarity == "Normal" && infoArray.indexOf("Can be used in the Eternal Laboratory or a personal Map Device.")) {
+    // If it has "Sacrifice at" or "Mortal" in the name then it's a vaal fragment, else a map fragment
+    if (item.info.fullName.match(/^Sacrifice at/) || item.info.fullName.match(/^Mortal /)) {
+      item.attributes.baseItemType = "Vaal Fragment";
+    } else {
+      item.attributes.baseItemType = "Map Fragment";
+    }
+    return(item);
   }
 
 

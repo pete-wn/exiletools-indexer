@@ -135,3 +135,50 @@ Travel to this Map by using it in the Eternal Laboratory or a personal Map Devic
     }
   })
 .toss();
+
+frisby.create("[IDENTIFY] Vaal Fragment")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Normal
+Sacrifice at Noon
+--------
+Item Level: 50
+--------
+The light without pales in comparison to the light within.
+--------
+Can be used in the Eternal Laboratory or a personal Map Device.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Sacrifice at Noon" },
+    attributes : {
+      baseItemType : "Vaal Fragment",
+      rarity: "Normal",
+      league: "Prophecy"
+    }
+  })
+.toss();
+
+frisby.create("[IDENTIFY] Map Fragment")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Normal
+Volkuur's Key
+--------
+Item Level: 71
+--------
+She of Many Bodies, whose very flesh unites all,
+whose dark whispers draw forth our souls, unfettered.
+--------
+Can be used in the Eternal Laboratory or a personal Map Device.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Volkuur's Key" },
+    attributes : { 
+      baseItemType : "Map Fragment",
+      rarity: "Normal",
+      league: "Prophecy"
+    }
+  })
+.toss();

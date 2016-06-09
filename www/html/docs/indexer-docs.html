@@ -276,9 +276,9 @@
   <tr><td><code>sockets.allSocketsSorted</code></td><td>This contains a simple list of all of the sockets sorted by color for searching. For example, if you want to find an item with three blue sockets anywhere on an item, you can search this field with a wildcard for <code>*BBB*</code></td></tr>
   <tr><td><code>sockets.allSocketsGGG</code></td><td>This contains a text string similar to GGG's style of socket listing, where <code>-</code> indicates a link and a space indicates a gap (i.e. <code>B-B G-R</code> means the first two are blue and linked, then a gap, then a linked green and red)</td></tr>
   <tr><td><code>sockets.totalWhite</code></td><td>A count of the total White sockets on the item</td></tr>
-  <tr><td><code>sockets.totalGreen</code></td><td>A count of the total White sockets on the item</td></tr>
-  <tr><td><code>sockets.totalBlue</code></td><td>A count of the total White sockets on the item</td></tr>
-  <tr><td><code>sockets.totalRed</code></td><td>A count of the total White sockets on the item</td></tr>
+  <tr><td><code>sockets.totalGreen</code></td><td>A count of the total Green sockets on the item</td></tr>
+  <tr><td><code>sockets.totalBlue</code></td><td>A count of the total Blue sockets on the item</td></tr>
+  <tr><td><code>sockets.totalRed</code></td><td>A count of the total Red sockets on the item</td></tr>
   <tr><td><code>sockets.sortedLinkGroup</code></td><td>
     <p>This contains a separate object for each link group, with the sockets in the group sorted for searching. For example, if you want to find an item that has at least a 4L with 2 Blue, 1 Red, and 1 Green, you would need to search each link group (<code>0</code>, <code>1</code>, <code>2</code>... etc.) for <code>*BBGR*</code> (note the wildcard match should be sorted)</p>
     <p>An example ElasticSearch query to find this object <a href="https://gist.github.com/trackpete/db7cd64b4efb36bb4795">available here.</a>.</p>
