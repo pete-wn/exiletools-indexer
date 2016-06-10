@@ -49,8 +49,8 @@ function parseItem(text, league) {
 
   // The infoArray must be a minimum of 4 elements - at time of
   // writing I'm not aware of any item which has less than 4 elements
-  if (infoArray.length < 4) {
-    var error = { error : "Valid item data should have at least four elements separated by dashes!" };
+  if (infoArray.length < 3) {
+    var error = { error : "Valid item data should have at least three elements separated by dashes!" };
     throw(JSON.stringify(error));
   }
 
@@ -80,14 +80,19 @@ function parseItem(text, league) {
     item.info.fullName = nameArray[1];
   }
 
+  // Detect if the item is corrupted
+  if (infoArray.indexOf("Corrupted") > -1) {
+    item.attributes.corrupted = "true";
+  }
+
   // Here's where things get tricky. Different item types have different data in the second slice.
   // Weapons: type, quality, damage, APS, critical strike
   // Armour: quality, armour/evasion/ES ratings
-  // Maps: Map Tier, Quantity, Rarity
-  // Currency: Stack Size
-  // Gems: Gem information
-  // Divination Card: Stack Size
-  // Prophecy: flavour text
+  // * Maps: Map Tier, Quantity, Rarity
+  // * Currency: Stack Size
+  // * Gems: Gem information
+  // * Divination Card: Stack Size
+  // * Prophecy: flavour text
   // normal items: item level
   // jewelry with requirements: requirements
   //
@@ -100,6 +105,7 @@ function parseItem(text, league) {
   // slice that starts with various things we know. 
 
   // OY OY OY ADD UNIDENTIFIED ITEM SUPPORT PEW PEW
+
 
   // PROPHECY:
   // If an item is normal and has the text "Right-click to add this prophecy to your character"
@@ -124,8 +130,8 @@ function parseItem(text, league) {
     // and converting them to numbers since they will always be properties.Map.[prop] = ###
     var thisInfo = _.compact(infoArray[1].split(/\n/));
     thisInfo.forEach(function (element) {
-      thisProperty = element.split(": ");
-      item.properties.Map[thisProperty[0]] = Number(thisProperty[1].replace(/\D+/g, ''));
+      var decodedProps = parseProperties(element);
+      item.properties.Map[decodedProps[0]] = decodedProps[1];
     });
 
     // for maps, infoArray[2] should always be the Item Level
@@ -152,7 +158,7 @@ function parseItem(text, league) {
   // Map / Vaal Fragments
   // If the item is Normal rarity and says "Can be used in the Eternal Laboratory or a personal Map Device."
   // it is probably a map fragment or vaal fragment
-  } else if (item.attributes.rarity == "Normal" && infoArray.indexOf("Can be used in the Eternal Laboratory or a personal Map Device.")) {
+  } else if (item.attributes.rarity == "Normal" && infoArray.indexOf("Can be used in the Eternal Laboratory or a personal Map Device.") > -1) {
     // If it has "Sacrifice at" or "Mortal" in the name then it's a vaal fragment, else a map fragment
     if (item.info.fullName.match(/^Sacrifice at/) || item.info.fullName.match(/^Mortal /)) {
       item.attributes.baseItemType = "Vaal Fragment";
@@ -160,6 +166,35 @@ function parseItem(text, league) {
       item.attributes.baseItemType = "Map Fragment";
     }
     return(item);
+
+  // CURRENCY detection
+  // let's allow the macro to do some basic currency rates
+  } else if (item.attributes.rarity == "Currency") {
+    item.attributes.baseItemType = "Currency";
+    return(item);
+
+  // GEM detection
+  // We need to detect the Gem name, level, and quality only for this
+  // That means we need to ignore a bunch of other properties
+  } else if (item.attributes.rarity == "Gem") {
+    item.attributes.baseItemType = "Gem";
+    item.properties = new Object();
+    item.properties.Gem = new Object();
+    var thisInfo = _.compact(infoArray[1].split(/\n/));
+    thisInfo.forEach(function (element) {
+      // this ignores the spell properties line as well, i.e. "Golem, Fire, Minion"
+      if (element.match(/:/)) {
+        var decodedProps = parseProperties(element);
+        if (decodedProps[0] == "Quality" || decodedProps[0] == "Level") {
+          item.properties.Gem[decodedProps[0]] = decodedProps[1];
+        }
+      } else {
+        console.log("Note: " + element + " isn't a matched pair property");
+      }
+    });
+
+    return(item);
+
   }
 
 
@@ -179,6 +214,8 @@ function parseMod(mod) {
   // This subroutine performs basic mod parsing. Right now it is not
   // nearly as complex as the ExileTools Indexer mod parsing.
   // At some point it will need to have modsTotal / etc. calculated
+
+  // NOTE FIX FIX FIX the crap below won't find decimal numbers like life leech etc.!
 
   // this can be better, I'm not good at nested matches in javascript, way easier
   // in perl - I'm probably missing something, but it works for now
@@ -203,4 +240,11 @@ function parseMod(mod) {
 
 
   return[modName, modValue];
+}
+
+function parseProperties(prop) {
+  thisProperty = prop.split(": ");
+  propName = thisProperty[0];
+  propValue = Number(thisProperty[1].replace(/[^0-9.]/g, ''));
+  return[propName, propValue];
 }

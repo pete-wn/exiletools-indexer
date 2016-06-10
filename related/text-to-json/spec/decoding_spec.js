@@ -182,3 +182,265 @@ Can be used in the Eternal Laboratory or a personal Map Device.`
     }
   })
 .toss();
+
+frisby.create("[IDENTIFY] Currency: Chaos Orb")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Currency
+Chaos Orb
+--------
+Stack Size: 173/10
+--------
+Reforges a rare item with new random properties
+--------
+Right click this item then left click a rare item to apply it.
+Shift click to unstack.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Chaos Orb" },
+    attributes : {
+      baseItemType : "Currency",
+      rarity: "Currency",
+      league: "Prophecy"
+    }
+  })
+.toss();
+
+frisby.create("[IDENTIFY] Currency: Exalted Orb")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Currency
+Exalted Orb
+--------
+Stack Size: 17/10
+--------
+Enchants a rare item with a new random property
+--------
+Right click this item then left click a rare item to apply it. Rare items can have up to six random properties.
+Shift click to unstack.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Exalted Orb" },
+    attributes : {
+      baseItemType : "Currency",
+      rarity: "Currency",
+      league: "Prophecy"
+    }
+  })
+.toss();
+
+frisby.create("[IDENTIFY] Gem: Summon Flame Golem lvl1 q13")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Gem
+Summon Flame Golem
+--------
+Golem, Fire, Minion, Spell
+Level: 1
+Mana Cost: 30
+Cooldown Time: 6.00 sec
+Cast Time: 1.00 sec
+Quality: +13% (augmented)
+Experience: 1/252,595
+--------
+Requirements:
+Level: 34
+Str: 50
+Int: 35
+--------
+Can raise up to 1 Golem at a time
+13% increased Minion Damage
+43% increased Minion Maximum Life
+Golems Grant 15% increased Damage
+--------
+Place into an item socket of the right colour to gain this skill. Right click to remove from a socket.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Summon Flame Golem" },
+    attributes : {
+      baseItemType : "Gem",
+      rarity: "Gem",
+      league: "Prophecy"
+    },
+    properties : {
+      Gem : {
+        Level: 1,
+        Quality: 13
+      }
+    }
+  })
+.toss();
+
+frisby.create("[IDENTIFY] Gem: Tempest Shield lvl4")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Gem
+Tempest Shield
+--------
+Spell, Lightning, Chaining, Duration
+Level: 4
+Mana Cost: 18
+Cast Time: 0.50 sec
+Critical Strike Chance: 6.00%
+Damage Effectiveness: 60%
+Experience: 86,337/199,345
+--------
+Requirements:
+Level: 28
+Str: 29
+Int: 42
+--------
+Deals 48-72 Lightning Damage
+Chain +1 Times
+Base duration is 12.00 seconds
+Additional 3% Shield Block Chance
+--------
+Place into an item socket of the right colour to gain this skill. Right click to remove from a socket.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Tempest Shield" },
+    attributes : {
+      baseItemType : "Gem",
+      rarity: "Gem",
+      league: "Prophecy"
+    },
+    properties : {
+      Gem : {
+        Level: 4
+      }
+    }
+  })
+.toss();
+
+frisby.create("[IDENTIFY] Gem: Enlighten lvl2 q17 corrupted")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Gem
+Enlighten Support
+--------
+Support
+Level: 2
+Mana Multiplier: 96%
+Quality: +17% (augmented)
+Experience: 792,851,397/1,439,190,228
+--------
+Requirements:
+Level: 10
+Int: 21
+--------
+This Gem gains 85% increased Experience
+--------
+This is a Support Gem. It does not grant a bonus to your character, but to skills in sockets connected to it. Place into an item socket connected to a socket containing the Active Skill Gem you wish to augment. Right click to remove from a socket.
+--------
+Corrupted`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Enlighten Support" },
+    attributes : {
+      baseItemType : "Gem",
+      rarity: "Gem",
+      corrupted: "true",
+      league: "Prophecy"
+    },
+    properties : {
+      Gem : {
+        Level: 2,
+        Quality: 17
+      }
+    }
+  })
+.toss();
+
+frisby.create("[IDENTIFY] Gem: Frenzy l20 q23 corrupted")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Gem
+Frenzy
+--------
+Attack, Melee, Bow
+Level: 20 (Max)
+Mana Cost: 10
+Quality: +23% (augmented)
+--------
+Requirements:
+Level: 70
+Dex: 155
+--------
+5% increased Physical Damage per Frenzy Charge
+Deals 136.6% of Base Attack Damage
+11% increased Attack Speed
+5% increased Attack Speed per Frenzy Charge
+--------
+Place into an item socket of the right colour to gain this skill. Right click to remove from a socket.
+--------
+Corrupted`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Frenzy" },
+    attributes : {
+      baseItemType : "Gem",
+      rarity: "Gem",
+      corrupted: "true",
+      league: "Prophecy"
+    },
+    properties : {
+      Gem : {
+        Level: 20,
+        Quality: 23
+      }
+    }
+  })
+.toss();
+
+
+
+frisby.create("[IDENTIFY] Gem: Vaal Haste lvl19")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Gem
+Vaal Haste
+--------
+Aura, Vaal, Spell, AoE, Duration
+Level: 19
+Mana Cost: 0
+Souls Per Use: 24
+Can Store 1 Use
+Cast Time: 0.60 sec
+Experience: 142,197,838/211,877,683
+--------
+Requirements:
+Level: 68
+Dex: 151
+--------
+Base duration is 6.00 seconds
+39% increased Area of Effect radius
+You and nearby allies gain 20% increased Movement Speed
+You and nearby allies gain 36% increased Attack Speed
+You and nearby allies gain 35% increased Cast Speed
+--------
+Place into an item socket of the right colour to gain this skill. Right click to remove from a socket.
+--------
+Corrupted`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Vaal Haste" },
+    attributes : {
+      baseItemType : "Gem",
+      rarity: "Gem",
+      corrupted: "true",
+      league: "Prophecy"
+    },
+    properties : {
+      Gem : {
+        Level: 19
+      }
+    }
+  })
+.toss();
