@@ -67,6 +67,12 @@ foreach $line (@content) {
 
 }
 
+if ($ARGV[0] eq "json") {
+  use JSON::XS;
+  my $jsonout = JSON::XS->new->utf8->pretty->encode(\%gearBaseType);
+  print $jsonout."\n";
+}
+
 exit;
 
 print Dumper(%h);
@@ -95,7 +101,8 @@ sub ProcessURL {
   my @content = split(/<tr>/, $content);
   foreach $line (@content) {
     if ($line =~ /<td><a href=\'item.php\?n=(.*?)\'>(.*?)<\/a>/) {
-      print "\$gearBaseType\{\"$2\"\} = \"$type\";\n";
+      print "\$gearBaseType\{\"$2\"\} = \"$type\";\n" unless ($ARGV[0] eq "json");
+      $gearBaseType{"$2"} = "$type";
     }
   }
 }

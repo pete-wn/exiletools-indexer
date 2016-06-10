@@ -3,6 +3,21 @@ var app = express();
 var bodyParser = require('body-parser');
 var _ = require('lodash');
 
+// Read in the itemType.json file - we're doing this synchronously on purpose
+var itemNames = require('./data/itemName-to-itemType.json');
+var itemNamesSizeCheck = _.size(itemNames);
+if (itemNamesSizeCheck > 800) {
+  console.log("STARTUP: Loaded " + itemNamesSizeCheck + " item names from itemName-to-itemType.json");
+} else {
+  console.log("FATAL: Something went wrong loading itemName-to-itemType.json data!");
+  console.log("Only " + itemNamesSizeCheck + " items were loaded, expected 800+!!");
+  process.exit(1);
+}
+
+var itemTypes = require('./data/itemType-to-baseItemType.json');
+var equipTypes = require('./data/itemName-to-equipType.json');
+
+
 app.use(express.static('public'));
 
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -86,15 +101,13 @@ function parseItem(text, league) {
   }
 
   // Here's where things get tricky. Different item types have different data in the second slice.
-  // Weapons: type, quality, damage, APS, critical strike
-  // Armour: quality, armour/evasion/ES ratings
   // * Maps: Map Tier, Quantity, Rarity
   // * Currency: Stack Size
   // * Gems: Gem information
   // * Divination Card: Stack Size
   // * Prophecy: flavour text
-  // normal items: item level
-  // jewelry with requirements: requirements
+  // Other items: We'll do a base item lookup. Unfortunately this will ONLY work with uniques and
+  //  rares, because normal items are a huge PITA. We might add support for that later.
   //
   // To do analysis, we need to look at some other data to optimize things.
   // rarity: Gem or Currency tell us what to look for in this slice
@@ -195,19 +208,91 @@ function parseItem(text, league) {
 
     return(item);
 
+  // Analyze Rare and Unique items that don't match any of the above
+  } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
+    console.log("this item is rare or unique, trying to identify it " + nameArray[2]);
+    if (itemNames[nameArray[2]]) {
+      item.attributes.itemType = itemNames[nameArray[2]];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+      item.attributes.equipType = equipTypes[nameArray[2]];
+      item.properties = new Object;
+
+      // Iterate through the properties - note that for some items, this will
+      // be the Requirements and we'll just ignore them if so
+      var thisInfo = _.compact(infoArray[1].split(/\n/));
+      if (thisInfo[0] != /^Requirements:/) {
+        // This means we have properties, so prepare the section of the object
+        item.properties[item.attributes.baseItemType] = new Object;
+
+        thisInfo.forEach(function (element) {
+          if (element.match(/:/)) {
+            // The parseProperties subroutine is only designed for : separated single number 
+            // properties. Only weapons violate this, so we will just parse out those 
+            // weapon properties here.
+            if (element.match(/Physical Damage: /)) {
+              var thisDamage = element.split("-");
+              var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
+              var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
+              var avgDamage = Math.round((minDamage + maxDamage) / 2);
+              item.properties.Weapon["Physical Damage"] = new Object;
+              item.properties.Weapon["Physical Damage"].min = minDamage;
+              item.properties.Weapon["Physical Damage"].max = maxDamage;
+              item.properties.Weapon["Physical Damage"].avg = avgDamage;
+            } else if ((element.match(/Elemental Damage: /)) || (element.match(/Chaos Damage:/))) {
+              // Right now, we can't actually identify the elemental damage types, but we can add
+              // overall DPS information
+              // Don't forget elemental damage can have multiple types, so we have to be a bit
+              // more iterative here
+              item.properties.Weapon["Elemental Damage"] = new Object;
+              item.properties.Weapon["Elemental Damage"].min = 0;
+              item.properties.Weapon["Elemental Damage"].max = 0;
+              item.properties.Weapon["Elemental Damage"].avg = 0;
+              var thisElement = element.split(": ");
+              var theseDamages = thisElement[1].split(", ");
+              theseDamages.forEach(function(thisEleDamage) {
+                var thisDamage = thisEleDamage.split("-");
+                var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
+                var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
+                var avgDamage = Math.round((minDamage + maxDamage) / 2);
+                item.properties.Weapon["Elemental Damage"].min += minDamage;
+                item.properties.Weapon["Elemental Damage"].max += maxDamage;
+                item.properties.Weapon["Elemental Damage"].avg += avgDamage;
+              });
+
+
+            } else {
+              var decodedProps = parseProperties(element);
+              item.properties[item.attributes.baseItemType][decodedProps[0]] = decodedProps[1];
+            }
+          }
+        });
+      }
+      // Calculate DPS for Weapons
+      if (item.attributes.baseItemType == "Weapon") {
+        item.properties.Weapon["Total DPS"] = 0;
+        if (item.properties.Weapon["Physical Damage"].avg) {
+          item.properties.Weapon["Physical DPS"] = Math.round(item.properties.Weapon["Physical Damage"].avg * item.properties.Weapon["Attacks per Second"]);
+          item.properties.Weapon["Total DPS"] += item.properties.Weapon["Physical DPS"];
+        }
+        if (item.properties.Weapon["Elemental Damage"].avg) {
+          item.properties.Weapon["Elemental DPS"] = Math.round(item.properties.Weapon["Elemental Damage"].avg * item.properties.Weapon["Attacks per Second"]);
+          item.properties.Weapon["Total DPS"] += item.properties.Weapon["Elemental DPS"];
+        }
+        
+      }
+      
+
+
+    } else {
+      var error = { error : "Unable to identify the base item and type for " + nameArray[2] + "!"};
+      throw(JSON.stringify(error));
+    }
+
+    return(item);
   }
-
-
-  // Find an element with "Requirements:" if it exists
-  // console.log(_.indexOf(infoArray, "Requirements:"));
-
-
-
 
   item.warning = "This item wasn't fully identified and is returning only default info!";
   return item;
-
-
 }
 
 function parseMod(mod) {
