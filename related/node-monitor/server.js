@@ -1,5 +1,8 @@
 // Include various modules
-var app = require('http').createServer(handler)
+//var app = require('http').createServer(handler)
+var app = require('http').createServer(function (req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+});
 var io = require('socket.io')(app);
 var bodyParser = require('body-parser');
 var _ = require('lodash');
@@ -28,6 +31,7 @@ var itemProcessTime = new Array;
 // socket.io listens on argv2
 app.listen(process.argv[2]);
 
+
 // this should ultimately just send a page with information, ignore the
 // current testing leftovers, we've moved to command line testing
 function handler (req, res) {
@@ -55,10 +59,15 @@ io.on('connection', function(socket){
   // we should probably add a response
   socket.on('filter', function (filter) {
     console.log('--> RECVD FILTER: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ' + JSON.stringify(filter));
+    if (typeof(filter) == "string") {
+      console.log('-->  FILTER is a STRING, converting to Object...');
+      io.to(socket.id).emit('heartbeat', { status : "You passed a string instead of an object. Attempting to parse this as an object anyway..." });
+      var filter = JSON.parse(filter);
+    }
 
-    if (filter.length > 20) {
+    if (filter.length > 50) {
       console.log('-->  FILTER FAIL: ' + socket.id + ' (' + socket.handshake.query.pwxid + ') ');
-      io.to(socket.id).emit('error', { error : "You are limited to 20 filters at a time! " + filter.length + " is too many!" });
+      io.to(socket.id).emit('error', { error : "You are limited to 50 filters at a time! " + filter.length + " is too many!" });
       return;
     }
 

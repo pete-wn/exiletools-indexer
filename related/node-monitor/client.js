@@ -12,7 +12,8 @@ var pwxid = uuid.v4();
 // For remote / live testing, use the "real time stash" URL at rtstashapi.exiletools.com
 // The localhost option is for internal testing/debugging
 //var socket = ioc.connect('http://rtstashapi.exiletools.com', {query: 'pwxid=' + pwxid});
-var socket = ioc.connect('http://localhost:6001', {query: 'pwxid=' + pwxid});
+//var socket = ioc.connect('http://localhost:6001', {query: 'pwxid=' + pwxid});
+var socket = ioc.connect('http://localhost:5000', {query: 'pwxid=' + pwxid});
 
 // Specify the filters here in a text format, we'll convert them to JSON. You can do this
 // however you'd like in your own app obviously.
