@@ -270,15 +270,46 @@ function parseItem(text, league) {
       // Calculate DPS for Weapons
       if (item.attributes.baseItemType == "Weapon") {
         item.properties.Weapon["Total DPS"] = 0;
-        if (item.properties.Weapon["Physical Damage"].avg) {
+        if ((item.properties.Weapon["Physical Damage"]) && (item.properties.Weapon["Physical Damage"].avg)) {
           item.properties.Weapon["Physical DPS"] = Math.round(item.properties.Weapon["Physical Damage"].avg * item.properties.Weapon["Attacks per Second"]);
           item.properties.Weapon["Total DPS"] += item.properties.Weapon["Physical DPS"];
         }
-        if (item.properties.Weapon["Elemental Damage"].avg) {
+        if ((item.properties.Weapon["Elemental Damage"]) && (item.properties.Weapon["Elemental Damage"].avg)) {
           item.properties.Weapon["Elemental DPS"] = Math.round(item.properties.Weapon["Elemental Damage"].avg * item.properties.Weapon["Attacks per Second"]);
           item.properties.Weapon["Total DPS"] += item.properties.Weapon["Elemental DPS"];
         }
         
+      }
+
+      // Calculate Sockets if it's a Weapon or Armour
+      if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+        // We have to iterate through infoArray to find the one with sockets
+        infoArray.forEach(function(thisInfo) {
+          if (thisInfo.match(/^Sockets/)) {
+            var thisSockets = thisInfo.split(": "); 
+            item.sockets = new Object;
+            item.sockets.allSocketsGGG = thisSockets[1].trim();
+            var linkArray = thisSockets[1].split(" ");
+            item.sockets.largestLinkGroup = 0;
+            item.sockets.socketCount = 0;
+            linkArray.forEach(function(thisLink) {
+              var thisLink = thisLink.replace(/\-/g, "");
+              item.sockets.socketCount += thisLink.length;
+              if (thisLink.length > item.sockets.largestLinkGroup) {
+                item.sockets.largestLinkGroup = thisLink.length;
+              }
+            });
+            return;
+          }
+        });
+        // Since we don't do much error checking, make sure 0 data is removed
+        if (item.sockets.largestLinkGroup < 1) {
+          delete item.sockets.largestLinkGroup;
+        }
+        if (item.sockets.socketCount < 1) {
+          delete item.sockets.socketCount;
+        }
+
       }
       
 
