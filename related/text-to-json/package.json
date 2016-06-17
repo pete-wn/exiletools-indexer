@@ -4,7 +4,7 @@
   "description": "Converts clipboard text to ElasticSearch JSON",
   "main": "server.js",
   "scripts": {
-    "test": "jasmine-node spec"
+    "test": "jasmine-node spec --verbose"
   },
   "author": "exiletools.com",
   "license": "ISC",

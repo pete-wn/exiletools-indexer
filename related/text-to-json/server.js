@@ -226,12 +226,12 @@ function parseItem(text, league) {
       item.attributes.itemType = itemNames[nameArray[2]];
       item.attributes.baseItemType = itemTypes[item.attributes.itemType];
       item.attributes.equipType = equipTypes[nameArray[2]];
-      item.properties = new Object;
 
       // Iterate through the properties - note that for some items, this will
       // be the Requirements and we'll just ignore them if so
       // ONLY ARMOUR AND WEAPONS HAVE PROPERTIES for RARE/UNIQUES!
       if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+        item.properties = new Object;
         var thisInfo = _.compact(infoArray[1].split(/\n/));
         if (thisInfo[0] != /^Requirements:/) {
           // This means we have properties, so prepare the section of the object
@@ -341,18 +341,35 @@ function parseItem(text, league) {
       // For Normal items this logic will have to work differently
       item.mods = new Object;
       item.mods[item.attributes.itemType] = new Object;
+      item.modsTotal = new Object;
       if (modInfo.length == 2) {
         // implicit
         item.mods[item.attributes.itemType].implicit = new Object;
         modInfo[0].forEach(function(mod) {
           var decodedMods = parseMod(mod);
           item.mods[item.attributes.itemType].implicit[decodedMods[0]] = decodedMods[1];
+          // Add non-booleans to modsTotal
+          if (typeof decodedMods[1] == 'number') {
+            if (item.modsTotal[decodedMods[0]]) {
+              item.modsTotal[decodedMods[0]] += decodedMods[1];
+            } else {
+              item.modsTotal[decodedMods[0]] = decodedMods[1];
+            }
+          }
         });
         // explicit
         item.mods[item.attributes.itemType].explicit = new Object;
         modInfo[1].forEach(function(mod) {
           var decodedMods = parseMod(mod);
           item.mods[item.attributes.itemType].explicit[decodedMods[0]] = decodedMods[1];
+          // Add non-booleans to modsTotal
+          if (typeof decodedMods[1] == 'number') {
+            if (item.modsTotal[decodedMods[0]]) {
+              item.modsTotal[decodedMods[0]] += decodedMods[1];
+            } else {
+              item.modsTotal[decodedMods[0]] = decodedMods[1];
+            }
+          }
         });
       } else {
         // explicit
@@ -360,6 +377,14 @@ function parseItem(text, league) {
         modInfo[0].forEach(function(mod) {
           var decodedMods = parseMod(mod);
           item.mods[item.attributes.itemType].explicit[decodedMods[0]] = decodedMods[1];
+          // Add non-booleans to modsTotal
+          if (typeof decodedMods[1] == 'number') {
+            if (item.modsTotal[decodedMods[0]]) {
+              item.modsTotal[decodedMods[0]] += decodedMods[1];
+            } else {
+              item.modsTotal[decodedMods[0]] = decodedMods[1];
+            }
+          }
         });
       }
 
@@ -413,9 +438,13 @@ function parseMod(mod) {
         modValue.min = Number(theseValues[0]);
         modValue.max = Number(theseValues[1]);
         modValue.avg = Math.floor((modValue.min + modValue.max) / 2);
+      } else if (matches[2].match(/%/)) {
+        matches[2] = matches[2].replace("%", "");
+        var modName = matches[1] + " #% " + matches[6];
+        var modValue = Number(matches[2]);
       } else {
         var modName = matches[1] + " # " + matches[6];
-        var modValue = matches[2];
+        var modValue = Number(matches[2]);
       }
 //      console.log(modName + ":" + modValue);
     } else {
@@ -425,26 +454,6 @@ function parseMod(mod) {
 //      console.log(modName + ":" + modValue);
     }
   }
-
-
-  // Original testing stuff below
-//  var matches = mod.match(/^(.*) (\d+)%(.*)/);
-//  if (matches != null) {
-//    var modName = matches[1] + " #%" + matches[3];
-//    var modValue = Number(matches[2]);
-//    console.log(modName + " : " + modValue);
-//  } else {
-//    var matches = mod.match(/^(.*) (\d+) (.*)/);
-//    if (matches != null) {
-//      var modName = matches[1] + " # " + matches[3];
-//      var modValue = Number(matches[2]);
-//      console.log(modName + " : " + modValue);
-//    } else {
-//      var modName = mod;
-//      var modValue = 'true';
-//    }
-//
-//  }
 
   // debug code
   if (modName == null) {

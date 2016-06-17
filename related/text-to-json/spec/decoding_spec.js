@@ -444,3 +444,117 @@ Corrupted`
     }
   })
 .toss();
+
+frisby.create("[IDENTIFY] Ungil's Gauche Boot Knife")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text':`Rarity: Unique
+Ungil's Gauche
+Boot Knife
+--------
+Dagger
+Physical Damage: 14-54 (augmented)
+Elemental Damage: 3-30 (augmented)
+Critical Strike Chance: 6.60%
+Attacks per Second: 1.54 (augmented)
+--------
+Requirements:
+Level: 20
+Dex: 31
+Int: 45
+--------
+Sockets: B 
+--------
+Item Level: 25
+--------
+40% increased Global Critical Strike Chance
+--------
+12% additional Block Chance while Dual Wielding
+80% increased Physical Damage
++11 to Dexterity
+Adds 3-30 Lightning Damage
+10% increased Attack Speed
+50% increased Global Critical Strike Chance
+--------
+Unwieldy and garish became graceful
+and deadly in Ungil's nimble hands.`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Ungil's Gauche Boot Knife" },
+    attributes : {
+      baseItemType : "Weapon",
+      rarity: "Unique",
+      league: "Prophecy",
+      itemType: "Dagger",
+      equipType: "One Handed Melee Weapon"
+    },
+    properties : {
+      Weapon : {
+        "Physical Damage": {
+          min: 14,
+          max: 54,
+          avg: 34
+        },
+        "Elemental Damage": {
+          min: 3,
+          max: 30,
+          avg: 17
+        },
+        "Critical Strike Chance": 6.6,
+        "Attacks per Second": 1.54,
+        "Total DPS": 78,
+        "Physical DPS": 52,
+        "Elemental DPS": 26
+      }
+    },
+    sockets: {
+      allSocketsGGG: "B",
+      largestLinkGroup: 1,
+      socketCount: 1
+    },
+    mods: {
+      Dagger: {
+        implicit: {
+          "#% increased Global Critical Strike Chance": 40
+        },
+        explicit: {
+          "#% additional Block Chance while Dual Wielding": 12,
+          "#% increased Physical Damage": 80,
+          "+# to Dexterity": 11,
+          "Adds #-# Lightning Damage": {
+            min: 3,
+            max: 30,
+            avg: 16
+          },
+          "#% increased Attack Speed": 10,
+          "#% increased Global Critical Strike Chance": 50
+        }
+      }
+    },
+    modsTotal: {
+      "#% increased Global Critical Strike Chance": 90,
+      "#% additional Block Chance while Dual Wielding": 12,
+      "#% increased Physical Damage": 80,
+      "+# to Dexterity": 11,
+      "#% increased Attack Speed": 10
+    }
+  })
+.toss();
+
+
+//frisby.create("[IDENTIFY] ")
+//  .post(baseurl, {
+//    'league':'Prophecy',
+//    'text':`
+//  })
+//  .expectStatus(200)
+//  .expectJSON({
+//    info : { fullName : "" },
+//    attributes : {
+//      baseItemType : "",
+//      rarity: "",
+//      league: "Prophecy"
+//    }
+//  })
+//.toss();
