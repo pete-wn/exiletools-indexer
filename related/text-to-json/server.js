@@ -211,6 +211,17 @@ function parseItem(text, league) {
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
     console.log("this item is rare or unique, trying to identify it " + nameArray[2]);
+
+    // If it has a note, remove that
+    if (infoArray[infoArray.length-1].match(/^Note/)) {
+      infoArray.pop();
+    }
+
+    // If it's Unique, remove the flavor text
+    if (item.attributes.rarity == "Unique") {
+      infoArray.pop();
+    }
+
     if (itemNames[nameArray[2]]) {
       item.attributes.itemType = itemNames[nameArray[2]];
       item.attributes.baseItemType = itemTypes[item.attributes.itemType];
@@ -219,54 +230,58 @@ function parseItem(text, league) {
 
       // Iterate through the properties - note that for some items, this will
       // be the Requirements and we'll just ignore them if so
-      var thisInfo = _.compact(infoArray[1].split(/\n/));
-      if (thisInfo[0] != /^Requirements:/) {
-        // This means we have properties, so prepare the section of the object
-        item.properties[item.attributes.baseItemType] = new Object;
-
-        thisInfo.forEach(function (element) {
-          if (element.match(/:/)) {
-            // The parseProperties subroutine is only designed for : separated single number 
-            // properties. Only weapons violate this, so we will just parse out those 
-            // weapon properties here.
-            if (element.match(/Physical Damage: /)) {
-              var thisDamage = element.split("-");
-              var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
-              var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
-              var avgDamage = Math.round((minDamage + maxDamage) / 2);
-              item.properties.Weapon["Physical Damage"] = new Object;
-              item.properties.Weapon["Physical Damage"].min = minDamage;
-              item.properties.Weapon["Physical Damage"].max = maxDamage;
-              item.properties.Weapon["Physical Damage"].avg = avgDamage;
-            } else if ((element.match(/Elemental Damage: /)) || (element.match(/Chaos Damage:/))) {
-              // Right now, we can't actually identify the elemental damage types, but we can add
-              // overall DPS information
-              // Don't forget elemental damage can have multiple types, so we have to be a bit
-              // more iterative here
-              item.properties.Weapon["Elemental Damage"] = new Object;
-              item.properties.Weapon["Elemental Damage"].min = 0;
-              item.properties.Weapon["Elemental Damage"].max = 0;
-              item.properties.Weapon["Elemental Damage"].avg = 0;
-              var thisElement = element.split(": ");
-              var theseDamages = thisElement[1].split(", ");
-              theseDamages.forEach(function(thisEleDamage) {
-                var thisDamage = thisEleDamage.split("-");
+      // ONLY ARMOUR AND WEAPONS HAVE PROPERTIES for RARE/UNIQUES!
+      if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+        var thisInfo = _.compact(infoArray[1].split(/\n/));
+        if (thisInfo[0] != /^Requirements:/) {
+          // This means we have properties, so prepare the section of the object
+          item.properties[item.attributes.baseItemType] = new Object;
+  
+          thisInfo.forEach(function (element) {
+            if (element.match(/:/)) {
+              // The parseProperties subroutine is only designed for : separated single number 
+              // properties. Only weapons violate this, so we will just parse out those 
+              // weapon properties here.
+              if (element.match(/Physical Damage: /)) {
+                var thisDamage = element.split("-");
                 var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
                 var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
                 var avgDamage = Math.round((minDamage + maxDamage) / 2);
-                item.properties.Weapon["Elemental Damage"].min += minDamage;
-                item.properties.Weapon["Elemental Damage"].max += maxDamage;
-                item.properties.Weapon["Elemental Damage"].avg += avgDamage;
-              });
-
-
-            } else {
-              var decodedProps = parseProperties(element);
-              item.properties[item.attributes.baseItemType][decodedProps[0]] = decodedProps[1];
+                item.properties.Weapon["Physical Damage"] = new Object;
+                item.properties.Weapon["Physical Damage"].min = minDamage;
+                item.properties.Weapon["Physical Damage"].max = maxDamage;
+                item.properties.Weapon["Physical Damage"].avg = avgDamage;
+              } else if ((element.match(/Elemental Damage: /)) || (element.match(/Chaos Damage:/))) {
+                // Right now, we can't actually identify the elemental damage types, but we can add
+                // overall DPS information
+                // Don't forget elemental damage can have multiple types, so we have to be a bit
+                // more iterative here
+                item.properties.Weapon["Elemental Damage"] = new Object;
+                item.properties.Weapon["Elemental Damage"].min = 0;
+                item.properties.Weapon["Elemental Damage"].max = 0;
+                item.properties.Weapon["Elemental Damage"].avg = 0;
+                var thisElement = element.split(": ");
+                var theseDamages = thisElement[1].split(", ");
+                theseDamages.forEach(function(thisEleDamage) {
+                  var thisDamage = thisEleDamage.split("-");
+                  var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
+                  var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
+                  var avgDamage = Math.round((minDamage + maxDamage) / 2);
+                  item.properties.Weapon["Elemental Damage"].min += minDamage;
+                  item.properties.Weapon["Elemental Damage"].max += maxDamage;
+                  item.properties.Weapon["Elemental Damage"].avg += avgDamage;
+                });
+  
+  
+              } else {
+                var decodedProps = parseProperties(element);
+                item.properties[item.attributes.baseItemType][decodedProps[0]] = decodedProps[1];
+              }
             }
-          }
-        });
+          });
+        }
       }
+
       // Calculate DPS for Weapons
       if (item.attributes.baseItemType == "Weapon") {
         item.properties.Weapon["Total DPS"] = 0;
@@ -311,7 +326,48 @@ function parseItem(text, league) {
         }
 
       }
-      
+      // Now we must attempt to parse mods. This isn't so easy, because the mods can
+      // show up in various sections. Thus we need to first eliminate non mod data.
+      // No mod contains a ':' or '"' so those will be the primary filters
+      var modInfo = new Array;
+      infoArray.forEach(function (element) {
+        if ((!element.match(/:/)) && (!element.match(/^\"/))) {
+          var theseMods = element.split("\n");
+          modInfo.push(theseMods);
+        }
+      });
+      // If modInfo has two elements, then the first element is an implicit mod
+      // If it only has one element, we will assume those are explicit/etc. mods
+      // For Normal items this logic will have to work differently
+      item.mods = new Object;
+      item.mods[item.attributes.itemType] = new Object;
+      if (modInfo.length == 2) {
+        // implicit
+        item.mods[item.attributes.itemType].implicit = new Object;
+        modInfo[0].forEach(function(mod) {
+          var decodedMods = parseMod(mod);
+          item.mods[item.attributes.itemType].implicit[decodedMods[0]] = decodedMods[1];
+        });
+        // explicit
+        item.mods[item.attributes.itemType].explicit = new Object;
+        modInfo[1].forEach(function(mod) {
+          var decodedMods = parseMod(mod);
+          item.mods[item.attributes.itemType].explicit[decodedMods[0]] = decodedMods[1];
+        });
+      } else {
+        // explicit
+        item.mods[item.attributes.itemType].explicit = new Object;
+        modInfo[0].forEach(function(mod) {
+          var decodedMods = parseMod(mod);
+          item.mods[item.attributes.itemType].explicit[decodedMods[0]] = decodedMods[1];
+        });
+      }
+
+//      var thisInfo = _.compact(infoArray[3].split(/\n/));
+//      thisInfo.forEach(function (element) {
+//        var decodedMods = parseMod(element);
+//        item.mods.Map.explicit[decodedMods[0]] = decodedMods[1];
+//      });
 
 
     } else {
@@ -331,29 +387,70 @@ function parseMod(mod) {
   // nearly as complex as the ExileTools Indexer mod parsing.
   // At some point it will need to have modsTotal / etc. calculated
 
-  // NOTE FIX FIX FIX the crap below won't find decimal numbers like life leech etc.!
 
-  // this can be better, I'm not good at nested matches in javascript, way easier
-  // in perl - I'm probably missing something, but it works for now
-  var matches = mod.match(/^(.*) (\d+)%(.*)/);
+  // Look for mods that start with +/- to a number or just a number with %
+  // examples this will match:
+  // +10 to life --> +# to life:10
+  // 200% increased damage --> % increased damage:200
+  var matches = mod.match(/^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/);
   if (matches != null) {
-    var modName = matches[1] + " #%" + matches[3];
-    var modValue = Number(matches[2]);
-    console.log(modName + " : " + modValue);
-  } else {
-    var matches = mod.match(/^(.*) (\d+) (.*)/);
-    if (matches != null) {
-      var modName = matches[1] + " # " + matches[3];
-      var modValue = Number(matches[2]);
-      console.log(modName + " : " + modValue);
+    if (matches[1]) {
+      var modName = matches[1] + "#" + matches[4] + " "  + matches[5];
     } else {
-      var modName = mod;
-      var modValue = 'true';
+      var modName = "#" + matches[4] + " "  + matches[5];
     }
-
+    var modValue = Number(matches[2]);
+//    console.log(modName + ":" + modValue);
+  } else {
+    // Look for +#-# stuff
+    var matches = mod.match(/^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/);
+    if (matches != null) {
+      // If the matching number is a range, treat it differently
+      if (matches[2].match(/-/)) {
+        var modName = matches[1] + " #-# " + matches[6];
+        var theseValues = matches[2].split("-");
+        var modValue = new Object;
+        modValue.min = Number(theseValues[0]);
+        modValue.max = Number(theseValues[1]);
+        modValue.avg = Math.floor((modValue.min + modValue.max) / 2);
+      } else {
+        var modName = matches[1] + " # " + matches[6];
+        var modValue = matches[2];
+      }
+//      console.log(modName + ":" + modValue);
+    } else {
+      // Assume anything left is a boolean value
+      var modName = mod;
+      var modValue = true;
+//      console.log(modName + ":" + modValue);
+    }
   }
 
 
+  // Original testing stuff below
+//  var matches = mod.match(/^(.*) (\d+)%(.*)/);
+//  if (matches != null) {
+//    var modName = matches[1] + " #%" + matches[3];
+//    var modValue = Number(matches[2]);
+//    console.log(modName + " : " + modValue);
+//  } else {
+//    var matches = mod.match(/^(.*) (\d+) (.*)/);
+//    if (matches != null) {
+//      var modName = matches[1] + " # " + matches[3];
+//      var modValue = Number(matches[2]);
+//      console.log(modName + " : " + modValue);
+//    } else {
+//      var modName = mod;
+//      var modValue = 'true';
+//    }
+//
+//  }
+
+  // debug code
+  if (modName == null) {
+    var modName = mod;
+    var modValue = "unparsed";
+  }
 
   return[modName, modValue];
 }
