@@ -61,6 +61,7 @@ function parseItem(text, league) {
   // the first slice always appears to contain rarity and name
   // (also note we remove any empty values just in case)
   var infoArray = _.compact(text.split(/\n--------\n/));
+  console.log('infoArray:', infoArray);
 
   // The infoArray must be a minimum of 4 elements - at time of
   // writing I'm not aware of any item which has less than 4 elements
@@ -236,13 +237,15 @@ function parseItem(text, league) {
         if (thisInfo[0] != /^Requirements:/) {
           // This means we have properties, so prepare the section of the object
           item.properties[item.attributes.baseItemType] = new Object;
-  
+          console.warn('thisInfoRareItem', thisInfo);
+          
           thisInfo.forEach(function (element) {
             if (element.match(/:/)) {
               // The parseProperties subroutine is only designed for : separated single number 
               // properties. Only weapons violate this, so we will just parse out those 
               // weapon properties here.
               if (element.match(/Physical Damage: /)) {
+                console.warn('PROPERTY Phys dmg:', element);
                 var thisDamage = element.split("-");
                 var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
                 var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
