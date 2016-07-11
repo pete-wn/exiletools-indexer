@@ -238,7 +238,7 @@ function parseItem(text, league) {
           // This means we have properties, so prepare the section of the object
           item.properties[item.attributes.baseItemType] = new Object;
           console.warn('thisInfoRareItem', thisInfo);
-          
+
           thisInfo.forEach(function (element) {
             if (element.match(/:/)) {
               // The parseProperties subroutine is only designed for : separated single number 
@@ -274,8 +274,6 @@ function parseItem(text, league) {
                   item.properties.Weapon["Elemental Damage"].max += maxDamage;
                   item.properties.Weapon["Elemental Damage"].avg += avgDamage;
                 });
-  
-  
               } else {
                 var decodedProps = parseProperties(element);
                 item.properties[item.attributes.baseItemType][decodedProps[0]] = decodedProps[1];
@@ -296,7 +294,7 @@ function parseItem(text, league) {
           item.properties.Weapon["Elemental DPS"] = Math.round(item.properties.Weapon["Elemental Damage"].avg * item.properties.Weapon["Attacks per Second"]);
           item.properties.Weapon["Total DPS"] += item.properties.Weapon["Elemental DPS"];
         }
-        
+
       }
 
       // Calculate Sockets if it's a Weapon or Armour
