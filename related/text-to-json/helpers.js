@@ -1,16 +1,13 @@
-const _ = require('lodash');
-
 const Helpers = module.exports;
 
 Helpers.parseProperties = function(item, propertyList) {
-	if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
-		item.properties[item.attributes.baseItemType] = {};
+	if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return;
 
-		propertyList.forEach(function(property) {
-			const {propKey, propValue} = parseProperty(property);
-			item.properties[item.attributes.baseItemType][propKey] = propValue;
-		});
-	}
+	item.properties[item.attributes.baseItemType] = {};
+	propertyList.forEach(function(prop) {
+		const {propKey, propValue} = parseProperty(prop);
+		item.properties[item.attributes.baseItemType][propKey] = propValue;
+	});
 }
 
 Helpers.calculateDPS = function(item) {
@@ -33,24 +30,24 @@ Helpers.calculateSockets = function(item, infoArray) {
 
   // We have to iterate through infoArray to find the one with sockets
   infoArray.forEach(function(thisInfo) {
-    if (thisInfo.match(/^Sockets/)) {
-    	const allSocketsGGG = thisInfo.split(': ')[1].trim();
-      item.sockets = {
-      	allSocketsGGG,
-      	largestLinkGroup: 0,
-      	socketCount: 0
-      };
-      const linkArray = allSocketsGGG.split(" ");
-      linkArray.forEach(function(thisLink) {
-        const thisLink = thisLink.replace(/\-/g, "");
-        item.sockets.socketCount += thisLink.length;
-        if (thisLink.length > item.sockets.largestLinkGroup) {
-          item.sockets.largestLinkGroup = thisLink.length;
-        }
-      });
-      return;
-    }
+    if (!thisInfo.match(/^Sockets/)) return;
+
+  	const allSocketsGGG = thisInfo.split(': ')[1].trim();
+    item.sockets = {
+    	allSocketsGGG,
+    	largestLinkGroup: 0,
+    	socketCount: 0
+    };
+    const linkArray = allSocketsGGG.split(" ");
+    linkArray.forEach(function(thisLink) {
+      const thisLink = thisLink.replace(/\-/g, "");
+      item.sockets.socketCount += thisLink.length;
+      if (thisLink.length > item.sockets.largestLinkGroup) {
+        item.sockets.largestLinkGroup = thisLink.length;
+      }
+    });
   });
+
   // Since we don't do much error checking, make sure 0 data is removed
   if (item.sockets.largestLinkGroup < 1) {
     delete item.sockets.largestLinkGroup;
@@ -58,10 +55,47 @@ Helpers.calculateSockets = function(item, infoArray) {
   if (item.sockets.socketCount < 1) {
     delete item.sockets.socketCount;
   }
-
 };
 
-// The below implementation removes a need to know anything about the item.
+Helper.createMods = function(item, modInfo) {
+	const itemType = item.attributes.itemType;
+	item.mods[itemType] = {};
+	item.modsTotal = {};
+
+	if (modInfo.length === 2) {
+		item.mods[itemType].implicit = {};
+		modInfo[0].forEach(function(mod) {
+			const [modKey, modVal] = parseMod(mod);
+			item.mods[itemType].implicit[modKey] = modVal;
+			if (typeof modKey == 'number') {
+				if (item.modsTotal[modKey]) {
+					item.modsTotal[modKey] += modVal;
+				} else {
+					item.modsTotal[modKey] = modVal;
+				}
+			}
+		})
+	} else {
+		item.mods[itemType].explicit = {};
+		const explicits = modInfo.length === 2 ? modInfo[1] : modInfo[0];
+		explicits.forEach(function(mod) {
+			const [modKey, modVal] = parseMod(mod);
+			item.mods[itemType].explicit[modKey] = modVal;
+			if (typeof modKey == 'number') {
+				if (item.modsTotal[modKey]) {
+					item.modsTotal[modKey] += modVal;
+				} else {
+					item.modsTotal[modKey] = modVal;
+				}
+			}
+		})
+	} else {
+    var error = { error : "Unable to identify the base item and type for " + nameArray[2] + "!"};
+    throw(JSON.stringify(error));
+  }
+}
+
+// This implementation does not need to know anything about the item.
 // @param propDesc the string representing the property
 // @return { propKey, propValue } parsing of @param propDesc
 function parseProperty(propDesc) {
@@ -90,6 +124,63 @@ function parseProperty(propDesc) {
 	} else {
 		return decodeProp(prop);
 	}
+}
+
+function parseMod(mod) {
+  // This subroutine performs basic mod parsing. Right now it is not
+  // nearly as complex as the ExileTools Indexer mod parsing.
+  // At some point it will need to have modsTotal / etc. calculated
+
+
+  // Look for mods that start with +/- to a number or just a number with %
+  // examples this will match:
+  // +10 to life --> +# to life:10
+  // 200% increased damage --> % increased damage:200
+  var matches = mod.match(/^(\+|\-)?(\d+(\.\d+)?)(\%?)\s+(.*)$/);
+  if (matches != null) {
+    if (matches[1]) {
+      var modName = matches[1] + "#" + matches[4] + " "  + matches[5];
+    } else {
+      var modName = "#" + matches[4] + " "  + matches[5];
+    }
+    var modValue = Number(matches[2]);
+//    console.log(modName + ":" + modValue);
+  } else {
+    // Look for +#-# stuff
+    var matches = mod.match(/^(.*?) (\+?\d+(\.\d+)?(-\d+(\.\d+)?)?%?)\s?(.*)$/);
+    if (matches != null) {
+      // If the matching number is a range, treat it differently
+      if (matches[2].match(/-/)) {
+        var modName = matches[1] + " #-# " + matches[6];
+        var theseValues = matches[2].split("-");
+        var modValue = new Object;
+        modValue.min = Number(theseValues[0]);
+        modValue.max = Number(theseValues[1]);
+        modValue.avg = Math.floor((modValue.min + modValue.max) / 2);
+      } else if (matches[2].match(/%/)) {
+        matches[2] = matches[2].replace("%", "");
+        var modName = matches[1] + " #% " + matches[6];
+        var modValue = Number(matches[2]);
+      } else {
+        var modName = matches[1] + " # " + matches[6];
+        var modValue = Number(matches[2]);
+      }
+//      console.log(modName + ":" + modValue);
+    } else {
+      // Assume anything left is a boolean value
+      var modName = mod;
+      var modValue = true;
+//      console.log(modName + ":" + modValue);
+    }
+  }
+
+  // debug code
+  if (modName == null) {
+    var modName = mod;
+    var modValue = "unparsed";
+  }
+
+  return[modName, modValue];
 }
 
 // @param damageDesc and string of the form: "XXX: 12 - 18 XXX"
