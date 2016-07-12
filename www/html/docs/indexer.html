@@ -81,50 +81,8 @@ this river of data into a stateful index that can be queried for current and his
 
 <h2>Authorization</h2>
 
-<div class="alert alert-danger" role="alert">Authorization is <b>required</b> to make a request to the API!</div>
+<div class="alert alert-danger" role="alert">As of 2016-07-07, authorization and API keys are no longer required to access the free public item index. Instead, requests are limited (loosely) on a per-IP basis. If you start seeing 403's or similar, you are making too many requests too fast (more than 10/s will be delayed then eventually denied).</div>
 
-<p>You must have a valid API key to make a request to the Index API. Please note that these keys are not intended to be secret or private at this time (as many open source tools or AJAX systems will embed them in a visible way), but rather to help me keep track of which tools are using the API. <b>You may use the Development API Key during development.</b> To request an API key, <a href="/info/apikey.php">click here</a>.</p>
-
-<p>API keys may be specified in two ways:</p>
-<ul>
-<h4>1. Authorization Header</h4>
-
-<p>Simply add a Header to the web request named <code>Authorization</code> with your API key as the value. For example, to do this in curl:</p>
-
-<pre>curl -s i -H 'Authorization: DEVELOPMENT-Indexer' --XGET 'http://api.exiletools.com/index/_search?pretty'</pre>
-
-<h4>2. Basic Web Auth</h4>
-
-<p>This is more common for various libraries (javascript/etc.) that will connect to the Index API. Simply specify a username of <code>apikey</code> with the password of the actual API key. For example, to do this in curl:</p>
-
-<pre>curl -s -i -XGET 'http://apikey:DEVELOPMENT-Indexer@api.exiletools.com/index/_search?pretty'</pre>
-
-<p><i>Note that browsers like Firefox and Chrome will drop Basic Auth credentials, so do not try to use the example above in the URL bar!</i></p>
-
-</ul>
-
-<h3>Development API Key</h3>
-
-<p>Please feel free to use the following API key during initial development or experimentation. If you begin making frequent requests to the API or release a public tool, please request an API key for use so that I can keep track. Thanks!</p>
-
-<pre><font size=3>DEVELOPMENT-Indexer</font></pre>
-
-<h2>Pay Attention to Response Codes</h2>
-
-<p>The API gateway will return errors in a standard JSON format. Please remember to pay attention to these and code any programs to response properly in the event of an error. Below is an example:</p>
-
-<pre>
-HTTP/1.1 403 Forbidden
-Date: Wed, 13 Jan 2016 21:49:08 GMT
-Content-Type: application/json
-Content-Length: 37
-X-Generator: tyk.io
-Set-Cookie: SERVERID=A; path=/
-
-{
-    "error": "Key not authorised"
-}
-</pre>
 
 <h2>Caching</h2>
 
@@ -156,7 +114,6 @@ parsing the results or managing the data itself.</p>
 $.ajax({
   type: "GET",
   headers: {
-    'Authorization':'DEVELOPMENT-Indexer',
     'Accept':'application/json',
     'Content-Type':'application/json'
   },

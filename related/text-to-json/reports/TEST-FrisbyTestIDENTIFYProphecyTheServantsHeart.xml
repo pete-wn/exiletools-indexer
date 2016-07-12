@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+<testsuite name="Frisby Test: [IDENTIFY] Prophecy: The Servant&amp;apos;s Heart" errors="0" tests="1" failures="0" time="0.08" timestamp="2016-06-17T16:35:42">
+  <testcase classname="Frisby Test: [IDENTIFY] Prophecy: The Servant&amp;apos;s Heart" name="
+	[ POST http://localhost:9000 ]" time="0.077"></testcase>
+</testsuite>
+</testsuites>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+<testsuite name="Frisby Test: [IDENTIFY] Gem: Vaal Haste lvl19" errors="0" tests="1" failures="0" time="0.011" timestamp="2016-06-17T16:35:43">
+  <testcase classname="Frisby Test: [IDENTIFY] Gem: Vaal Haste lvl19" name="
+	[ POST http://localhost:9000 ]" time="0.011"></testcase>
+</testsuite>
+</testsuites>
