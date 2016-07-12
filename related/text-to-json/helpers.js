@@ -1,16 +1,20 @@
 const Helpers = module.exports;
 
-Helpers.parseProperties = function(item, propertyList) {
+Helpers.writeProperties = function(item, propertyList) {
 	if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return;
+
+	console.warn('property list:', propertyList);
 
 	item.properties[item.attributes.baseItemType] = {};
 	propertyList.forEach(function(prop) {
-		const {propKey, propValue} = parseProperty(prop);
-		item.properties[item.attributes.baseItemType][propKey] = propValue;
+		const {propKey, propVal} = parseProperty(prop);
+		if (!propKey) return;
+
+		item.properties[item.attributes.baseItemType][propKey] = propVal;
 	});
 }
 
-Helpers.calculateDPS = function(item) {
+Helpers.writeDPS = function(item) {
 	if (!item.attributes.baseItemType === 'Weapon') return;
 
 	weaponProps = item.properties.Weapon;
@@ -25,7 +29,7 @@ Helpers.calculateDPS = function(item) {
 	}
 }
 
-Helpers.calculateSockets = function(item, infoArray) {
+Helpers.writeSockets = function(item, infoArray) {
 	if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return;
 
   // We have to iterate through infoArray to find the one with sockets
@@ -39,8 +43,8 @@ Helpers.calculateSockets = function(item, infoArray) {
     	socketCount: 0
     };
     const linkArray = allSocketsGGG.split(" ");
-    linkArray.forEach(function(thisLink) {
-      const thisLink = thisLink.replace(/\-/g, "");
+    linkArray.forEach(function(_thisLink) {
+      thisLink = _thisLink.replace(/\-/g, "");
       item.sockets.socketCount += thisLink.length;
       if (thisLink.length > item.sockets.largestLinkGroup) {
         item.sockets.largestLinkGroup = thisLink.length;
@@ -57,54 +61,61 @@ Helpers.calculateSockets = function(item, infoArray) {
   }
 };
 
-Helper.createMods = function(item, modInfo) {
+// For Normal items this logic will have to work differently
+Helpers.writeMods = function(item, modInfo) {
 	const itemType = item.attributes.itemType;
+	item.mods = {};
 	item.mods[itemType] = {};
 	item.modsTotal = {};
 
+	// If modInfo has two elements, then the first element is an implicit mod
 	if (modInfo.length === 2) {
 		item.mods[itemType].implicit = {};
 		modInfo[0].forEach(function(mod) {
 			const [modKey, modVal] = parseMod(mod);
 			item.mods[itemType].implicit[modKey] = modVal;
-			if (typeof modKey == 'number') {
+			if (typeof modVal === 'number') {
 				if (item.modsTotal[modKey]) {
 					item.modsTotal[modKey] += modVal;
 				} else {
 					item.modsTotal[modKey] = modVal;
 				}
 			}
-		})
-	} else {
+		});
+	}
+
+	// explicits
+	if (item.attributes.rarity !== 'normal') {
 		item.mods[itemType].explicit = {};
 		const explicits = modInfo.length === 2 ? modInfo[1] : modInfo[0];
 		explicits.forEach(function(mod) {
 			const [modKey, modVal] = parseMod(mod);
 			item.mods[itemType].explicit[modKey] = modVal;
-			if (typeof modKey == 'number') {
+			if (typeof modVal === 'number') {
 				if (item.modsTotal[modKey]) {
 					item.modsTotal[modKey] += modVal;
 				} else {
 					item.modsTotal[modKey] = modVal;
 				}
 			}
-		})
+		});
 	} else {
-    var error = { error : "Unable to identify the base item and type for " + nameArray[2] + "!"};
-    throw(JSON.stringify(error));
-  }
+		// noop
+	}
 }
 
-// This implementation does not need to know anything about the item.
-// @param propDesc the string representing the property
-// @return { propKey, propValue } parsing of @param propDesc
+// @param propDesc the string describing the property
+// @return { propKey, propVal } parsing of @param propDesc
 function parseProperty(propDesc) {
-	if (!propDesc.match(/:/)) return;
+	// The parseProperties subroutine is only designed for : separated single number 
+	// properties. Only weapons violate this, so we will just parse out those 
+	// weapon properties here.
+	if (!propDesc.match(/:/)) return {};
 
 	if (propDesc.match(/Physical Damage: /)) {
 		return {
 			propKey: "Physical Damage",
-			propValue: parseMinMaxAvg(prop)
+			propVal: parseMinMaxAvg(propDesc)
 		};
 	} else if (propDesc.match(/Elemental Damage: /) || propDesc.match(/Chaos Damages:/)) {
 		const dmgSummary = { min: 0, max: 0, avg: 0 };
@@ -112,26 +123,24 @@ function parseProperty(propDesc) {
 		const damageList = propDesc.split(': ')[1];
 		const eleDamages = damageList.split(', ');
 		eleDamages.forEach(function(dmg) {
-			const { min, max, avg } = parseMinMaxAvg(dmg);
+			const {min, max, avg} = parseMinMaxAvg(dmg);
 			dmgSummary.min += min;
 			dmgSummary.max += max;
 			dmgSummary.avg += avg;
 		});
 		return {
 			propKey: "Elemental Damage",
-			propValue: dmgSummary
+			propVal: dmgSummary
 		};
 	} else {
-		return decodeProp(prop);
+		return decodeProp(propDesc);
 	}
 }
 
+// This subroutine performs basic mod parsing. Right now it is not
+// nearly as complex as the ExileTools Indexer mod parsing.
+// At some point it will need to have modsTotal / etc. calculated
 function parseMod(mod) {
-  // This subroutine performs basic mod parsing. Right now it is not
-  // nearly as complex as the ExileTools Indexer mod parsing.
-  // At some point it will need to have modsTotal / etc. calculated
-
-
   // Look for mods that start with +/- to a number or just a number with %
   // examples this will match:
   // +10 to life --> +# to life:10
@@ -200,6 +209,6 @@ function decodeProp(prop) {
 	const [key, val] = prop.split(': ');
 	return {
 		propKey: key,
-		propValue: Number(val.replace(/[^0-9.]/g, '')),
+		propVal: Number(val.replace(/[^0-9.]/g, '')),
 	};
 }

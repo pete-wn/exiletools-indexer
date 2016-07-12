@@ -3,6 +3,8 @@ var app = express();
 var bodyParser = require('body-parser');
 var _ = require('lodash');
 
+const H = require('./helpers');
+
 // Read in the itemType.json file - we're doing this synchronously on purpose
 var itemNames = require('./data/itemName-to-itemType.json');
 var itemNamesSizeCheck = _.size(itemNames);
@@ -61,7 +63,6 @@ function parseItem(text, league) {
   // the first slice always appears to contain rarity and name
   // (also note we remove any empty values just in case)
   var infoArray = _.compact(text.split(/\n--------\n/));
-  console.log('infoArray:', infoArray);
 
   // The infoArray must be a minimum of 4 elements - at time of
   // writing I'm not aware of any item which has less than 4 elements
@@ -233,100 +234,23 @@ function parseItem(text, league) {
       // ONLY ARMOUR AND WEAPONS HAVE PROPERTIES for RARE/UNIQUES!
       if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
         item.properties = new Object;
-        var thisInfo = _.compact(infoArray[1].split(/\n/));
-        if (thisInfo[0] != /^Requirements:/) {
-          // This means we have properties, so prepare the section of the object
-          item.properties[item.attributes.baseItemType] = new Object;
-          console.warn('thisInfoRareItem', thisInfo);
-
-          thisInfo.forEach(function (element) {
-            if (element.match(/:/)) {
-              // The parseProperties subroutine is only designed for : separated single number 
-              // properties. Only weapons violate this, so we will just parse out those 
-              // weapon properties here.
-              if (element.match(/Physical Damage: /)) {
-                console.warn('PROPERTY Phys dmg:', element);
-                var thisDamage = element.split("-");
-                var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
-                var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
-                var avgDamage = Math.round((minDamage + maxDamage) / 2);
-                item.properties.Weapon["Physical Damage"] = new Object;
-                item.properties.Weapon["Physical Damage"].min = minDamage;
-                item.properties.Weapon["Physical Damage"].max = maxDamage;
-                item.properties.Weapon["Physical Damage"].avg = avgDamage;
-              } else if ((element.match(/Elemental Damage: /)) || (element.match(/Chaos Damage:/))) {
-                // Right now, we can't actually identify the elemental damage types, but we can add
-                // overall DPS information
-                // Don't forget elemental damage can have multiple types, so we have to be a bit
-                // more iterative here
-                item.properties.Weapon["Elemental Damage"] = new Object;
-                item.properties.Weapon["Elemental Damage"].min = 0;
-                item.properties.Weapon["Elemental Damage"].max = 0;
-                item.properties.Weapon["Elemental Damage"].avg = 0;
-                var thisElement = element.split(": ");
-                var theseDamages = thisElement[1].split(", ");
-                theseDamages.forEach(function(thisEleDamage) {
-                  var thisDamage = thisEleDamage.split("-");
-                  var minDamage = Number(thisDamage[0].replace(/[^0-9.]/g, ''));
-                  var maxDamage = Number(thisDamage[1].replace(/[^0-9.]/g, ''));
-                  var avgDamage = Math.round((minDamage + maxDamage) / 2);
-                  item.properties.Weapon["Elemental Damage"].min += minDamage;
-                  item.properties.Weapon["Elemental Damage"].max += maxDamage;
-                  item.properties.Weapon["Elemental Damage"].avg += avgDamage;
-                });
-              } else {
-                var decodedProps = parseProperties(element);
-                item.properties[item.attributes.baseItemType][decodedProps[0]] = decodedProps[1];
-              }
-            }
-          });
+        var propertyList = _.compact(infoArray[1].split(/\n/));
+        if (propertyList[0] != /^Requirements:/) {
+          // This means we have properties, so create pwx style properties from them
+          H.writeProperties(item, propertyList);
         }
       }
 
       // Calculate DPS for Weapons
       if (item.attributes.baseItemType == "Weapon") {
-        item.properties.Weapon["Total DPS"] = 0;
-        if ((item.properties.Weapon["Physical Damage"]) && (item.properties.Weapon["Physical Damage"].avg)) {
-          item.properties.Weapon["Physical DPS"] = Math.round(item.properties.Weapon["Physical Damage"].avg * item.properties.Weapon["Attacks per Second"]);
-          item.properties.Weapon["Total DPS"] += item.properties.Weapon["Physical DPS"];
-        }
-        if ((item.properties.Weapon["Elemental Damage"]) && (item.properties.Weapon["Elemental Damage"].avg)) {
-          item.properties.Weapon["Elemental DPS"] = Math.round(item.properties.Weapon["Elemental Damage"].avg * item.properties.Weapon["Attacks per Second"]);
-          item.properties.Weapon["Total DPS"] += item.properties.Weapon["Elemental DPS"];
-        }
-
+        H.writeDPS(item);
       }
 
       // Calculate Sockets if it's a Weapon or Armour
       if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
-        // We have to iterate through infoArray to find the one with sockets
-        infoArray.forEach(function(thisInfo) {
-          if (thisInfo.match(/^Sockets/)) {
-            var thisSockets = thisInfo.split(": "); 
-            item.sockets = new Object;
-            item.sockets.allSocketsGGG = thisSockets[1].trim();
-            var linkArray = thisSockets[1].split(" ");
-            item.sockets.largestLinkGroup = 0;
-            item.sockets.socketCount = 0;
-            linkArray.forEach(function(thisLink) {
-              var thisLink = thisLink.replace(/\-/g, "");
-              item.sockets.socketCount += thisLink.length;
-              if (thisLink.length > item.sockets.largestLinkGroup) {
-                item.sockets.largestLinkGroup = thisLink.length;
-              }
-            });
-            return;
-          }
-        });
-        // Since we don't do much error checking, make sure 0 data is removed
-        if (item.sockets.largestLinkGroup < 1) {
-          delete item.sockets.largestLinkGroup;
-        }
-        if (item.sockets.socketCount < 1) {
-          delete item.sockets.socketCount;
-        }
-
+        H.writeSockets(item, infoArray);
       }
+
       // Now we must attempt to parse mods. This isn't so easy, because the mods can
       // show up in various sections. Thus we need to first eliminate non mod data.
       // No mod contains a ':' or '"' so those will be the primary filters
@@ -337,57 +261,9 @@ function parseItem(text, league) {
           modInfo.push(theseMods);
         }
       });
-      // If modInfo has two elements, then the first element is an implicit mod
-      // If it only has one element, we will assume those are explicit/etc. mods
+
       // For Normal items this logic will have to work differently
-      item.mods = new Object;
-      item.mods[item.attributes.itemType] = new Object;
-      item.modsTotal = new Object;
-      if (modInfo.length == 2) {
-        // implicit
-        item.mods[item.attributes.itemType].implicit = new Object;
-        modInfo[0].forEach(function(mod) {
-          var decodedMods = parseMod(mod);
-          item.mods[item.attributes.itemType].implicit[decodedMods[0]] = decodedMods[1];
-          // Add non-booleans to modsTotal
-          if (typeof decodedMods[1] == 'number') {
-            if (item.modsTotal[decodedMods[0]]) {
-              item.modsTotal[decodedMods[0]] += decodedMods[1];
-            } else {
-              item.modsTotal[decodedMods[0]] = decodedMods[1];
-            }
-          }
-        });
-        // explicit
-        item.mods[item.attributes.itemType].explicit = new Object;
-        modInfo[1].forEach(function(mod) {
-          var decodedMods = parseMod(mod);
-          item.mods[item.attributes.itemType].explicit[decodedMods[0]] = decodedMods[1];
-          // Add non-booleans to modsTotal
-          if (typeof decodedMods[1] == 'number') {
-            if (item.modsTotal[decodedMods[0]]) {
-              item.modsTotal[decodedMods[0]] += decodedMods[1];
-            } else {
-              item.modsTotal[decodedMods[0]] = decodedMods[1];
-            }
-          }
-        });
-      } else {
-        // explicit
-        item.mods[item.attributes.itemType].explicit = new Object;
-        modInfo[0].forEach(function(mod) {
-          var decodedMods = parseMod(mod);
-          item.mods[item.attributes.itemType].explicit[decodedMods[0]] = decodedMods[1];
-          // Add non-booleans to modsTotal
-          if (typeof decodedMods[1] == 'number') {
-            if (item.modsTotal[decodedMods[0]]) {
-              item.modsTotal[decodedMods[0]] += decodedMods[1];
-            } else {
-              item.modsTotal[decodedMods[0]] = decodedMods[1];
-            }
-          }
-        });
-      }
+      H.writeMods(item, modInfo);
 
 //      var thisInfo = _.compact(infoArray[3].split(/\n/));
 //      thisInfo.forEach(function (element) {
@@ -461,6 +337,8 @@ function parseMod(mod) {
     var modName = mod;
     var modValue = "unparsed";
   }
+
+  console.warn('EXTRACTED MOD:', modName, modValue)
 
   return[modName, modValue];
 }
