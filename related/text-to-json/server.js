@@ -215,10 +215,17 @@ function parseItem(text, league) {
     */
     console.warn('nameArray:', nameArray);
     console.warn('infoArray:', infoArray);
-    console.warn('this item is normal or magical, trying to identify it:', nameArray[2]);
 
-    // have a proper item type
-    const itemName = nameArray[1];
+    // Okay. How to extract the name from a magic item.
+    // I think a good approach may be to search itemNames for two words before 'of'
+    // and if that fails, the first word before 'of'. This is a constant speed solution but
+    // I don't know if it catches all cases. What have you done before, Steve?
+    const nameParts = nameArray[1].split(' ')
+    const ofIdx = nameParts.indexOf('of');
+    const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
+    const itemName = itemNames[itemNameParts.join(' ')] ? itemNameParts.join(' ') : itemNameParts[1];
+    console.warn('itemName:', itemName);
+    // Depending on if this type of name extraction is used again, abstract it.
     if (itemNames[itemName]) {
       item.attributes.itemType = itemNames[itemName];
       item.attributes.equipType = equipTypes[itemName];
@@ -231,10 +238,14 @@ function parseItem(text, league) {
         if (!propertyList[0].match(/^Requirements:/)) {
           writeProperties(item, propertyList);
         }
-        console.warn('added properties to item:', item);
       }
 
+    } else {
+      const error = new Error('could not determine normal/magic item name from clipboard information')
+      console.warn(error.message)
+      throw(error);
     }
+    console.warn('item:', item);
 
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
@@ -303,6 +314,8 @@ function parseItem(text, league) {
       throw(JSON.stringify(error));
     }
 
+    const util = require('util');
+    console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
     return(item);
   }
 
