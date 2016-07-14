@@ -295,34 +295,14 @@ function parseItem(text, league) {
       // be the Requirements and we'll just ignore them if so
       // ONLY ARMOUR AND WEAPONS HAVE PROPERTIES for RARE/UNIQUES!
       if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
-        item.properties = new Object;
-        var propertyList = _.compact(infoArray[1].split(/\n/));
-        if (propertyList[0] != /^Requirements:/) {
-          // This means we have properties, so create pwx style properties from them
-          writeProperties(item, propertyList);
-        }
-      }
-
-      // Calculate DPS for Weapons
-      if (item.attributes.baseItemType == "Weapon") {
-        writeDPS(item);
-      }
-
-      // Calculate Sockets if it's a Weapon or Armour
-      if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+        writeProperties(item, infoArray);
         writeSockets(item, infoArray);
+        if (item.attributes.baseItemType === 'Weapon') {
+          writeDPS(item);
+        }
       }
 
-      // Now we must attempt to parse mods. This isn't so easy, because the mods can
-      // show up in various sections. Thus we need to first eliminate non mod data.
-      // No mod contains a ':' or '"' so those will be the primary filters
-      var modInfo = new Array;
-      infoArray.forEach(function (element) {
-        if ((!element.match(/:/)) && (!element.match(/^\"/))) {
-          var theseMods = element.split("\n");
-          modInfo.push(theseMods);
-        }
-      });
+      const modInfo = getModInfo(infoArray);
 
       // For Normal items this logic will have to work differently
       writeMods(item, modInfo);
@@ -418,6 +398,7 @@ function parseProperties(prop) {
 ********/
 
 /*
+  Note: properties are white-text attributes of items such as attack speed and damage.
   Extract properties and values from @param propertyList and record them in @param item.
   @return extend @param item.properties with: {
     [baseItemType]: {
@@ -426,16 +407,22 @@ function parseProperties(prop) {
     }
   }
 */
-function writeProperties(item, propertyList) {
-  if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
+function writeProperties(item, infoArray) {
+  item.properties = {};
+  const propertyList = _.compact(infoArray[1].split(/\n/));
+  // This means we have properties, so create pwx style properties from them
+  if (propertyList[0] != /^Requirements:/) {
+    // check-safe incase this function is used elsewhere.
+    if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
 
-  item.properties[item.attributes.baseItemType] = {};
-  propertyList.forEach(function(prop) {
-    const [propKey, propVal] = parseProperty(prop);
-    if (!propKey) return;
+    item.properties[item.attributes.baseItemType] = {};
+    propertyList.forEach(function(prop) {
+      const [propKey, propVal] = parseProperty(prop);
+      if (!propKey) return;
 
-    item.properties[item.attributes.baseItemType][propKey] = propVal;
-  });
+      item.properties[item.attributes.baseItemType][propKey] = propVal;
+    });
+  }
 }
 
 // Accumulate weapon statistics into a useful format.
@@ -443,15 +430,15 @@ function writeProperties(item, propertyList) {
 function writeDPS(item) {
   if (!item.attributes.baseItemType === 'Weapon') return;
 
-  weaponProps = item.properties.Weapon;
-  weaponProps["Total DPS"] = 0;
-  if (weaponProps["Physical Damage"] && weaponProps["Physical Damage"].avg) {
-    weaponProps["Physical DPS"] = Math.round(weaponProps["Physical Damage"].avg * weaponProps["Attacks per Second"]);
-    weaponProps["Total DPS"] += weaponProps["Physical DPS"];
+  const weapon = item.properties.Weapon;
+  weapon["Total DPS"] = 0;
+  if (weapon["Physical Damage"] && weapon["Physical Damage"].avg) {
+    weapon["Physical DPS"] = Math.round(weapon["Physical Damage"].avg * weapon["Attacks per Second"]);
+    weapon["Total DPS"] += weapon["Physical DPS"];
   }
-  if ((weaponProps["Elemental Damage"]) && (weaponProps["Elemental Damage"].avg)) {
-    weaponProps["Elemental DPS"] = Math.round(weaponProps["Elemental Damage"].avg * weaponProps["Attacks per Second"]);
-    weaponProps["Total DPS"] += weaponProps["Elemental DPS"];
+  if ((weapon["Elemental Damage"]) && (weapon["Elemental Damage"].avg)) {
+    weapon["Elemental DPS"] = Math.round(weapon["Elemental Damage"].avg * weapon["Attacks per Second"]);
+    weapon["Total DPS"] += weapon["Elemental DPS"];
   }
 }
 
@@ -471,7 +458,7 @@ function writeSockets(item, infoArray) {
     };
     const linkArray = allSocketsGGG.split(" ");
     linkArray.forEach(function(_thisLink) {
-      thisLink = _thisLink.replace(/\-/g, "");
+      const thisLink = _thisLink.replace(/\-/g, "");
       item.sockets.socketCount += thisLink.length;
       if (thisLink.length > item.sockets.largestLinkGroup) {
         item.sockets.largestLinkGroup = thisLink.length;
@@ -563,6 +550,23 @@ function parseProperty(propDesc) {
   }
 }
 
+// Extract the mods from @param infoArray, the clipboard text
+// @return [ mod text ]
+function getModInfo(infoArray) {
+  // Now we must attempt to parse mods. This isn't so easy, because the mods can
+  // show up in various sections. Thus we need to first eliminate non mod data.
+  // No mod contains a ':' or '"' so those will be the primary filters
+
+  const modInfo = [];
+  infoArray.forEach(function(element) {
+    if ((!element.match(/:/)) && (!element.match(/^\"/))) {
+      const theseMods = element.split('\n');
+      modInfo.push(theseMods);
+    }
+  });
+  return modInfo;
+}
+
 // @param dmgDesc is string of the form: "XXX: 12 - 18 XXX"
 // @return { min, max, avg }
 function parseMinMaxAvg(dmgDesc) {
@@ -581,3 +585,4 @@ function decodeProp(prop) {
   const [key, val] = prop.split(': ');
   return [key, Number(val.replace(/[^0-9.]/g, ''))];
 }
+
