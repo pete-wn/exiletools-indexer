@@ -207,14 +207,14 @@ function parseItem(text, league) {
     });
 
     return(item);
-  } else if (item.attributes.rarity == 'Normal' || item.attributes.rarity === 'Magic') {
+  } else if (item.attributes.rarity == 'Normal') {
+    console.warn('parsing normal item! Will not return anything right now!');
+  } else if (item.attributes.rarity === 'Magic') {
     /*
       nameArray: [rarity, item name]
       infoArray: ['rarity,item name', 'item level', 'property']
       if chest: 
     */
-    console.warn('nameArray:', nameArray);
-    console.warn('infoArray:', infoArray);
 
     // Okay. How to extract the name from a magic item.
     // I think a good approach may be to search itemNames for two words before 'of'
@@ -224,7 +224,6 @@ function parseItem(text, league) {
     const ofIdx = nameParts.indexOf('of');
     const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
     const itemName = itemNames[itemNameParts.join(' ')] ? itemNameParts.join(' ') : itemNameParts[1];
-    console.warn('itemName:', itemName);
     // Depending on if this type of name extraction is used again, abstract it.
     if (itemNames[itemName]) {
       item.attributes.itemType = itemNames[itemName];
@@ -240,12 +239,37 @@ function parseItem(text, league) {
         }
       }
 
+      // Calculate DPS for Weapons
+      if (item.attributes.baseItemType === "Weapon") {
+        writeDPS(item);
+      }
+
+      // Calculate Sockets if it's a Weapon or Armour
+      if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+        writeSockets(item, infoArray);
+      }
+
+      // Now we must attempt to parse mods. This isn't so easy, because the mods can
+      // show up in various sections. Thus we need to first eliminate non mod data.
+      // No mod contains a ':' or '"' so those will be the primary filters
+      var modInfo = new Array;
+      infoArray.forEach(function (element) {
+        if ((!element.match(/:/)) && (!element.match(/^\"/))) {
+          var theseMods = element.split("\n");
+          modInfo.push(theseMods);
+        }
+      });
+
+      // For Normal items this logic will have to work differently
+      writeMods(item, modInfo);
+
     } else {
       const error = new Error('could not determine normal/magic item name from clipboard information')
       console.warn(error.message)
       throw(error);
     }
-    console.warn('item:', item);
+    const util = require('util');
+    console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
 
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
