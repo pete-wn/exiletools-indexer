@@ -1,1 +1,5 @@
 node_modules/
+npm-debug.log
+
+# A test file with sample poe item clipboard info.
+samples.js
