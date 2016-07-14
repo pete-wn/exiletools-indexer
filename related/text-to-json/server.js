@@ -207,9 +207,38 @@ function parseItem(text, league) {
     });
 
     return(item);
+  } else if (item.attributes.rarity == 'Normal' || item.attributes.rarity === 'Magic') {
+    /*
+      nameArray: [rarity, item name]
+      infoArray: ['rarity,item name', 'item level', 'property']
+      if chest: 
+    */
+    console.warn('nameArray:', nameArray);
+    console.warn('infoArray:', infoArray);
+    console.warn('this item is normal or magical, trying to identify it:', nameArray[2]);
+
+    // have a proper item type
+    const itemName = nameArray[1];
+    if (itemNames[itemName]) {
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+
+      if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
+        item.properties = {};
+        const propertyList = _.compact(infoArray[1].split(/\n/));
+        console.warn('property list:', propertyList);
+        if (!propertyList[0].match(/^Requirements:/)) {
+          writeProperties(item, propertyList);
+        }
+        console.warn('added properties to item:', item);
+      }
+
+    }
 
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
+    console.log('UNIQUE nameArray:', nameArray);
     console.log("this item is rare or unique, trying to identify it " + nameArray[2]);
 
     // If it has a note, remove that
