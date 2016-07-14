@@ -210,12 +210,6 @@ function parseItem(text, league) {
   } else if (item.attributes.rarity == 'Normal') {
     console.warn('parsing normal item! Will not return anything right now!');
   } else if (item.attributes.rarity === 'Magic') {
-    /*
-      nameArray: [rarity, item name]
-      infoArray: ['rarity,item name', 'item level', 'property']
-      if chest: 
-    */
-
     // Okay. How to extract the name from a magic item.
     // I think a good approach may be to search itemNames for two words before 'of'
     // and if that fails, the first word before 'of'. This is a constant speed solution but
@@ -231,36 +225,14 @@ function parseItem(text, league) {
       item.attributes.baseItemType = itemTypes[item.attributes.itemType];
 
       if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
-        item.properties = {};
-        const propertyList = _.compact(infoArray[1].split(/\n/));
-        console.warn('property list:', propertyList);
-        if (!propertyList[0].match(/^Requirements:/)) {
-          writeProperties(item, propertyList);
-        }
-      }
-
-      // Calculate DPS for Weapons
-      if (item.attributes.baseItemType === "Weapon") {
-        writeDPS(item);
-      }
-
-      // Calculate Sockets if it's a Weapon or Armour
-      if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+        writeProperties(item, infoArray);
         writeSockets(item, infoArray);
+        if (item.attributes.baseItemType === 'Weapon') {
+          writeDPS(item);
+        }
       }
 
-      // Now we must attempt to parse mods. This isn't so easy, because the mods can
-      // show up in various sections. Thus we need to first eliminate non mod data.
-      // No mod contains a ':' or '"' so those will be the primary filters
-      var modInfo = new Array;
-      infoArray.forEach(function (element) {
-        if ((!element.match(/:/)) && (!element.match(/^\"/))) {
-          var theseMods = element.split("\n");
-          modInfo.push(theseMods);
-        }
-      });
-
-      // For Normal items this logic will have to work differently
+      const modInfo = getModInfo(infoArray);
       writeMods(item, modInfo);
 
     } else {
@@ -270,6 +242,8 @@ function parseItem(text, league) {
     }
     const util = require('util');
     console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
+
+    return item;
 
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
