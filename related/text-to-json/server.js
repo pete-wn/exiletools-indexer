@@ -335,8 +335,6 @@ function parseMod(mod) {
     var modValue = "unparsed";
   }
 
-  console.warn('EXTRACTED MOD:', modName, modValue)
-
   return[modName, modValue];
 }
 
