@@ -346,7 +346,7 @@ function writeProperties(item, infoArray) {
   const propertyList = _.compact(infoArray[1].split(/\n/));
   // This means we have properties, so create pwx style properties from them
   if (propertyList[0] != /^Requirements:/) {
-    // check-safe incase this function is used elsewhere before checking.
+    // check-safe incase this function is used elsewhere.
     if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
 
     item.properties[item.attributes.baseItemType] = {};
@@ -364,15 +364,15 @@ function writeProperties(item, infoArray) {
 function writeDPS(item) {
   if (!item.attributes.baseItemType === 'Weapon') return;
 
-  weaponProps = item.properties.Weapon;
-  weaponProps["Total DPS"] = 0;
-  if (weaponProps["Physical Damage"] && weaponProps["Physical Damage"].avg) {
-    weaponProps["Physical DPS"] = Math.round(weaponProps["Physical Damage"].avg * weaponProps["Attacks per Second"]);
-    weaponProps["Total DPS"] += weaponProps["Physical DPS"];
+  const weapon = item.properties.Weapon;
+  weapon["Total DPS"] = 0;
+  if (weapon["Physical Damage"] && weapon["Physical Damage"].avg) {
+    weapon["Physical DPS"] = Math.round(weapon["Physical Damage"].avg * weapon["Attacks per Second"]);
+    weapon["Total DPS"] += weapon["Physical DPS"];
   }
-  if ((weaponProps["Elemental Damage"]) && (weaponProps["Elemental Damage"].avg)) {
-    weaponProps["Elemental DPS"] = Math.round(weaponProps["Elemental Damage"].avg * weaponProps["Attacks per Second"]);
-    weaponProps["Total DPS"] += weaponProps["Elemental DPS"];
+  if ((weapon["Elemental Damage"]) && (weapon["Elemental Damage"].avg)) {
+    weapon["Elemental DPS"] = Math.round(weapon["Elemental Damage"].avg * weapon["Attacks per Second"]);
+    weapon["Total DPS"] += weapon["Elemental DPS"];
   }
 }
 
@@ -392,7 +392,7 @@ function writeSockets(item, infoArray) {
     };
     const linkArray = allSocketsGGG.split(" ");
     linkArray.forEach(function(_thisLink) {
-      thisLink = _thisLink.replace(/\-/g, "");
+      const thisLink = _thisLink.replace(/\-/g, "");
       item.sockets.socketCount += thisLink.length;
       if (thisLink.length > item.sockets.largestLinkGroup) {
         item.sockets.largestLinkGroup = thisLink.length;
