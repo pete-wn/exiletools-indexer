@@ -347,6 +347,7 @@ function parseProperties(prop) {
   return[propName, propValue];
 }
 
+
 /********
   Additional code, mostly just abstracting your work but I rewrote it to
   understand what was going on.
@@ -354,7 +355,7 @@ function parseProperties(prop) {
 
 /*
   Extract properties and values from @param propertyList and record them in @param item.
-  @return extend @param item with: {
+  @return extend @param item.properties with: {
     [baseItemType]: {
       [propertyType]: [value],
       ...
@@ -362,7 +363,7 @@ function parseProperties(prop) {
   }
 */
 function writeProperties(item, propertyList) {
-    if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
+  if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
 
   item.properties[item.attributes.baseItemType] = {};
   propertyList.forEach(function(prop) {
@@ -374,7 +375,7 @@ function writeProperties(item, propertyList) {
 }
 
 // Accumulate weapon statistics into a useful format.
-// @return extend @param item with field { 'Total DPS' }
+// @return extend @param item.properties.Weapon with field { 'Total DPS' }
 function writeDPS(item) {
   if (!item.attributes.baseItemType === 'Weapon') return;
 
@@ -471,7 +472,7 @@ function writeMods(item, modInfo) {
 }
 
 // @param propDesc the string describing the property
-// @return { propKey, propVal } parsing of @param propDesc
+// @return [propKey, propVal] parsing of @param propDesc
 function parseProperty(propDesc) {
   // The parseProperties subroutine is only designed for : separated single number 
   // properties. Only weapons violate this, so we will just parse out those 
