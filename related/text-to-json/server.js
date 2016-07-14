@@ -3,8 +3,6 @@ var app = express();
 var bodyParser = require('body-parser');
 var _ = require('lodash');
 
-const H = require('./helpers');
-
 // Read in the itemType.json file - we're doing this synchronously on purpose
 var itemNames = require('./data/itemName-to-itemType.json');
 var itemNamesSizeCheck = _.size(itemNames);
@@ -237,18 +235,18 @@ function parseItem(text, league) {
         var propertyList = _.compact(infoArray[1].split(/\n/));
         if (propertyList[0] != /^Requirements:/) {
           // This means we have properties, so create pwx style properties from them
-          H.writeProperties(item, propertyList);
+          writeProperties(item, propertyList);
         }
       }
 
       // Calculate DPS for Weapons
       if (item.attributes.baseItemType == "Weapon") {
-        H.writeDPS(item);
+        writeDPS(item);
       }
 
       // Calculate Sockets if it's a Weapon or Armour
       if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
-        H.writeSockets(item, infoArray);
+        writeSockets(item, infoArray);
       }
 
       // Now we must attempt to parse mods. This isn't so easy, because the mods can
@@ -263,14 +261,13 @@ function parseItem(text, league) {
       });
 
       // For Normal items this logic will have to work differently
-      H.writeMods(item, modInfo);
+      writeMods(item, modInfo);
 
 //      var thisInfo = _.compact(infoArray[3].split(/\n/));
 //      thisInfo.forEach(function (element) {
 //        var decodedMods = parseMod(element);
 //        item.mods.Map.explicit[decodedMods[0]] = decodedMods[1];
 //      });
-
 
     } else {
       var error = { error : "Unable to identify the base item and type for " + nameArray[2] + "!"};
@@ -348,4 +345,174 @@ function parseProperties(prop) {
   propName = thisProperty[0];
   propValue = Number(thisProperty[1].replace(/[^0-9.]/g, ''));
   return[propName, propValue];
+}
+
+/********
+  Additional code, mostly just abstracting your work but I rewrote it to
+  understand what was going on.
+********/
+
+/*
+  Extract properties and values from @param propertyList and record them in @param item.
+  @return extend @param item with: {
+    [baseItemType]: {
+      [propertyType]: [value],
+      ...
+    }
+  }
+*/
+function writeProperties(item, propertyList) {
+    if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
+
+  item.properties[item.attributes.baseItemType] = {};
+  propertyList.forEach(function(prop) {
+    const [propKey, propVal] = parseProperty(prop);
+    if (!propKey) return;
+
+    item.properties[item.attributes.baseItemType][propKey] = propVal;
+  });
+}
+
+// Accumulate weapon statistics into a useful format.
+// @return extend @param item with field { 'Total DPS' }
+function writeDPS(item) {
+  if (!item.attributes.baseItemType === 'Weapon') return;
+
+  weaponProps = item.properties.Weapon;
+  weaponProps["Total DPS"] = 0;
+  if (weaponProps["Physical Damage"] && weaponProps["Physical Damage"].avg) {
+    weaponProps["Physical DPS"] = Math.round(weaponProps["Physical Damage"].avg * weaponProps["Attacks per Second"]);
+    weaponProps["Total DPS"] += weaponProps["Physical DPS"];
+  }
+  if ((weaponProps["Elemental Damage"]) && (weaponProps["Elemental Damage"].avg)) {
+    weaponProps["Elemental DPS"] = Math.round(weaponProps["Elemental Damage"].avg * weaponProps["Attacks per Second"]);
+    weaponProps["Total DPS"] += weaponProps["Elemental DPS"];
+  }
+}
+
+// Extract socket information from @param infoArray and write a useful summary to @param item. 
+function writeSockets(item, infoArray) {
+  if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return;
+
+  // We have to iterate through infoArray to find the one with sockets
+  infoArray.forEach(function(thisInfo) {
+    if (!thisInfo.match(/^Sockets/)) return;
+
+    const allSocketsGGG = thisInfo.split(': ')[1].trim();
+    item.sockets = {
+      allSocketsGGG,
+      largestLinkGroup: 0,
+      socketCount: 0
+    };
+    const linkArray = allSocketsGGG.split(" ");
+    linkArray.forEach(function(_thisLink) {
+      thisLink = _thisLink.replace(/\-/g, "");
+      item.sockets.socketCount += thisLink.length;
+      if (thisLink.length > item.sockets.largestLinkGroup) {
+        item.sockets.largestLinkGroup = thisLink.length;
+      }
+    });
+  });
+}
+
+/*
+  Extract modifier information from @param modInfo and write it to @param item.
+  @return extend @param item with fields:
+  {
+    'mods': {
+      [itemType]: {
+        [unique list of mods]
+      }
+    },
+    'modsTotal': {
+      [modType]: [mod sum],
+      ...
+    }
+  }
+*/
+function writeMods(item, modInfo) {
+  const itemType = item.attributes.itemType;
+  item.mods = {};
+  item.mods[itemType] = {};
+  item.modsTotal = {};
+
+  // If modInfo has two elements, then the first element is an implicit mod
+  if (modInfo.length === 2) {
+    item.mods[itemType].implicit = {};
+    modInfo[0].forEach(function(mod) {
+      const [modKey, modVal] = parseMod(mod);
+      item.mods[itemType].implicit[modKey] = modVal;
+      if (typeof modVal === 'number') {
+        if (item.modsTotal[modKey]) {
+          item.modsTotal[modKey] += modVal;
+        } else {
+          item.modsTotal[modKey] = modVal;
+        }
+      }
+    });
+  }
+
+  // explicits
+  if (item.attributes.rarity !== 'normal') {
+    item.mods[itemType].explicit = {};
+    const explicits = modInfo.length === 2 ? modInfo[1] : modInfo[0];
+    explicits.forEach(function(mod) {
+      const [modKey, modVal] = parseMod(mod);
+      item.mods[itemType].explicit[modKey] = modVal;
+      if (typeof modVal === 'number') {
+        if (item.modsTotal[modKey]) {
+          item.modsTotal[modKey] += modVal;
+        } else {
+          item.modsTotal[modKey] = modVal;
+        }
+      }
+    });
+  }
+}
+
+// @param propDesc the string describing the property
+// @return { propKey, propVal } parsing of @param propDesc
+function parseProperty(propDesc) {
+  // The parseProperties subroutine is only designed for : separated single number 
+  // properties. Only weapons violate this, so we will just parse out those 
+  // weapon properties here.
+  if (!propDesc.match(/:/)) return [];
+
+  if (propDesc.match(/Physical Damage: /)) {
+    return ["Physical Damage", parseMinMaxAvg(propDesc)];
+  } else if (propDesc.match(/Elemental Damage: /) || propDesc.match(/Chaos Damages:/)) {
+    const dmgSummary = { min: 0, max: 0, avg: 0 };
+
+    const damageList = propDesc.split(': ')[1];
+    const eleDamages = damageList.split(', ');
+    eleDamages.forEach(function(dmg) {
+      const {min, max, avg} = parseMinMaxAvg(dmg);
+      dmgSummary.min += min;
+      dmgSummary.max += max;
+      dmgSummary.avg += avg;
+    });
+    
+    return ["Elemental Damage", dmgSummary];
+  } else {
+    return decodeProp(propDesc);
+  }
+}
+
+// @param dmgDesc is string of the form: "XXX: 12 - 18 XXX"
+// @return { min, max, avg }
+function parseMinMaxAvg(dmgDesc) {
+  const dmg = dmgDesc.split('-');
+  const minDmg = Number(dmg[0].replace(/[^0-9.]/g, ''))
+  const maxDmg = Number(dmg[1].replace(/[^0-9.]/g, ''))
+  return {
+    min: minDmg,
+    max: maxDmg,
+    avg: Math.round((minDmg + maxDmg) / 2),
+  };
+}
+
+// @return [propertyKey, propertyValue]
+function decodeProp(prop) {
+  const [key, val] = prop.split(': ');
+  return [key, Number(val.replace(/[^0-9.]/g, ''))];
 }

@@ -1,13 +1,11 @@
 const Helpers = module.exports;
 
 Helpers.writeProperties = function(item, propertyList) {
-	if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return;
-
-	console.warn('property list:', propertyList);
+	if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
 
 	item.properties[item.attributes.baseItemType] = {};
 	propertyList.forEach(function(prop) {
-		const {propKey, propVal} = parseProperty(prop);
+		const [propKey, propVal] = parseProperty(prop);
 		if (!propKey) return;
 
 		item.properties[item.attributes.baseItemType][propKey] = propVal;
@@ -113,10 +111,7 @@ function parseProperty(propDesc) {
 	if (!propDesc.match(/:/)) return {};
 
 	if (propDesc.match(/Physical Damage: /)) {
-		return {
-			propKey: "Physical Damage",
-			propVal: parseMinMaxAvg(propDesc)
-		};
+		return ["Physical Damage", parseMinMaxAvg(propDesc)];
 	} else if (propDesc.match(/Elemental Damage: /) || propDesc.match(/Chaos Damages:/)) {
 		const dmgSummary = { min: 0, max: 0, avg: 0 };
 
@@ -128,10 +123,8 @@ function parseProperty(propDesc) {
 			dmgSummary.max += max;
 			dmgSummary.avg += avg;
 		});
-		return {
-			propKey: "Elemental Damage",
-			propVal: dmgSummary
-		};
+		
+		return ["Elemental Damage", dmgSummary];
 	} else {
 		return decodeProp(propDesc);
 	}
@@ -205,10 +198,8 @@ function parseMinMaxAvg(damageDesc) {
 	}
 }
 
+// @return [propertyKey, propertyValue]
 function decodeProp(prop) {
 	const [key, val] = prop.split(': ');
-	return {
-		propKey: key,
-		propVal: Number(val.replace(/[^0-9.]/g, '')),
-	};
+	return [key, Number(val.replace(/[^0-9.]/g, ''))]
 }
