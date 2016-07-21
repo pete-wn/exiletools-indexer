@@ -1,0 +1,11 @@
+{
+  "0" : "Normal",
+  "1" : "Magic",
+  "2" : "Rare",
+  "3" : "Unique",
+  "4" : "Gem",
+  "5" : "Currency",
+  "6" : "Divination Card",
+  "7" : "Quest Reward",
+  "8" : "Prophecy"
+}
