@@ -208,6 +208,8 @@ function parseItem(text, league) {
 
     return(item);
 
+  // NOTE: Flasks
+
   // NORMAL rarity detection
   } else if (item.attributes.rarity == 'Normal') {
     console.warn('parsing normal item');

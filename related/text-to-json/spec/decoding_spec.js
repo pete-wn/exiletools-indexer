@@ -445,6 +445,144 @@ Corrupted`
   })
 .toss();
 
+frisby.create("[IDENTIFY] Rustic Sash")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text': `Rarity: Normal
+Rustic Sash
+--------
+Item Level: 3
+--------
+19% increased Physical Damage`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : 'Rustic Sash' },
+    attributes : {
+      league: 'Prophecy',
+      rarity: 'Normal',
+      itemType: 'Belt',
+      equipType: 'Belt',
+      baseItemType : 'Jewelry'
+    },
+    mods: {
+      Belt: {
+        implicit: {
+          '#% increased Physical Damage': 19
+        }
+      }
+    },
+    modsTotal: {
+      '#% increased Physical Damage': 19
+    }
+  })
+  .toss();
+
+frisby.create("[IDENTIFY] Light Brigandine")
+  .post(baseurl, {
+    'league':'Prophecy',
+    'text': `Rarity: Normal
+Light Brigandine
+--------
+Armour: 35
+Evasion Rating: 35
+--------
+Requirements:
+Level: 8
+Str: 16
+Dex: 16
+--------
+Sockets: B-R G 
+--------
+Item Level: 15`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : 'Light Brigandine' },
+    attributes : {
+      league: 'Prophecy',
+      rarity: 'Normal',
+      itemType: 'Body',
+      equipType: 'Body',
+      baseItemType : 'Armour'
+    },
+    properties: {
+      Armour: {
+        Armour: 35,
+        'Evasion Rating': 35
+      }
+    },
+    sockets: {
+      allSocketsGGG: 'B-R G',
+      largestLinkGroup: 2,
+      socketCount: 3
+    }
+  })
+  .toss();
+
+frisby.create("[IDENTIFY] Instilled Legion Boots of the Starfish")
+ .post(baseurl, {
+   'league':'Prophecy',
+   'text':
+`Rarity: Magic
+Instilled Legion Boots of the Starfish
+--------
+Armour: 147 (augmented)
+Energy Shield: 43 (augmented)
+--------
+Requirements:
+Level: 58
+Str: 54
+Int: 54
+--------
+Sockets: G-R B 
+--------
+Item Level: 59
+--------
+5% increased Movement Speed
+--------
+61% increased Armour and Energy Shield
+15% increased Movement Speed`
+    })
+    .expectStatus(200)
+    .expectJSON({
+      info : { fullName : 'Instilled Legion Boots of the Starfish' },
+      attributes : {
+       league: 'Prophecy',
+       rarity: 'Magic',
+       baseItemType: 'Armour',
+       equipType: 'Boots',
+       itemType: 'Boots',
+      },
+      properties: {
+        Armour: {
+          Armour: 147,
+          'Energy Shield': 43
+        }
+      },
+      sockets: {
+        allSocketsGGG: 'G-R B',
+        largestLinkGroup: 2,
+        socketCount: 3
+      },
+      mods: {
+        Boots: {
+          implicit: {
+            '#% increased Movement Speed': 5
+          },
+          explicit: {
+            '#% increased Armour and Energy Shield': 61,
+            '#% increased Movement Speed': 15
+          }
+        }
+      },
+      modsTotal: {
+        '#% increased Armour and Energy Shield': 61,
+        '#% increased Movement Speed': 20
+      },
+    })
+    .toss();
+
 frisby.create("[IDENTIFY] Ungil's Gauche Boot Knife")
   .post(baseurl, {
     'league':'Prophecy',
@@ -541,69 +679,6 @@ and deadly in Ungil's nimble hands.`
     }
   })
 .toss();
-
-frisby.create("[IDENTIFY] Instilled Legion Boots of the Starfish")
- .post(baseurl, {
-   'league':'Prophecy',
-   'text':
-`Rarity: Magic
-Instilled Legion Boots of the Starfish
---------
-Armour: 147 (augmented)
-Energy Shield: 43 (augmented)
---------
-Requirements:
-Level: 58
-Str: 54
-Int: 54
---------
-Sockets: G-R B 
---------
-Item Level: 59
---------
-5% increased Movement Speed
---------
-61% increased Armour and Energy Shield
-15% increased Movement Speed`
-    })
-    .expectStatus(200)
-    .expectJSON({
-      info : { fullName : 'Instilled Legion Boots of the Starfish' },
-      attributes : {
-       league: 'Prophecy',
-       rarity: 'Magic',
-       baseItemType: 'Armour',
-       equipType: 'Boots',
-       itemType: 'Boots',
-      },
-      properties: {
-        Armour: {
-          Armour: 147,
-          'Energy Shield': 43
-        }
-      },
-      sockets: {
-        allSocketsGGG: 'G-R B',
-        largestLinkGroup: 2,
-        socketCount: 3
-      },
-      mods: {
-        Boots: {
-          implicit: {
-            '#% increased Movement Speed': 5
-          },
-          explicit: {
-            '#% increased Armour and Energy Shield': 61,
-            '#% increased Movement Speed': 15
-          }
-        }
-      },
-      modsTotal: {
-        '#% increased Armour and Energy Shield': 61,
-        '#% increased Movement Speed': 20
-      },
-    })
-    .toss();
 
 //frisby.create("[IDENTIFY] ")
 //  .post(baseurl, {
