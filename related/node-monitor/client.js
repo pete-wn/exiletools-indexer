@@ -12,14 +12,14 @@ var pwxid = uuid.v4();
 // For remote / live testing, use the "real time stash" URL at rtstashapi.exiletools.com
 // The localhost option is for internal testing/debugging
 //var socket = ioc.connect('http://rtstashapi.exiletools.com', {query: 'pwxid=' + pwxid});
-//var socket = ioc.connect('http://localhost:6001', {query: 'pwxid=' + pwxid});
-var socket = ioc.connect('http://localhost:5000', {query: 'pwxid=' + pwxid});
+var socket = ioc.connect('http://localhost:6001', {query: 'pwxid=' + pwxid});
+//var socket = ioc.connect('http://localhost:5000', {query: 'pwxid=' + pwxid});
 
 // Specify the filters here in a text format, we'll convert them to JSON. You can do this
 // however you'd like in your own app obviously.
 //var filterText = '[ { "eq": { "attributes.league": "Standard", "attributes.baseItemType": "Jewelry", "attributes.rarity": "Rare", "shop.hasPrice": true }, "gt": { "modsPseudo.+# Total to maximum Life": 30 }, "lt": { "shop.chaosEquiv": 10 } }, { "eq": { "attributes.league": "Standard", "attributes.baseItemType": "Armour", "attributes.rarity": "Rare", "shop.hasPrice": true }, "gt": { "modsPseudo.+# Total to maximum Life": 30 }, "lt": { "shop.chaosEquiv": 10 } } ]';
 
-var filterText = ' [ { "eq" : { "attributes.league" : "Standard" } } ]'
+var filterText = ' [ { "eq" : { "attributes.fullName" : "Stacked Deck", "attributes.league" : "Prophecy" } } ]'
 //var filterText = ' [ { "eq" : { "attributes.league" : "Perandus", "attributes.rarity" : "Normal", "shop.hasPrice" : true } }, { "eq" : { "attributes.league" : "Perandus", "shop.hasPrice" : true, "sockets.socketCount" : 6 }, "lt" : { "shop.chaosEquiv" : 1 } } ]'
 
 // Convert the filter text to JSON

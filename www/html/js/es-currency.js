@@ -1,20 +1,20 @@
 // We define an EsConnector module that depends on the elasticsearch module.     
 var EsConnector = angular.module('EsConnector', ['elasticsearch','ui.bootstrap','ui.grid','ui.grid.autoResize','angularPromiseButtons','angular-cache','ngRoute','ui.select','ngStorage','highcharts-ng']).config( ['$routeProvider', function($routeProvider) {
 $routeProvider
-  .when('/:league/:unique/:options/:links', {
-    templateUrl: 'uniqueReport.html',
-    controller: 'uniqueReport',
+  .when('/:league/:currency/:options/:links', {
+    templateUrl: 'currencyReport.html',
+    controller: 'currencyReport',
   })
-  .when('/:league/:unique/:options', {
-    templateUrl: 'uniqueReport.html',
-    controller: 'uniqueReport',
+  .when('/:league/:currency/:options', {
+    templateUrl: 'currencyReport.html',
+    controller: 'currencyReport',
   })
-  .when('/:league/:unique', {
-    redirectTo: '/:league/:unique/PastWeek'
+  .when('/:league/:currency', {
+    redirectTo: '/:league/:currency/PastWeek'
   })
   .when('/:league', {
-    templateUrl: 'uniqueChooser.html',
-    controller: 'uniqueChooser',
+    templateUrl: 'currencyChooser.html',
+    controller: 'currencyChooser',
     league: 'league'
   })
   .otherwise({
@@ -28,7 +28,7 @@ $routeProvider
 // NOTE: Please do not use this API key if you re-host this page or fork this. Sign up for your own.
 // This key may be expired at any time and I need a way to notify people of changes in the API
 EsConnector.service('es', function (esFactory) {
-  return esFactory({ host: 'http://apikey:3fcfca58ada145a27b5de1f824111cd5@dev.exiletools.com' });
+  return esFactory({ host: 'http://apikey:3fcfca58ada145a27b5de1f824111cd5@api.exiletools.com' });
 });
 
 // We define an Angular controller that returns the server health
@@ -59,15 +59,15 @@ var initChooser = function($scope, es, $location, $localStorage, $sessionStorage
     $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i>Loading league list...</div>');
 
     var searchStart = new Date();
-    // Get a list of leagues with uniques in them
+    // Get a list of leagues with currencys in them
     es.search({
       index: 'index',
       body: {
         "aggs" : {
           "leagues" : {
-          "filter": { "term": { "attributes.rarity": "Unique" } },
+          "filter": { "term": { "attributes.rarity": "Currency" } },
             "aggs": {
-              "uniquesInLeagues": {
+              "currencysInLeagues": {
                 "terms": {
                   "field": "attributes.league",
                   "size": 10,
@@ -87,20 +87,20 @@ var initChooser = function($scope, es, $location, $localStorage, $sessionStorage
       var LeaguesFound = 0; 
 
       // Loop through all the ItemsInLeagues buckets
-      response.aggregations.leagues.uniquesInLeagues.buckets.forEach(function (item, index, array) {
+      response.aggregations.leagues.currencysInLeagues.buckets.forEach(function (item, index, array) {
         // Add the total count information and league name
         LeagueStats[item.key] = item.doc_count;
         LeaguesFound++;
       });
 
       var searchEnd = new Date();
-      console.log("initChooser: League Chooser Search executed in " + (searchEnd - searchStart) + "ms, found " + LeaguesFound + " leagues with uniques");
+      console.log("initChooser: League Chooser Search executed in " + (searchEnd - searchStart) + "ms, found " + LeaguesFound + " leagues with currencys");
 
       // Throw an error if no leagues are in the list
       if (LeaguesFound < 1) {
       // Push an error into the loader div
-        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the league list!<br/><br/><br/>ERROR: No leagues found with unique items!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
-        console.log('initChooser: ERROR: No leagues found with unique items! Something wrong with index?');
+        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the league list!<br/><br/><br/>ERROR: No leagues found with currency items!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+        console.log('initChooser: ERROR: No leagues found with currency items! Something wrong with index?');
         return false;
       }
 
@@ -126,28 +126,28 @@ var initChooser = function($scope, es, $location, $localStorage, $sessionStorage
   console.log('initChooser: leagueChooser initialized');
 }
 
-// init function for the unique list so it can be loaded in multiple controllers
-var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
-  // Check to see if we have list of unique items for this league in local storage
-  if ($localStorage[$scope.league] && $localStorage[$scope.league].Uniques && (new Date() - $localStorage[$scope.league].AgeUniques) < 600000) {
-    console.log("initUniqueList: Uniques for " + $scope.league + " are in Local Storage as of " + $localStorage[$scope.league].AgeUniques + ", using cached data");
+// init function for the currency list so it can be loaded in multiple controllers
+var initCurrencyList = function($scope, es, $localStorage, $sessionStorage) {
+  // Check to see if we have list of currency items for this league in local storage
+  if ($localStorage[$scope.league] && $localStorage[$scope.league].Currencys && (new Date() - $localStorage[$scope.league].AgeCurrencys) < 600000) {
+    console.log("initCurrencyList: Currencys for " + $scope.league + " are in Local Storage as of " + $localStorage[$scope.league].AgeCurrencys + ", using cached data");
 
     // Sort it
-    UniquesSorted = $localStorage[$scope.league].Uniques.slice().sort();
+    CurrencysSorted = $localStorage[$scope.league].Currencys.slice().sort();
 
     // Give it to scope
-    $scope.Uniques = UniquesSorted;
+    $scope.Currencys = CurrencysSorted;
 
-    // If a unique item is selected, calculate the rank
-    // Note we do this here so that if a user goes directly to a page without hitting the unique list
+    // If a currency item is selected, calculate the rank
+    // Note we do this here so that if a user goes directly to a page without hitting the currency list
     // first, they will load this in the background and it will display on ng-if
     // This way we don't have to worry about promises/etc. due to asynch requests
-    if ($scope.unique) {
+    if ($scope.currency) {
       var count = 0;
       // Get the item rank
-      $localStorage[$scope.league].Uniques.forEach(function (item, index, array) {
+      $localStorage[$scope.league].Currencys.forEach(function (item, index, array) {
         count++;
-        if ($scope.unique == item) {
+        if ($scope.currency == item) {
           $scope.commonRank = count;
         }
       });
@@ -157,13 +157,13 @@ var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
       $scope.totalCount = count;
     }
   } else {
-    console.log("initUniqueList: Generating list of items in " + $scope.league);
+    console.log("initCurrencyList: Generating list of items in " + $scope.league);
     var searchStart = new Date();
 
     // Start loading icon
-    $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Populating unique item list for ' + $scope.league + '...</div>');
+    $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Populating currency item list for ' + $scope.league + '...</div>');
   
-    // Get a list of uniques available in this league
+    // Get a list of currencys available in this league
     es.search({
       index: 'index',
       body: {
@@ -172,14 +172,14 @@ var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
           "filter": {
             "bool": {
               "must" : [
-                { "term" : { "attributes.rarity" : "Unique" } },
+                { "term" : { "attributes.rarity" : "Currency" } },
                 { "term" : { "attributes.identified" : true } },
                 { "term" : { "attributes.league" : $scope.league } }
               ]
             }
           },
             "aggs": {
-              "uniqueNames": {
+              "currencyNames": {
                 "terms": {
                   "field": "info.fullName",
                   "size": 1000
@@ -191,52 +191,52 @@ var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
         size:0
       }
     }).then(function (response) {
-      // Define the Uniques array
-      var Uniques = new Array();
+      // Define the Currencys array
+      var Currencys = new Array();
 
-      // Define a counter for uniques - since we're already looping through the array, this is fastest I think
-      var UniquesCount = 0;
+      // Define a counter for currencys - since we're already looping through the array, this is fastest I think
+      var CurrencysCount = 0;
   
-      // Loop through all the unique names buckets
-      response.aggregations.leagues.uniqueNames.buckets.forEach(function (item, index, array) {
-      //      Uniques.push(item.key + " (" + item.doc_count + ")");
-        Uniques.push(item.key);
-        UniquesCount++;
+      // Loop through all the currency names buckets
+      response.aggregations.leagues.currencyNames.buckets.forEach(function (item, index, array) {
+      //      Currencys.push(item.key + " (" + item.doc_count + ")");
+        Currencys.push(item.key);
+        CurrencysCount++;
       });
 
       var searchEnd = new Date();
-      console.log("initUniqueList: Unique Item List Search executed in " + (searchEnd - searchStart) + "ms (found " + UniquesCount + " different uniques)");
+      console.log("initCurrencyList: Currency Item List Search executed in " + (searchEnd - searchStart) + "ms (found " + CurrencysCount + " different currencys)");
 
-      // Check to make sure there are some uniques in this list
-      if (UniquesCount < 1) {
+      // Check to make sure there are some currencys in this list
+      if (CurrencysCount < 1) {
         // Push an error into the loader div
-        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the list of unique items!<br/><br/><br/>ERROR: No unique items found in ' + $scope.league + '!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
-        console.log("initUniqueList: ERROR: Didn't find any uniques in " + $scope.league + "!");
+        $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the list of currency items!<br/><br/><br/>ERROR: No currency items found in ' + $scope.league + '!<br/><br/>Something may be wrong with the ES index, please try again later or contact pete@pwx.me if the error continues.</div>');
+        console.log("initCurrencyList: ERROR: Didn't find any currencys in " + $scope.league + "!");
         return false;
       }
 
       // Give it to localStorage
       $localStorage[$scope.league] = new Object();
-      $localStorage[$scope.league].Uniques = Uniques;
-      $localStorage[$scope.league].UniquesUnsort = Uniques;
-      $localStorage[$scope.league].AgeUniques = new Date().valueOf();
+      $localStorage[$scope.league].Currencys = Currencys;
+      $localStorage[$scope.league].CurrencysUnsort = Currencys;
+      $localStorage[$scope.league].AgeCurrencys = new Date().valueOf();
   
       // Sort it
-      UniquesSorted = Uniques.slice().sort();
+      CurrencysSorted = Currencys.slice().sort();
 
       // Give it to scope
-      $scope.Uniques = UniquesSorted;
+      $scope.Currencys = CurrencysSorted;
 
-      // If a unique item is selected, calculate the rank
-      // Note we do this here so that if a user goes directly to a page without hitting the unique list
+      // If a currency item is selected, calculate the rank
+      // Note we do this here so that if a user goes directly to a page without hitting the currency list
       // first, they will load this in the background and it will display on ng-if
       // This way we don't have to worry about promises/etc. due to asynch requests
-      if ($scope.unique) {
+      if ($scope.currency) {
         var count = 0;
         // Get the item rank
-        $localStorage[$scope.league].Uniques.forEach(function (item, index, array) {
+        $localStorage[$scope.league].Currencys.forEach(function (item, index, array) {
           count++;
-          if ($scope.unique == item) {
+          if ($scope.currency == item) {
             $scope.commonRank = count;
           }
         });
@@ -252,19 +252,19 @@ var initUniqueList = function($scope, es, $localStorage, $sessionStorage) {
 
     }, function (err) {
       // Push an error into the loader div
-      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the Unique list!<br/><br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
+      $("#loader").html('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> Something went wrong loading the Currency list!<br/><br/><br/>Please try reloading this page. If the error continues, please access the developer console to see the underlying error and contact pete@pwx.me for help.</div>');
       console.trace(err.message);
     });
   }
 
 
-  console.log('initUniqueList: uniqueChooser initialized');
+  console.log('initCurrencyList: currencyChooser initialized');
 }
 
 // Function to perform the ready report - this is outside the controller because it is called on different templates
 var readyReportFunction = function($scope, $routeParams, es, $localStorage, $sessionStorage, $searchFilters) {
   // Start loading icon
-  $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Creating report for ' + $scope.unique + " in " + $scope.league + '...</div>');
+  $("#loader").html('<div style="min-width:200px;max-width:500px" class="alert alert-warning" role="alert"><i class="fa fa-gear fa-spin" style="font-size:500%"></i> Creating report for ' + $scope.currency + " in " + $scope.league + '...</div>');
 
   // Set the currency icon object
   $scope.CurrencyIcons = new Object();
@@ -317,7 +317,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
               "must" : [
                 $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
-                { "term" : { "info.fullName" : $scope.unique } }
+                { "term" : { "info.fullName" : $scope.currency } }
               ]
             }
           }
@@ -371,7 +371,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
             "field": "shop.currency"
           }
         },
-        "uniqueSellers" : {
+        "currencySellers" : {
           "cardinality": {
             "field": "shop.sellerAccount"
           }
@@ -386,7 +386,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
       $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for general item statistics query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found!');
+      console.log('ERROR: No matching currency items found!');
       $scope.errors.push("Query 1 (General Item Statistics): No results returned!");
       searchPromise['1'] = 'failed';
       resolve(searchPromise);
@@ -407,7 +407,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     $scope.baseItemType = response.aggregations.baseItemType.buckets[0].key;
     $scope.itemType = response.aggregations.itemType.buckets[0].key;
     $scope.equipType = response.aggregations.equipType.buckets[0].key;
-    $scope.uniqueSellers = response.aggregations.uniqueSellers.value;
+    $scope.currencySellers = response.aggregations.currencySellers.value;
 
     if ($scope.equipType == "Body" || $scope.equipType == "Two Handed Melee Weapon" || $scope.equipType == "Bow") {
       $scope.hasUpTo6Sockets = true;
@@ -478,7 +478,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
               "must" : [
                 $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
-                { "term" : { "info.fullName" : $scope.unique } },
+                { "term" : { "info.fullName" : $scope.currency } },
                 { "range" : { "shop.chaosEquiv" : { "gt" : 0 } } }
               ]
             }
@@ -492,7 +492,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
             "size": 10
           }
         },    
-        "uniqueSellers" : {
+        "currencySellers" : {
           "cardinality": {
             "field": "shop.sellerAccount"
           }
@@ -526,7 +526,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
       $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for pricing statistics query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found!');
+      console.log('ERROR: No matching currency items found!');
       $scope.errors.push("Query 2 (Pricing Statistics): No results returned!");
       searchPromise['2'] = 'failed';
       resolve(searchPromise);
@@ -537,7 +537,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     $("#loader").append('<div style="min-width:200px;max-width:500px" class="alert alert-success" role="alert">Gathered pricing statistics in ' + (searchEnd - searchStart) + 'ms</div>');
 
     // Set various scope variables
-    $scope.uniqueSellersWithPrice = response.aggregations.uniqueSellers.value;
+    $scope.currencySellersWithPrice = response.aggregations.currencySellers.value;
 
     // Iterate through verified to separate out YES, NO, GONE, OLD
     $scope.verifiedPrice = new Object();
@@ -578,7 +578,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
               "must" : [
                 $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
-                { "term" : { "info.fullName" : $scope.unique } },
+                { "term" : { "info.fullName" : $scope.currency } },
                 { "term" : { "shop.verified" : "GONE" } },
                 { "range" : { "shop.chaosEquiv" : { "gt" : 0 } } }
               ]
@@ -647,7 +647,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
       $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for GONE statistics query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found!');
+      console.log('ERROR: No matching currency items found!');
       $scope.errors.push("Query 3 (GONE Statistics): No results returned!");
       searchPromise['3'] = 'failed';
       resolve(searchPromise);
@@ -738,7 +738,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
               "must" : [
                 $searchFilters,
                 { "term" : { "attributes.league" : $scope.league } },
-                { "term" : { "info.fullName" : $scope.unique } },
+                { "term" : { "info.fullName" : $scope.currency } },
                 { "term" : { "shop.verified" : "GONE" } }
               ]
             }
@@ -762,7 +762,7 @@ var readyReportFunction = function($scope, $routeParams, es, $localStorage, $ses
     // Throw an error if there weren't any hits
     if (response.hits.total < 1) {
       $("#loader").append('<div style="min-width:200px;max-width:1000px" class="alert alert-danger" role="alert"><i class="fa fa-warning" style="font-size:500%"></i> ERROR: No matching data returned for GONE histogram query!<br><br>This most likely means no matching items exist in the index because the item you have searched for is too rare to return results on this query. Try broadening your search by selecting Past Week or All League, Any Links, etc.<br><br>If you receive this error on different items repeatedly, it may indicate a problem with the ES API Service - please try again later or contact pete@pwx.me if the error continues.</div>');
-      console.log('ERROR: No matching unique items found!');
+      console.log('ERROR: No matching currency items found!');
       $scope.errors.push("Query 4 (GONE Histogram): No results returned!");
       searchPromise['4'] = 'failed';
       resolve(searchPromise);
@@ -1259,27 +1259,27 @@ EsConnector.controller('leagueChooser', function($scope, $routeParams, es, $loca
 
 });
 
-EsConnector.controller('uniqueChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage) {
+EsConnector.controller('currencyChooser', function($scope, $routeParams, es, $location, $localStorage, $sessionStorage) {
   // Pull the league from the URL
   $scope.league = $routeParams.league;
 
-  // Load the uniques list for the league
-  initUniqueList($scope, es, $localStorage, $sessionStorage);
+  // Load the currencys list for the league
+  initCurrencyList($scope, es, $localStorage, $sessionStorage);
 
-  // When a unique is selected from the dropdown, redirect to a URL for that item and run the report
-  $scope.selectUnique = function (unique) {
-    $location.path($scope.league + "/" + unique);
-    console.log(unique + " selected");
+  // When a currency is selected from the dropdown, redirect to a URL for that item and run the report
+  $scope.selectCurrency = function (currency) {
+    $location.path($scope.league + "/" + currency);
+    console.log(currency + " selected");
     return;
   }
 
   return true;
 });
 
-EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $localStorage, $sessionStorage) {
-  // Pull the League, Unique Item, and Report Options from the URL
+EsConnector.controller('currencyReport', function($scope, $routeParams, es, $localStorage, $sessionStorage) {
+  // Pull the League, Currency Item, and Report Options from the URL
   $scope.league = $routeParams.league;
-  $scope.unique = $routeParams.unique;
+  $scope.currency = $routeParams.currency;
   $scope.options = $routeParams.options;
   $scope.links = $routeParams.links;
   // Default readyReport to false
@@ -1288,14 +1288,14 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   // Create a scope array for errors, if any
   $scope.errors = new Array;
 
-  console.log("Unique report for " + $scope.unique + " in " + $scope.league + " with option " + $scope.options);
+  console.log("Currency report for " + $scope.currency + " in " + $scope.league + " with option " + $scope.options);
   if ($scope.links) {
     console.log("  Specifically showing only " + $scope.links + " items"); 
     $scope.addToTabURL = "/" + $scope.links;
   }
 
-  // Make sure the unique list is loaded
-  initUniqueList($scope, es, $localStorage, $sessionStorage);
+  // Make sure the currency list is loaded
+  initCurrencyList($scope, es, $localStorage, $sessionStorage);
 
   // Build a list of possible report types and define in an object
   // This allows these to be added easily as needed
@@ -1315,17 +1315,17 @@ EsConnector.controller('uniqueReport', function($scope, $routeParams, es, $local
   $scope.tabs.PastWeek.class = "";
 
   // Configure the search filters for the tabs
-  // Note, they all need the attributes.rarity set to Unique to ensure the comma in the search
+  // Note, they all need the attributes.rarity set to Currency to ensure the comma in the search
   // doesn't mess up elasticsearch
   $scope.tabs.AllLeague.SearchFilters = [
-    { "term" : { "attributes.rarity" : "Unique" } }
+    { "term" : { "attributes.rarity" : "Currency" } }
   ];
   $scope.tabs.PastWeek.SearchFilters = [
-    { "term" : { "attributes.rarity" : "Unique" } }, 
+    { "term" : { "attributes.rarity" : "Currency" } }, 
     { "range" : { "shop.modified" : { gte : "now-1w" } } }
   ];
   $scope.tabs.Past3Days.SearchFilters = [
-    { "term" : { "attributes.rarity" : "Unique" } }, 
+    { "term" : { "attributes.rarity" : "Currency" } }, 
     { "range" : { "shop.modified" : { gte : "now-3d" } } }
   ];
 

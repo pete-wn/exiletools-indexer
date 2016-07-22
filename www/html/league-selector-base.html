@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en" ng-app="EsConnector">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>[title changeme]</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link href="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.css" rel="stylesheet">
+  <link href="css/ui-layout.css" rel="stylesheet">
+  <link href="css/select.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'  type='text/css'>
+
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular-route.min.js"></script>
+  <script src="js/thirdparty/elasticsearch.angular.min.js"></script>
+  <script src="js/thirdparty/ui-bootstrap-tpls-0.14.3.min.js"></script>
+  <script src="js/thirdparty/angular-promise-buttons.min.js"></script>
+  <script src="js/thirdparty/angular-cache.min.js"></script>
+  <script src="js/thirdparty/select.min.js"></script>
+  <script src="js/thirdparty/highcharts-ng.min.js"></script>
+  <script src="https://cdn.rawgit.com/angular-ui/bower-ui-grid/master/ui-grid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.6/ngStorage.min.js"></script>
+  <script src="http://code.highcharts.com/stock/highstock.src.js"></script>
+  <script src="http://code.highcharts.com/stock/highcharts-more.src.js"></script>
+  <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+  <script src="js/es-base.js"></script>
+
+<style>
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+@font-face {
+    font-family: "fontin";
+    src: url("css/fontin-regular-webfont.woff") format('woff');
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- Note: Indenting for the body starts at base for simplicity -->
+<!-- Simple header -->
+<div style="width:100%;min-width:550px;padding:10px;padding-left:25px;background-color:#F6E3CE">
+  <noscript>Uh, it appears your browser doesn't support JavaScript! This page requires JavaScript and a host of other modern web plugins to work, sorry. :(</noscript>
+
+  <div class="row">
+    <div class="col-md-4">
+      <font style="font-size:150%;font-weight:bold">
+        [title changeme]
+      </font>
+    </div>
+    <div class="col-md-7">
+      <font style="font-size:150%">
+        dynamically generated using the <a href="http://api.exiletools.com/info/indexer">free public ExileTools Index</a>
+      </font>
+    </div>
+    <div class="col-md-1">
+      <font style="font-size:80%;color:red;font-weight:bold">DEVELOPMENT VERSION</font>
+    </div>
+  </div>
+
+</div>
+
+<!-- Main Body DIV -->
+<div id="main" style="width:100%;padding-left:25px;padding-right:25px;min-width:550px">
+
+  <!-- table seems to work better for this than anything else -->
+  <div ng-controller="leagueChooser" class="clearfix">
+    <div ng-if="LeagueStats" style="float:left;width:80%">
+      <h4>Choose a League:</h4>
+      <table cellspacing=0 cellpadding=0 border=0>
+        <tr>
+          <td ng-repeat="(key, val) in LeagueStats">
+            <button class="btn" ng-click="selectLeague(key)" promise-btn style="margin:3px">{{key}}</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div style="text-align:right;padding-top:5px">
+      <!-- This is hard coded right now, should probably change it sometime -->
+      <p style="font-size:.8em">
+      </p>
+      <p style="font-size:.7em">
+        <a href="https://github.com/trackpete/exiletools-indexer/issues">Follow this project on GitHub!</a>
+      </p>
+    </div>
+  </div>
+  <!-- End league Chooser -->
+
+  <hr width=100% size=1>
+  <!-- Empty Div for Loader -->
+  <div id="loaderProgress"></div>
+  <div id="loader"></div>
+  <!-- Empty Div to display content -->
+  <div class="ng-view" style="width:100%"></div>
+
+  <!-- START Template for Unique Chooser -->
+  <script type="text/ng-template" id="uniqueChooser.html">
+    <div ng-if="Uniques">
+      <ui-select ng-model="unique.selected" theme="selectize" ng-disabled="disabled" style="min-width:250px;max-width:550px" on-select="selectUnique(unique.selected)">
+        <ui-select-match placeholder="Choose a unique item...">{{$select.selected}}</ui-select-match>
+        <ui-select-choices repeat="unique in Uniques | filter: $select.search">{{unique}}</ui-select-choices>
+      </ui-select>
+    </div>
+  </script>
+  <!-- END Template for Unique Chooser -->
+
+  <!-- START Template for the Unique Report -->
+  <script type="text/ng-template" id="uniqueReport.html">
+  <!-- Empty Div for failedReport -->
+  <div ng-if="failedReport">
+    <div class="alert alert-warning" role="alert" style="min-width:200px;max-width:800px">
+     <p style="font-size:200%"><i class="fa fa-exclamation-triangle"></i>&nbsp;&nbsp;&nbsp;There was a problem generating this report!</p>
+     <hr width=100% size=1>
+     <p>
+Woops. Explanation.
+     </p>
+     <hr width=100% size=1>
+     <p>You attempted to generate a report for:</p><br>
+     <ul>
+       <li> League: <b>{{league}}</b>
+       <li> Report Option: <b>{{options}}</b>
+     </ul><br>
+     <p>The backend returned the following error(s):</p><br>
+     <ul>
+       <li ng-repeat="error in errors"> {{error}}
+     </ul>
+    </div>
+  </div>
+
+    <!-- Master DIV - only displays data if readyReport is set -->
+    <div style="width:100%" ng-if="readyReport">
+    </div>
+  </script>
+  <!-- END Template for the Unique Report -->
+
+
+
+</div>
+
+
+</body>
+</html>

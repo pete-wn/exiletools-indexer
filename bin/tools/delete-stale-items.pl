@@ -41,7 +41,7 @@ while($keepRunning) {
           must => [
             { 
               range => {
-                "shop.modified" => { lte => "now-60d/d" }
+                "shop.updated" => { lte => "now-30d/d" }
               }
             }
 #            },
@@ -63,28 +63,21 @@ while($keepRunning) {
       {
         "range": {
           "shop.updated": {
-            "lte": "now-14d/d"
-          }
-        }
-      },
-      {
-        "term": {
-          "shop.verified": {
-            "value": "YES"
+            "lte": "now-30d/d"
           }
         }
       }
     ]
   },
   size:1000,
-  timeout:60
+  timeout:300
 }
 }';
 
   my $deleteCommand = "curl -XDELETE \'http://$conf{esHost}:9200/poe/item/_query\' -d \'$deleteQuery\'";
-#  print "$deleteCommand\n";
+  print "$deleteCommand\n";
 
 
-  sleep 60;
+exit;
 }
 

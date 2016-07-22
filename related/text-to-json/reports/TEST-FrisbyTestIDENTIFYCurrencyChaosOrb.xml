@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+<testsuite name="Frisby Test: [IDENTIFY] Currency: Chaos Orb" errors="0" tests="1" failures="0" time="0.012" timestamp="2016-06-17T16:35:43">
+  <testcase classname="Frisby Test: [IDENTIFY] Currency: Chaos Orb" name="
+	[ POST http://localhost:9000 ]" time="0.012"></testcase>
+</testsuite>
+</testsuites>

@@ -50,7 +50,7 @@ $h{"Mana Flasks"} = "Flask";
 $h{"Hybrid Flasks"} = "Flask";
 $h{"Utility Flasks"} = "Flask";
 $h{"Maps"} = "Map";
-$h{"Map Fragments"} = "Vaal Fragment";
+$h{"Map Fragments"} = "Map Fragment";
 
 $h{"Divination Card"} = "Card";
 

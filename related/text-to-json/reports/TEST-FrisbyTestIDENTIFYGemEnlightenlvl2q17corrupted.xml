@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+<testsuite name="Frisby Test: [IDENTIFY] Gem: Enlighten lvl2 q17 corrupted" errors="0" tests="1" failures="0" time="0.016" timestamp="2016-06-17T16:35:43">
+  <testcase classname="Frisby Test: [IDENTIFY] Gem: Enlighten lvl2 q17 corrupted" name="
+	[ POST http://localhost:9000 ]" time="0.016"></testcase>
+</testsuite>
+</testsuites>

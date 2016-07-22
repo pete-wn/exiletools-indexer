@@ -829,6 +829,7 @@ $gearBaseType{"Mortal Rage"} = "Vaal Fragment";
 $gearBaseType{"Mortal Hope"} = "Vaal Fragment";
 $gearBaseType{"Mortal Ignorance"} = "Vaal Fragment";
 $gearBaseType{"Mortal Grief"} = "Vaal Fragment";
+$gearBaseType{"Offering to the Goddess"} = "Offering";
 
 foreach $key (keys(%gearBaseType)) {
   push @gearBaseTypeArray, $key;
