@@ -57,14 +57,14 @@
           $data->{name} = $uniqueInfoHash{$item{info}{icon}} if ($uniqueInfoHash{$item{info}{icon}});
         }
       
-        if ($data->{descrText}) {
-          $item{info}{descrText} = $data->{descrText};
-          $item{info}{tokenized}{descrText} = lc($data->{descrText});
-        }
-        if ($data->{prophecyText}) {
-          $item{info}{prophecyText} = $data->{prophecyText};
-          $item{info}{tokenized}{prophecyText} = lc($data->{prophecyText});
-        }
+#        if ($data->{descrText}) {
+#          $item{info}{descrText} = $data->{descrText};
+#          $item{info}{tokenized}{descrText} = lc($data->{descrText});
+#        }
+#        if ($data->{prophecyText}) {
+#          $item{info}{prophecyText} = $data->{prophecyText};
+#          $item{info}{tokenized}{prophecyText} = lc($data->{prophecyText});
+#        }
       
         if ($data->{duplicated}) {
           $item{attributes}{mirrored} = $data->{duplicated};
@@ -72,11 +72,11 @@
           $item{attributes}{mirrored} = \0;
         }
       
-        if ($data->{lockedToCharacter}) {
-          $item{attributes}{lockedToCharacter} = $data->{lockedToCharacter};
-        } else {
-          $item{attributes}{lockedToCharacter} = \0;
-        }
+#        if ($data->{lockedToCharacter}) {
+#          $item{attributes}{lockedToCharacter} = $data->{lockedToCharacter};
+#        } else {
+#          $item{attributes}{lockedToCharacter} = \0;
+#        }
       
         foreach my $flava (@{$data->{flavourText}}) {
           # I strip the \r out because it doesn't blend well
@@ -167,10 +167,10 @@
       
         if ($data->{frameType} < 4) {
           # normal, magic, rare, and unique items need to be extracted
-          if ($data->{descrText} =~ /Travel to this Map by using it in the Eternal Laboratory/) {
-            $item{attributes}{itemType} = "Map";
-            $item{attributes}{baseItemType} = "Map";
-            $item{attributes}{baseItemName} = "A Map";
+#          if ($data->{descrText} =~ /Travel to this Map by using it in the Eternal Laboratory/) {
+#            $item{attributes}{itemType} = "Map";
+#            $item{attributes}{baseItemType} = "Map";
+#            $item{attributes}{baseItemName} = "A Map";
           } elsif ($data->{descrText} =~ /Place into an allocated Jewel Socket/) {
             $item{attributes}{itemType} = "Jewel";
             $item{attributes}{baseItemType} = "Jewel";
