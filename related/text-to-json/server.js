@@ -212,10 +212,13 @@ function parseItem(text, league) {
 
   // NORMAL rarity detection
   } else if (item.attributes.rarity == 'Normal') {
-    console.warn('parsing normal item');
+
     const itemName = nameArray[1];
     if (itemNames[itemName]) {
-      writeAttributes(item, itemName);
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+
       if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
         writeProperties(item, infoArray);
         writeSockets(item, infoArray);
@@ -225,23 +228,17 @@ function parseItem(text, league) {
       }
 
       const modInfo = getModInfo(infoArray);
-      if (modInfo.length) {
-        writeMods(item, modInfo);
-      }
+      writeMods(item, modInfo);
     } else {
       const error = new Error('Could not determine Normal item name from clipboard information.');
       console.error(error);
       throw(error);
     }
-    const util = require('util');
-    console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
 
     return item;
 
   // MAGIC rarity detection
   } else if (item.attributes.rarity === 'Magic') {
-    console.warn('parsing magic item');
-
     // Okay. How to extract the name from a magic item.
     // An approach may be to search itemNames for the two words before 'of'
     // and if that fails, the first word before 'of'. It's relatively fast but
@@ -250,9 +247,11 @@ function parseItem(text, league) {
     const ofIdx = nameParts.indexOf('of');
     const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
     const itemName = itemNames[itemNameParts.join(' ')] ? itemNameParts.join(' ') : itemNameParts[1];
-
     if (itemNames[itemName]) {
-      writeAttributes(item, itemName);
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+
       if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
         writeProperties(item, infoArray);
         writeSockets(item, infoArray);
@@ -267,8 +266,6 @@ function parseItem(text, league) {
       console.error(error.message)
       throw(error);
     }
-    const util = require('util');
-    console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
 
     return item;
 
@@ -286,8 +283,11 @@ function parseItem(text, league) {
       infoArray.pop();
     }
 
-    if (itemNames[nameArray[2]]) {
-      writeAttributes(item, nameArray[2]);
+    const itemName = nameArray[2];
+    if (itemNames[itemName]) {
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
 
       // Iterate through the properties - note that for some items, this will
       // be the Requirements and we'll just ignore them if so
@@ -477,13 +477,15 @@ function writeSockets(item, infoArray) {
   }
 */
 function writeMods(item, modInfo) {
+  if (!modInfo.length) return; // if no mods, do nothing
+
   const itemType = item.attributes.itemType;
   item.mods = {};
   item.mods[itemType] = {};
   item.modsTotal = {};
-  console.warn('modInfo:', modInfo);
 
   // If modInfo has two elements, then the first element is an implicit mod
+  // If item is of Normal rarity and has mods, mods are implicit.
   if (modInfo.length === 2 || item.attributes.rarity === 'Normal') {
     item.mods[itemType].implicit = {};
     modInfo[0].forEach(function(mod) {
@@ -499,7 +501,7 @@ function writeMods(item, modInfo) {
     });
   }
 
-  // explicits
+  // explicit mods
   if (item.attributes.rarity !== 'Normal') {
     item.mods[itemType].explicit = {};
     const explicits = modInfo.length === 2 ? modInfo[1] : modInfo[0];
@@ -580,14 +582,3 @@ function decodeProp(prop) {
   const [key, val] = prop.split(': ');
   return [key, Number(val.replace(/[^0-9.]/g, ''))];
 }
-
-/*
-  @return extend @param item with field: {
-    attributes: { itemType, equipType, baseItemType }
-  }
-*/
-function writeAttributes(item, itemName) {
-  item.attributes.itemType = itemNames[itemName];
-  item.attributes.equipType = equipTypes[itemName];
-  item.attributes.baseItemType = itemTypes[item.attributes.itemType];
-};
