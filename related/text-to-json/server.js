@@ -211,7 +211,7 @@ function parseItem(text, league) {
     console.warn('parsing normal item! Will not return anything right now!');
   } else if (item.attributes.rarity === 'Magic') {
     // Okay. How to extract the name from a magic item.
-    // I think a good approach may be to search itemNames for two words before 'of'
+    // I think a good approach may be to search itemNames for the two words before 'of'
     // and if that fails, the first word before 'of'. This is a constant speed solution but
     // I don't know if it catches all cases. What have you done before, Steve?
     const nameParts = nameArray[1].split(' ')
