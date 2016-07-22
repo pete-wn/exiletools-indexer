@@ -207,23 +207,13 @@ function parseItem(text, league) {
     });
 
     return(item);
-  } else if (item.attributes.rarity == 'Normal') {
-    console.warn('parsing normal item! Will not return anything right now!');
-  } else if (item.attributes.rarity === 'Magic') {
-    // Okay. How to extract the name from a magic item.
-    // I think a good approach may be to search itemNames for the two words before 'of'
-    // and if that fails, the first word before 'of'. This is a constant speed solution but
-    // I don't know if it catches all cases. What have you done before, Steve?
-    const nameParts = nameArray[1].split(' ')
-    const ofIdx = nameParts.indexOf('of');
-    const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
-    const itemName = itemNames[itemNameParts.join(' ')] ? itemNameParts.join(' ') : itemNameParts[1];
-    // Depending on if this type of name extraction is used again, abstract it.
-    if (itemNames[itemName]) {
-      item.attributes.itemType = itemNames[itemName];
-      item.attributes.equipType = equipTypes[itemName];
-      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
 
+  // NORMAL rarity detection
+  } else if (item.attributes.rarity == 'Normal') {
+    console.warn('parsing normal item');
+    const itemName = nameArray[1];
+    if (itemNames[itemName]) {
+      writeAttributes(item, itemName);
       if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
         writeProperties(item, infoArray);
         writeSockets(item, infoArray);
@@ -233,11 +223,46 @@ function parseItem(text, league) {
       }
 
       const modInfo = getModInfo(infoArray);
-      writeMods(item, modInfo);
-
+      if (modInfo.length) {
+        writeMods(item, modInfo);
+      }
     } else {
-      const error = new Error('could not determine normal/magic item name from clipboard information')
-      console.warn(error.message)
+      const error = new Error('Could not determine Normal item name from clipboard information.');
+      console.error(error);
+      throw(error);
+    }
+    const util = require('util');
+    console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
+
+    return item;
+
+  // MAGIC rarity detection
+  } else if (item.attributes.rarity === 'Magic') {
+    console.warn('parsing magic item');
+
+    // Okay. How to extract the name from a magic item.
+    // An approach may be to search itemNames for the two words before 'of'
+    // and if that fails, the first word before 'of'. It's relatively fast but
+    // I don't know if it catches all cases. What have you done before, Steve?
+    const nameParts = nameArray[1].split(' ')
+    const ofIdx = nameParts.indexOf('of');
+    const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
+    const itemName = itemNames[itemNameParts.join(' ')] ? itemNameParts.join(' ') : itemNameParts[1];
+
+    if (itemNames[itemName]) {
+      writeAttributes(item, itemName);
+      if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
+        writeProperties(item, infoArray);
+        writeSockets(item, infoArray);
+        if (item.attributes.baseItemType === 'Weapon') {
+          writeDPS(item);
+        }
+      }
+      const modInfo = getModInfo(infoArray);
+      writeMods(item, modInfo);
+    } else {
+      const error = new Error('could not determine magic item name from clipboard information')
+      console.error(error.message)
       throw(error);
     }
     const util = require('util');
@@ -247,7 +272,6 @@ function parseItem(text, league) {
 
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
-    console.log('UNIQUE nameArray:', nameArray);
     console.log("this item is rare or unique, trying to identify it " + nameArray[2]);
 
     // If it has a note, remove that
@@ -261,9 +285,7 @@ function parseItem(text, league) {
     }
 
     if (itemNames[nameArray[2]]) {
-      item.attributes.itemType = itemNames[nameArray[2]];
-      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
-      item.attributes.equipType = equipTypes[nameArray[2]];
+      writeAttributes(item, nameArray[2]);
 
       // Iterate through the properties - note that for some items, this will
       // be the Requirements and we'll just ignore them if so
@@ -277,8 +299,6 @@ function parseItem(text, league) {
       }
 
       const modInfo = getModInfo(infoArray);
-
-      // For Normal items this logic will have to work differently
       writeMods(item, modInfo);
 
 //      var thisInfo = _.compact(infoArray[3].split(/\n/));
@@ -292,9 +312,7 @@ function parseItem(text, league) {
       throw(JSON.stringify(error));
     }
 
-    const util = require('util');
-    console.warn('parsed item:', util.inspect(item, {showHidden: false, depth: null}));
-    return(item);
+    return item;
   }
 
   item.warning = "This item wasn't fully identified and is returning only default info!";
@@ -461,9 +479,10 @@ function writeMods(item, modInfo) {
   item.mods = {};
   item.mods[itemType] = {};
   item.modsTotal = {};
+  console.warn('modInfo:', modInfo);
 
   // If modInfo has two elements, then the first element is an implicit mod
-  if (modInfo.length === 2) {
+  if (modInfo.length === 2 || item.attributes.rarity === 'Normal') {
     item.mods[itemType].implicit = {};
     modInfo[0].forEach(function(mod) {
       const [modKey, modVal] = parseMod(mod);
@@ -479,7 +498,7 @@ function writeMods(item, modInfo) {
   }
 
   // explicits
-  if (item.attributes.rarity !== 'normal') {
+  if (item.attributes.rarity !== 'Normal') {
     item.mods[itemType].explicit = {};
     const explicits = modInfo.length === 2 ? modInfo[1] : modInfo[0];
     explicits.forEach(function(mod) {
@@ -560,3 +579,13 @@ function decodeProp(prop) {
   return [key, Number(val.replace(/[^0-9.]/g, ''))];
 }
 
+/*
+  @return extend @param item with field: {
+    attributes: { itemType, equipType, baseItemType }
+  }
+*/
+function writeAttributes(item, itemName) {
+  item.attributes.itemType = itemNames[itemName];
+  item.attributes.equipType = equipTypes[itemName];
+  item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+};
