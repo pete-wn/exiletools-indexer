@@ -239,28 +239,39 @@ function parseItem(text, league) {
 
   // MAGIC rarity detection
   } else if (item.attributes.rarity === 'Magic') {
-    // Okay. How to extract the name from a magic item.
-    // An approach may be to search itemNames for the two words before 'of'
-    // and if that fails, the first word before 'of'. It's relatively fast but
-    // I don't know if it catches all cases. What have you done before, Steve?
+    // Affixes make extracting a magic item's name difficult, so we take two approaches
+    // It's relatively fast but I'm not sure it catches all cases.
     const nameParts = nameArray[1].split(' ')
-    let itemName = "";
-    if (nameParts.includes('of')) {
-      const ofIdx = nameParts.indexOf('of');
-      const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
-      if (itemNames[itemNameParts.join(' ')]) {
-        itemName = itemNameParts.join(' ');
-      } else {
-        itemName = itemNameParts[1];
+    let itemName = null;
+
+    const itemNameEnd = nameParts.includes('of') ? nameParts.indexOf('of') : nameParts.length - 1;
+    while (nameParts.length) {
+      const name = nameParts.slice(0, itemNameEnd).join(' ');
+      if (name in itemNames) {
+        itemName = name;
+        break;
       }
-    } else {
-      const oneWordItemName = nameParts[nameParts.length - 1];
-      const twoWordItemName = nameParts.slice(nameParts.length - 2, nameParts.length).join(' ');
-      itemName = itemNames[twoWordItemName] ? twoWordItemName : oneWordItemName;
+      nameParts.shift();
     }
 
+    // // if the item has a suffix, parse backwards from 'of'
+    // if (nameParts.includes('of')) {}
+    //   const ofIdx = nameParts.indexOf('of');
+    //   const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
+    //   if (itemNames[itemNameParts.join(' ')]) {
+    //     itemName = itemNameParts.join(' ');
+    //   } else {
+    //     itemName = itemNameParts[1];
+    //   }
+    // } else {
+    //   // the item does not have a suffix, parse from the end of the string
+    //   const oneWordItemName = nameParts[nameParts.length - 1];
+    //   const twoWordItemName = nameParts.slice(nameParts.length - 2, nameParts.length).join(' ');
+    //   itemName = itemNames[twoWordItemName] ? twoWordItemName : oneWordItemName;
+    // }
+
     console.warn('Normal item name:', itemName); // debug for magic item naming.
-    if (itemNames[itemName]) {
+    if (itemName in itemNames) {
       item.attributes.itemType = itemNames[itemName];
       item.attributes.equipType = equipTypes[itemName];
       item.attributes.baseItemType = itemTypes[item.attributes.itemType];

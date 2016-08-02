@@ -680,6 +680,49 @@ and deadly in Ungil's nimble hands.`
   })
 .toss();
 
+frisby.create("[IDENTIFY] ")
+  .post(baseurl, {
+  'league':'Prophecy',
+  'text': `Rarity: Magic
+Cerulean Gold Ring
+--------
+Requirements:
+Level: 23
+--------
+Item Level: 36
+--------
+15% increased Rarity of Items found
+--------
++37 to maximum Mana`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : 'Cerulean Gold Ring' },
+    attributes : {
+      league: 'Prophecy',
+      rarity: 'Magic',
+      baseItemType : 'Jewelry',
+      equipType: 'Ring',
+      itemType: 'Ring'
+    },
+    mods: {
+      Ring: {
+        implicit: {
+          '#% increased Rarity of Items found': 15,
+        },
+        explicit: {
+          '+# to maximum Mana': 37,
+        }
+      }
+    },
+    modsTotal: {
+      '#% increased Rarity of Items found': 15,
+      '+# to maximum Mana': 37
+    }
+  })
+  .toss();
+
+
 //frisby.create("[IDENTIFY] ")
 //  .post(baseurl, {
 //    'league':'Prophecy',
