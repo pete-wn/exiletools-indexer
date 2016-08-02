@@ -523,8 +523,7 @@ Item Level: 15`
 frisby.create("[IDENTIFY] Instilled Legion Boots of the Starfish")
  .post(baseurl, {
    'league':'Prophecy',
-   'text':
-`Rarity: Magic
+   'text': `Rarity: Magic
 Instilled Legion Boots of the Starfish
 --------
 Armour: 147 (augmented)
@@ -543,45 +542,87 @@ Item Level: 59
 --------
 61% increased Armour and Energy Shield
 15% increased Movement Speed`
-    })
-    .expectStatus(200)
-    .expectJSON({
-      info : { fullName : 'Instilled Legion Boots of the Starfish' },
-      attributes : {
-       league: 'Prophecy',
-       rarity: 'Magic',
-       baseItemType: 'Armour',
-       equipType: 'Boots',
-       itemType: 'Boots',
-      },
-      properties: {
-        Armour: {
-          Armour: 147,
-          'Energy Shield': 43
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : 'Instilled Legion Boots of the Starfish' },
+    attributes : {
+     league: 'Prophecy',
+     rarity: 'Magic',
+     baseItemType: 'Armour',
+     equipType: 'Boots',
+     itemType: 'Boots',
+    },
+    properties: {
+      Armour: {
+        Armour: 147,
+        'Energy Shield': 43
+      }
+    },
+    sockets: {
+      allSocketsGGG: 'G-R B',
+      largestLinkGroup: 2,
+      socketCount: 3
+    },
+    mods: {
+      Boots: {
+        implicit: {
+          '#% increased Movement Speed': 5
+        },
+        explicit: {
+          '#% increased Armour and Energy Shield': 61,
+          '#% increased Movement Speed': 15
         }
-      },
-      sockets: {
-        allSocketsGGG: 'G-R B',
-        largestLinkGroup: 2,
-        socketCount: 3
-      },
-      mods: {
-        Boots: {
-          implicit: {
-            '#% increased Movement Speed': 5
-          },
-          explicit: {
-            '#% increased Armour and Energy Shield': 61,
-            '#% increased Movement Speed': 15
-          }
+      }
+    },
+    modsTotal: {
+      '#% increased Armour and Energy Shield': 61,
+      '#% increased Movement Speed': 20
+    },
+  })
+  .toss();
+
+frisby.create("[IDENTIFY] Lava Caller's Gold Ring")
+  .post(baseurl, {
+  'league':'Prophecy',
+  'text': `Rarity: Magic
+Lava Caller's Gold Ring
+--------
+Requirements:
+Level: 23
+--------
+Item Level: 36
+--------
+15% increased Rarity of Items found
+--------
++37 to maximum Mana`
+  })
+  .expectStatus(200)
+  .expectJSON({
+    info : { fullName : "Lava Caller's Gold Ring" },
+    attributes : {
+      league: 'Prophecy',
+      rarity: 'Magic',
+      baseItemType : 'Jewelry',
+      equipType: 'Ring',
+      itemType: 'Ring'
+    },
+    mods: {
+      Ring: {
+        implicit: {
+          '#% increased Rarity of Items found': 15,
+        },
+        explicit: {
+          '+# to maximum Mana': 37,
         }
-      },
-      modsTotal: {
-        '#% increased Armour and Energy Shield': 61,
-        '#% increased Movement Speed': 20
-      },
-    })
-    .toss();
+      }
+    },
+    modsTotal: {
+      '#% increased Rarity of Items found': 15,
+      '+# to maximum Mana': 37
+    }
+  })
+  .toss();
 
 frisby.create("[IDENTIFY] Ungil's Gauche Boot Knife")
   .post(baseurl, {
@@ -679,48 +720,6 @@ and deadly in Ungil's nimble hands.`
     }
   })
 .toss();
-
-frisby.create("[IDENTIFY] ")
-  .post(baseurl, {
-  'league':'Prophecy',
-  'text': `Rarity: Magic
-Cerulean Gold Ring
---------
-Requirements:
-Level: 23
---------
-Item Level: 36
---------
-15% increased Rarity of Items found
---------
-+37 to maximum Mana`
-  })
-  .expectStatus(200)
-  .expectJSON({
-    info : { fullName : 'Cerulean Gold Ring' },
-    attributes : {
-      league: 'Prophecy',
-      rarity: 'Magic',
-      baseItemType : 'Jewelry',
-      equipType: 'Ring',
-      itemType: 'Ring'
-    },
-    mods: {
-      Ring: {
-        implicit: {
-          '#% increased Rarity of Items found': 15,
-        },
-        explicit: {
-          '+# to maximum Mana': 37,
-        }
-      }
-    },
-    modsTotal: {
-      '#% increased Rarity of Items found': 15,
-      '+# to maximum Mana': 37
-    }
-  })
-  .toss();
 
 
 //frisby.create("[IDENTIFY] ")
