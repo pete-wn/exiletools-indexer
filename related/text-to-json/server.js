@@ -244,9 +244,22 @@ function parseItem(text, league) {
     // and if that fails, the first word before 'of'. It's relatively fast but
     // I don't know if it catches all cases. What have you done before, Steve?
     const nameParts = nameArray[1].split(' ')
-    const ofIdx = nameParts.indexOf('of');
-    const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
-    const itemName = itemNames[itemNameParts.join(' ')] ? itemNameParts.join(' ') : itemNameParts[1];
+    let itemName = "";
+    if (nameParts.includes('of')) {
+      const ofIdx = nameParts.indexOf('of');
+      const itemNameParts = nameParts.slice(ofIdx - 2, ofIdx);
+      if (itemNames[itemNameParts.join(' ')]) {
+        itemName = itemNameParts.join(' ');
+      } else {
+        itemName = itemNameParts[1];
+      }
+    } else {
+      const oneWordItemName = nameParts[nameParts.length - 1];
+      const twoWordItemName = nameParts.slice(nameParts.length - 2, nameParts.length).join(' ');
+      itemName = itemNames[twoWordItemName] ? twoWordItemName : oneWordItemName;
+    }
+
+    console.warn('Normal item name:', itemName); // debug for magic item naming.
     if (itemNames[itemName]) {
       item.attributes.itemType = itemNames[itemName];
       item.attributes.equipType = equipTypes[itemName];
