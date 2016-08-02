@@ -231,24 +231,25 @@ function parseItem(text, league) {
       writeMods(item, modInfo);
     } else {
       const error = new Error('Could not determine Normal item name from clipboard information.');
-      console.error(error);
-      throw(error);
+      throw error;
     }
 
     return item;
 
   // MAGIC rarity detection
   } else if (item.attributes.rarity === 'Magic') {
-    // Affixes complicate extracting a magic item's name, or type
+    // Affixes complicate extracting a magic item's name, or type, so:
 
-    // Find the index of the end of the item's name
+    // Find the index of the end of the item's name, removing a possible suffix
+    // note: all suffixes (from poe.wiki) begin with 'of'.
     let nameParts = nameArray[1].split(' ')
     const itemNameEnd = nameParts.includes('of')
       ? nameParts.indexOf('of')
       : nameParts.length;
     nameParts = nameParts.slice(0, itemNameEnd);
 
-    // Search from beginning to find an item type match
+    // Search from the front to find an item type match, incrementally removing a prefix
+    // note: all prefixes are only one word except +gem level prefixes.. darn.
     let itemName = null;
     while (nameParts.length) {
       const name = nameParts.slice(0).join(' ');
@@ -274,9 +275,8 @@ function parseItem(text, league) {
       const modInfo = getModInfo(infoArray);
       writeMods(item, modInfo);
     } else {
-      const error = new Error('could not determine magic item name from clipboard information')
-      console.error(error.message)
-      throw(error);
+      const error = new Error('Could not determine Magic item name from clipboard information.');
+      throw error;
     }
 
     return item;
