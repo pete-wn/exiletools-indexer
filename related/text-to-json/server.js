@@ -212,8 +212,10 @@ function parseItem(text, league) {
 
   // NORMAL rarity detection
   } else if (item.attributes.rarity == 'Normal') {
+    const itemName = nameArray[1].includes('Superior')
+      ? nameArray[1].slice('Superior '.length)
+      : nameArray[1];
 
-    const itemName = nameArray[1];
     if (itemNames[itemName]) {
       item.attributes.itemType = itemNames[itemName];
       item.attributes.equipType = equipTypes[itemName];
