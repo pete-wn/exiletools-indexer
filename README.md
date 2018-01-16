@@ -1,3 +1,17 @@
+# IMPORTANT NOTE: ExileTools and this project has been shut down!
+
+Please see this thread for more information: https://www.reddit.com/r/pathofexiledev/comments/4xviyw/psa_exiletools_shutting_down_after_prophecy/
+
+This entire project was shut down in late 2016, including all active development and hosting. The conversion to node from perl was abandoned and all supporting documentation, information, etc. was removed and exiletools.com was allowed to expire.
+
+I've left this project on-line for developers who come into the Path of Exile ecosystem later and are interested in seeing some of its history and some of the complexities of dealing with indexing and working with GGG as a third party developer. All open issues, PR's, etc. have been left as is.
+
+Cheers!
+
+   -Pete
+   
+------------------------------------------------
+
 # ExileTools Indexer v4
 
 This project contains the open source indexer back-end used by ExileTools for its free ElasticSearch API service, a searchable index of all items for sale (or recently for sale) by players of Path of Exile using the Stash Tab API service from Grinding Gear Games.
