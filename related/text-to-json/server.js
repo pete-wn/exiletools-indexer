@@ -208,6 +208,81 @@ function parseItem(text, league) {
 
     return(item);
 
+  // NOTE: Flasks
+
+  // NORMAL rarity detection
+  } else if (item.attributes.rarity == 'Normal') {
+    const itemName = nameArray[1].includes('Superior')
+      ? nameArray[1].slice('Superior '.length)
+      : nameArray[1];
+
+    if (itemNames[itemName]) {
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+
+      if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
+        writeProperties(item, infoArray);
+        writeSockets(item, infoArray);
+        if (item.attributes.baseItemType === 'Weapon') {
+          writeDPS(item);
+        }
+      }
+
+      const modInfo = getModInfo(infoArray);
+      writeMods(item, modInfo);
+    } else {
+      const error = new Error('Could not determine Normal item name from clipboard information.');
+      throw error;
+    }
+
+    return item;
+
+  // MAGIC rarity detection
+  } else if (item.attributes.rarity === 'Magic') {
+    // Affixes complicate extracting a magic item's name, or type, so:
+
+    // Find the index of the end of the item's name, removing a possible suffix
+    // note: all suffixes (from poe.wiki) begin with 'of'.
+    let nameParts = nameArray[1].split(' ')
+    const itemNameEnd = nameParts.includes('of')
+      ? nameParts.indexOf('of')
+      : nameParts.length;
+    nameParts = nameParts.slice(0, itemNameEnd);
+
+    // Search from the front to find an item type match, incrementally removing a prefix
+    // note: all prefixes are only one word except +gem level prefixes.. darn.
+    let itemName = null;
+    while (nameParts.length) {
+      const name = nameParts.slice(0).join(' ');
+      if (name in itemNames) {
+        itemName = name;
+        break;
+      }
+      nameParts.shift();
+    }
+
+    if (itemName in itemNames) {
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
+      item.attributes.baseItemType = itemTypes[item.attributes.itemType];
+
+      if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
+        writeProperties(item, infoArray);
+        writeSockets(item, infoArray);
+        if (item.attributes.baseItemType === 'Weapon') {
+          writeDPS(item);
+        }
+      }
+      const modInfo = getModInfo(infoArray);
+      writeMods(item, modInfo);
+    } else {
+      const error = new Error('Could not determine Magic item name from clipboard information.');
+      throw error;
+    }
+
+    return item;
+
   // Analyze Rare and Unique items that don't match any of the above
   } else if (item.attributes.rarity == "Rare" || item.attributes.rarity == "Unique") {
     console.log("this item is rare or unique, trying to identify it " + nameArray[2]);
@@ -222,15 +297,16 @@ function parseItem(text, league) {
       infoArray.pop();
     }
 
-    if (itemNames[nameArray[2]]) {
-      item.attributes.itemType = itemNames[nameArray[2]];
+    const itemName = nameArray[2];
+    if (itemNames[itemName]) {
+      item.attributes.itemType = itemNames[itemName];
+      item.attributes.equipType = equipTypes[itemName];
       item.attributes.baseItemType = itemTypes[item.attributes.itemType];
-      item.attributes.equipType = equipTypes[nameArray[2]];
 
       // Iterate through the properties - note that for some items, this will
       // be the Requirements and we'll just ignore them if so
       // ONLY ARMOUR AND WEAPONS HAVE PROPERTIES for RARE/UNIQUES!
-      if ((item.attributes.baseItemType == "Weapon") || (item.attributes.baseItemType == "Armour")) {
+      if (['Weapon', 'Armour'].includes(item.attributes.baseItemType)) {
         writeProperties(item, infoArray);
         writeSockets(item, infoArray);
         if (item.attributes.baseItemType === 'Weapon') {
@@ -239,8 +315,6 @@ function parseItem(text, league) {
       }
 
       const modInfo = getModInfo(infoArray);
-
-      // For Normal items this logic will have to work differently
       writeMods(item, modInfo);
 
 //      var thisInfo = _.compact(infoArray[3].split(/\n/));
@@ -254,7 +328,7 @@ function parseItem(text, league) {
       throw(JSON.stringify(error));
     }
 
-    return(item);
+    return item;
   }
 
   item.warning = "This item wasn't fully identified and is returning only default info!";
@@ -318,11 +392,11 @@ function parseMod(mod) {
   return[modName, modValue];
 }
 
+// @return [propertyKey, propertyValue]
 function parseProperties(prop) {
-  thisProperty = prop.split(": ");
-  propName = thisProperty[0];
-  propValue = Number(thisProperty[1].replace(/[^0-9.]/g, ''));
-  return[propName, propValue];
+  const [key, val] = prop.split(': ');
+  const parsedValue = Number(val.replace(/[^0-9.]/g, ''));
+  return [key, parsedValue];
 }
 
 
@@ -346,7 +420,8 @@ function writeProperties(item, infoArray) {
   const propertyList = _.compact(infoArray[1].split(/\n/));
   // This means we have properties, so create pwx style properties from them
   if (propertyList[0] != /^Requirements:/) {
-    // check-safe incase this function is used elsewhere.
+    console.log('parsing properties for:', item.info.fullName);
+    // check-safe - only Weapons and Armour have properties
     if (!['Weapon', 'Armour'].includes(item.attributes.baseItemType)) return; 
 
     item.properties[item.attributes.baseItemType] = {};
@@ -417,13 +492,20 @@ function writeSockets(item, infoArray) {
   }
 */
 function writeMods(item, modInfo) {
+  if (!modInfo.length) return; // if no mods, do nothing
+
   const itemType = item.attributes.itemType;
   item.mods = {};
   item.mods[itemType] = {};
   item.modsTotal = {};
 
+  // TODO: Determine implicit/explicit mod type of Magic items with only one mod 
+  // Right now, all magic item mods are interpreted as explicit mods.
+  // Not sure how to do this / if it is possible
+
   // If modInfo has two elements, then the first element is an implicit mod
-  if (modInfo.length === 2) {
+  // If item is of Normal rarity and has mods, mods are implicit.
+  if (modInfo.length === 2 || item.attributes.rarity === 'Normal') {
     item.mods[itemType].implicit = {};
     modInfo[0].forEach(function(mod) {
       const [modKey, modVal] = parseMod(mod);
@@ -438,8 +520,8 @@ function writeMods(item, modInfo) {
     });
   }
 
-  // explicits
-  if (item.attributes.rarity !== 'normal') {
+  // explicit mods
+  if (item.attributes.rarity !== 'Normal') {
     item.mods[itemType].explicit = {};
     const explicits = modInfo.length === 2 ? modInfo[1] : modInfo[0];
     explicits.forEach(function(mod) {
@@ -459,7 +541,7 @@ function writeMods(item, modInfo) {
 // @param propDesc the string describing the property
 // @return [propKey, propVal] parsing of @param propDesc
 function parseProperty(propDesc) {
-  // The parseProperties subroutine is only designed for : separated single number 
+  // The parseProperties subroutine is only designed for ':' separated single number 
   // properties. Only weapons violate this, so we will just parse out those 
   // weapon properties here.
   if (!propDesc.match(/:/)) return [];
@@ -480,7 +562,7 @@ function parseProperty(propDesc) {
     
     return ["Elemental Damage", dmgSummary];
   } else {
-    return decodeProp(propDesc);
+    return parseProperties(propDesc);
   }
 }
 
@@ -514,9 +596,8 @@ function parseMinMaxAvg(dmgDesc) {
   };
 }
 
-// @return [propertyKey, propertyValue]
-function decodeProp(prop) {
-  const [key, val] = prop.split(': ');
-  return [key, Number(val.replace(/[^0-9.]/g, ''))];
+// Useful log pattern for debugging deeply nested Objects
+const util = require('util');
+function debugLog(description, toLog) {
+  console.warn(description, util.inspect(toLog, false, null));
 }
-
