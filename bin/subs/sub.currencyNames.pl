@@ -20,7 +20,6 @@ $currencyName{chances} = "Orb of Chance";
 $currencyName{chis} = "Cartographers Chisel";
 $currencyName{chisel} = "Cartographers Chisel";
 $currencyName{chises} = "Cartographers Chisel";
-$currencyName{chisel} = "Cartographers Chisel";
 $currencyName{chisels} = "Cartographers Chisel";
 $currencyName{cartographer} = "Cartographers Chisel";
 $currencyName{cartographers} = "Cartographers Chisel";
